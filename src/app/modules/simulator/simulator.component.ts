@@ -113,9 +113,13 @@ export class SimulatorComponent implements OnInit {
       } else if (event.key === 'ArrowDown') {
         this.isMovingBackward = true;
       } else if (event.key === 'ArrowLeft') {
-        this.car.rotation.y += this.turnSpeed;
+        if (this.isMovingForward || this.isMovingBackward) {
+          this.car.rotation.y += this.turnSpeed;
+        }
       } else if (event.key === 'ArrowRight') {
-        this.car.rotation.y -= this.turnSpeed;
+        if (this.isMovingForward || this.isMovingBackward) {
+          this.car.rotation.y -= this.turnSpeed;
+        }
       }
     }
   }
