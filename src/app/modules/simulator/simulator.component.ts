@@ -16,7 +16,8 @@ export class SimulatorComponent implements OnInit {
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private car!: THREE.Object3D; 
-  private speed: number = 0.06;
+  private forwardSpeed: number = 0.06;
+  private backwardSpeed: number = 0.03;
   private turnSpeed: number = 0.15;
 
   private isMovingForward: boolean = false;
@@ -89,16 +90,16 @@ export class SimulatorComponent implements OnInit {
       this.car.getWorldDirection(direction);
 
       if (this.isMovingForward) {
-        this.car.position.add(direction.clone().multiplyScalar(this.speed));
+        this.car.position.add(direction.clone().multiplyScalar(this.forwardSpeed));
       }
       if (this.isMovingBackward) {
-        this.car.position.add(direction.clone().multiplyScalar(-this.speed));
+        this.car.position.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
 
-      if (this.isMovingForward || this.isMovingBackward) {
+      if (this.isMovingForward) {
         const turnDirection = new THREE.Vector3();
         turnDirection.set(Math.sin(this.car.rotation.y), 0, Math.cos(this.car.rotation.y));
-        this.car.position.add(turnDirection.multiplyScalar(this.speed * 0.5));
+        this.car.position.add(turnDirection.multiplyScalar(this.forwardSpeed * 0.5));
       }
 
     }
