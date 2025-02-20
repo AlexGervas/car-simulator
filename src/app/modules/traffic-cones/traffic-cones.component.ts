@@ -51,6 +51,10 @@ export class TrafficConesComponent implements OnChanges {
     }
   }
 
+  public createParallelParking() {
+    this.loadConeModel(5, 2);
+  }
+
   public createSnake() {
     if (!this.camera) {
         console.error('Camera is not defined');

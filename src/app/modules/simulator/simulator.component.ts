@@ -47,6 +47,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   private init() {
     this.scene = new THREE.Scene();
+    this.createSceneBackground();
+
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.set(0, 2, 5);
     this.camera.lookAt(0, 0, 0);
@@ -61,6 +63,34 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7.5);
     this.scene.add(directionalLight);
+  }
+
+  private createSceneBackground() {
+    // this.scene.background = new THREE.Color(0xc0c0c0);
+
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load('textures/asphalt.jpg', () => {
+      this.scene.background = texture;
+    });
+
+    // const grassTexture = textureLoader.load('textures/green-grass.jpg');
+    // const skyTexture = textureLoader.load('textures/sky.jpg');
+
+    // const grassGeometry = new THREE.PlaneGeometry(100, 100);
+    // const grassMaterial = new THREE.MeshBasicMaterial({ map: grassTexture });
+    // const grass = new THREE.Mesh(grassGeometry, grassMaterial);
+    // grass.rotation.x = -Math.PI / 2;
+    // grass.position.y = 0;
+
+    // this.scene.add(grass);
+
+    // const skyGeometry = new THREE.PlaneGeometry(100, 100);
+    // const skyMaterial = new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide });
+    // const sky = new THREE.Mesh(skyGeometry, skyMaterial);
+    // sky.rotation.x = Math.PI / 2;
+    // sky.position.y = 50;
+
+    // this.scene.add(sky);
   }
 
   private loadModel() {
