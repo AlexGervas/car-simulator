@@ -1,2 +1,28 @@
-<canvas #canvas id="webgl-canvas"></canvas>
-<app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera"></app-traffic-cones>
+<div class="container">
+    <canvas #canvas id="webgl-canvas"></canvas>
+    <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera"></app-traffic-cones>
+
+    <div class="controls" *ngIf="isMobileDevice">
+        <div class="up-control">
+            <button (touchstart)="isMovingForward = true" (touchend)="isMovingForward = false"
+                (touchcancel)="isMovingForward = false">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+        </div>
+        <div class="turn-controls">
+            <button (touchstart)="turnLeft()">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <div class="empty-space"></div>
+            <button (touchstart)="turnRight()">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+        <div class="down-control">
+            <button (touchstart)="isMovingBackward = true" (touchend)="isMovingBackward = false"
+                (touchcancel)="isMovingBackward = false">
+                <i class="fas fa-arrow-down"></i>
+            </button>
+        </div>
+    </div>
+</div>

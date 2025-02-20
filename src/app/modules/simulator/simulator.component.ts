@@ -3,11 +3,13 @@ import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { DeviceService } from '../../core/services/device.service';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [TrafficConesComponent],
+  imports: [CommonModule, TrafficConesComponent],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
@@ -24,12 +26,15 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
 
-  private isMovingForward: boolean = false;
-  private isMovingBackward: boolean = false;
+  public isMovingForward: boolean = false;
+  public isMovingBackward: boolean = false;
+  public isMobileDevice: boolean = false;
 
-  constructor(private el: ElementRef) {}
+  constructor(private el: ElementRef, private deviceService: DeviceService) { }
 
   ngOnInit() {
+    this.isMobileDevice = this.deviceService.isMobile();
+    console.log(22222, this.isMobileDevice)
     this.init();
     this.loadModel();
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
@@ -147,6 +152,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     if (this.car) {
       const direction = new THREE.Vector3();
       this.car.getWorldDirection(direction);
+      direction.y = 0;
+      direction.normalize();
 
       if (this.isMovingForward) {
         this.car.position.add(direction.clone().multiplyScalar(this.forwardSpeed));
@@ -154,13 +161,18 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
       if (this.isMovingBackward) {
         this.car.position.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
+    }
+  }
 
-      if (this.isMovingForward) {
-        const turnDirection = new THREE.Vector3();
-        turnDirection.set(Math.sin(this.car.rotation.y), 0, Math.cos(this.car.rotation.y));
-        this.car.position.add(turnDirection.multiplyScalar(this.forwardSpeed * 0.5));
-      }
+  public turnLeft() {
+    if (this.car) {
+      this.car.rotation.y += this.turnSpeed;
+    }
+  }
 
+  public turnRight() {
+    if (this.car) {
+      this.car.rotation.y -= this.turnSpeed;
     }
   }
 
@@ -192,6 +204,43 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     }
   }
 
+  // Управление с мобильного
+  @HostListener('window:touchstart', ['$event'])
+  handleTouchStart(event: TouchEvent) {
+    if (this.car) {
+      const touch = event.touches[0];
+      if (touch.clientY < window.innerHeight / 2) {
+        this.isMovingForward = true;
+      } else {
+        this.isMovingBackward = true;
+      }
+    }
+  }
+
+  @HostListener('window:touchend', ['$event'])
+  handleTouchEnd(event: TouchEvent) {
+    this.isMovingForward = false;
+    this.isMovingBackward = false;
+  }
+
+  @HostListener('window:touchmove', ['$event'])
+  handleTouchMove(event: TouchEvent) {
+    if (this.car) {
+      const touch = event.touches[0];
+      const deltaX = touch.clientX - (window.innerWidth / 2);
+
+      if (deltaX < -50) {
+        this.car.rotation.y += this.turnSpeed;
+      } else if (deltaX > 50) {
+        this.car.rotation.y -= this.turnSpeed;
+      }
+    }
+  }
+
+  @HostListener('window:resize', ['$event'])
+  onResize() {
+    this.isMobileDevice = this.deviceService.isMobile();
+  }
   
   private onWindowResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
