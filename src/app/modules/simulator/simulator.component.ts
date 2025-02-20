@@ -20,9 +20,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
-  private forwardSpeed: number = 0.06;
-  private backwardSpeed: number = 0.03;
-  private turnSpeed: number = 0.15;
+  private forwardSpeed: number = 0.04;
+  private backwardSpeed: number = 0.02;
+  private turnSpeed: number = 0.1;
 
   private isMovingForward: boolean = false;
   private isMovingBackward: boolean = false;
@@ -124,7 +124,23 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     requestAnimationFrame(() => this.animate());
     this.controls.update(); 
     this.updateCarPosition();
+    this.updateCameraPosition();
     this.renderer.render(this.scene, this.camera);
+  }
+
+
+  private updateCameraPosition() {
+    if (this.car) {
+      const offset = new THREE.Vector3(0, 2, 5);
+      this.camera.position.copy(this.car.position).add(offset);
+
+      const direction = new THREE.Vector3();
+      this.car.getWorldDirection(direction);
+      direction.y = 0;
+      direction.normalize();
+
+      this.camera.lookAt(this.car.position.clone().sub(direction));
+    }
   }
 
   private updateCarPosition() {

@@ -44,7 +44,7 @@ export class TrafficConesComponent implements OnChanges {
         direction.normalize();
 
         const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
-        const xPosition = this.car.position.x;
+        const xPosition = this.car.position.x - 3;
 
         cone.position.set(xPosition, 0.5, zPosition);
         cone.rotation.y = Math.PI; 
@@ -69,7 +69,7 @@ export class TrafficConesComponent implements OnChanges {
         return;
     }
 
-    this.loadConeModel(5, 6, 15);
+    this.loadConeModel(5, 15, 15);
   }
 
 
