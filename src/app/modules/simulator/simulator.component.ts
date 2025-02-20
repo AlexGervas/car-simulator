@@ -5,6 +5,7 @@ import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 import { DeviceService } from '../../core/services/device.service';
 import { CommonModule } from '@angular/common';
+import { ConeStateService } from '../../core/services/cone-state.service';
 
 @Component({
   selector: 'app-simulator',
@@ -29,12 +30,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
   public isMobileDevice: boolean = false;
+  private isConeFallen: boolean = false;
+  private isGameOver: boolean = false;
 
-  constructor(private el: ElementRef, private deviceService: DeviceService) { }
+  constructor(private el: ElementRef, private deviceService: DeviceService, private coneStateService: ConeStateService) { }
 
   ngOnInit() {
     this.isMobileDevice = this.deviceService.isMobile();
-    console.log(22222, this.isMobileDevice)
     this.init();
     this.loadModel();
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
@@ -112,8 +114,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   private loadModel() {
     const loader = new GLTFLoader();
     loader.load('cars/vw2.glb', (gltf: GLTF) => {
-      console.log('Model loaded successfully:', gltf);
-
       this.car = gltf.scene;
       this.car.scale.set(1, 1, 1);
       this.car.position.set(0, 0, 0);
@@ -122,7 +122,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     }, undefined, (error) => {
       console.error('Error loading GLTF model:', error);
     });
-    this.animate();
   }
 
   private animate() {
@@ -149,22 +148,52 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   }
 
   private updateCarPosition() {
-    if (this.car) {
+    if (this.car && !this.isGameOver) {
       const direction = new THREE.Vector3();
       this.car.getWorldDirection(direction);
       direction.y = 0;
       direction.normalize();
 
+      const newPosition = this.car.position.clone();
+
       if (this.isMovingForward) {
-        this.car.position.add(direction.clone().multiplyScalar(this.forwardSpeed));
+        newPosition.add(direction.clone().multiplyScalar(this.forwardSpeed));
       }
       if (this.isMovingBackward) {
-        this.car.position.add(direction.clone().multiplyScalar(-this.backwardSpeed));
+        newPosition.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
+
+      const carBox = new THREE.Box3().setFromObject(this.car);
+
+      for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
+        const coneBox = this.trafficCones.getConeBoxes()[i];
+
+        if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen()) {
+          console.log('Collision detected with cone at index:', i);
+
+          alert('Вы врезались в ' + (i+1) + ' конус!');
+          this.coneStateService.setConeFallen(true);
+          this.isGameOver = true; 
+
+          const cone = this.trafficCones.getCones()[i];
+
+          if (cone) {
+            console.log('Cone found for falling:', cone);
+
+            const fallDirection = new THREE.Vector3().subVectors(cone.position, this.car.position).normalize();
+            this.trafficCones.animateConeFall(cone, fallDirection);
+          } else {
+            console.error('Cone not found at index:', i);
+          }
+          return;
+        }
+      }
+
+      this.car.position.copy(newPosition);
     }
   }
 
-  public turnLeft() {
+public turnLeft() {
     if (this.car) {
       this.car.rotation.y += this.turnSpeed;
     }
@@ -178,7 +207,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (this.car) {
+    if (this.car && !this.isGameOver) {
       if (event.key === 'ArrowUp') {
         this.isMovingForward = true;
       } else if (event.key === 'ArrowDown') {
