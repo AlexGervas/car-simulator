@@ -1,21 +1,23 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [],
+  imports: [TrafficConesComponent],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
-export class SimulatorComponent implements OnInit {
+export class SimulatorComponent implements OnInit, AfterViewInit {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
+  @ViewChild('TrafficConesComponent') trafficCones !: TrafficConesComponent;
 
+  public camera!: THREE.PerspectiveCamera;
+  public car!: THREE.Object3D; 
   private scene!: THREE.Scene;
-  private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
-  private car!: THREE.Object3D; 
   private forwardSpeed: number = 0.06;
   private backwardSpeed: number = 0.03;
   private turnSpeed: number = 0.15;
@@ -28,10 +30,19 @@ export class SimulatorComponent implements OnInit {
   ngOnInit() {
     this.init();
     this.loadModel();
-    // this.createTrafficCones();
-    this.animate();
-
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
+  }
+
+  ngAfterViewInit() {
+    console.log('TrafficConesComponent:', this.trafficCones);
+    if (this.trafficCones) {
+      this.trafficCones.setScene(this.scene);
+      this.trafficCones.camera = this.camera;
+      this.trafficCones.car = this.car;
+      this.animate();
+    } else {
+      console.error('TrafficCones is undefined');
+    }
   }
 
   private init() {
@@ -65,17 +76,7 @@ export class SimulatorComponent implements OnInit {
     }, undefined, (error) => {
       console.error('Error loading GLTF model:', error);
     });
-  }
-
-  private createTrafficCones() {
-    const coneGeometry = new THREE.CylinderGeometry(0, 0.5, 1, 8);
-    const coneMaterial = new THREE.MeshBasicMaterial({ color: 0xffa500 });
-
-    for (let i = 0; i < 10; i++) {
-      const cone = new THREE.Mesh(coneGeometry, coneMaterial);
-      cone.position.set(Math.random() * 10 - 5, 0.5, Math.random() * 10 - 5);
-      this.scene.add(cone);
-    }
+    this.animate();
   }
 
   private animate() {
