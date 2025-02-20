@@ -33,4 +33,30 @@ declare module 'three/examples/jsm/loaders/GLTFLoader' {
     }
 }
 
-
+declare module 'three/examples/jsm/controls/OrbitControls' {
+    import { Camera, EventDispatcher, MOUSE, Vector2, Vector3 } from 'three';
+  
+    export class OrbitControls extends EventDispatcher {
+      constructor(object: Camera, domElement: HTMLElement);
+  
+      object: Camera;
+      target: Vector3;
+      enableDamping: boolean;
+      dampingFactor: number;
+      enableZoom: boolean;
+      zoomSpeed: number;
+      enableRotate: boolean;
+      rotateSpeed: number;
+      enablePan: boolean;
+      panSpeed: number;
+      screenSpacePanning: boolean;
+      mouseButtons: {
+        LEFT: MOUSE;
+        MIDDLE: MOUSE;
+        RIGHT: MOUSE;
+      };
+      update(): void;
+      dispose(): void;
+    }
+}
+  

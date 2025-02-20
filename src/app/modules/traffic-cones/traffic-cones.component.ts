@@ -30,18 +30,21 @@ export class TrafficConesComponent implements OnChanges {
     this.scene = scene;
   }
 
-  private loadConeModel(count: number, spacing: number) {
+  private loadConeModel(count: number, spacing: number, distanceFromCar: number) {
     const trafficConePath = 'traffic-cone/cone.glb';
 
     for (let i = 0; i < count; i++) {
       this.loader.load(trafficConePath, (gltf) => {
         const cone = gltf.scene;
-        cone.position.set(0, 0, 0);
         this.scene.add(cone);
 
-        const zOffset = (i % 2 === 0) ? 0 : spacing;
+        const direction = new THREE.Vector3();
+        this.car.getWorldDirection(direction);
+        direction.y = 0;
+        direction.normalize();
+
+        const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
         const xPosition = this.car.position.x;
-        const zPosition = this.car.position.z + (i * spacing) - (count * spacing / 2);
 
         cone.position.set(xPosition, 0.5, zPosition);
         cone.rotation.y = Math.PI; 
@@ -49,10 +52,10 @@ export class TrafficConesComponent implements OnChanges {
         console.error('An error occurred while loading the model:', error);
       });
     }
-  }
+}
 
   public createParallelParking() {
-    this.loadConeModel(5, 2);
+    this.loadConeModel(5, 2, 5);
   }
 
   public createSnake() {
@@ -66,7 +69,7 @@ export class TrafficConesComponent implements OnChanges {
         return;
     }
 
-    this.loadConeModel(3, 2);
+    this.loadConeModel(5, 6, 15);
   }
 
 

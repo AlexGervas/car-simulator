@@ -2,6 +2,7 @@ import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit }
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
 
 @Component({
   selector: 'app-simulator',
@@ -18,6 +19,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public car!: THREE.Object3D; 
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
+  private controls!: OrbitControls;
   private forwardSpeed: number = 0.06;
   private backwardSpeed: number = 0.03;
   private turnSpeed: number = 0.15;
@@ -63,15 +65,24 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7.5);
     this.scene.add(directionalLight);
+
+    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    this.controls.enableDamping = true;
+    this.controls.dampingFactor = 0.25;
+    this.controls.enableZoom = true;
+    this.controls.zoomSpeed = 1.0;
+    this.controls.enablePan = true;
+    this.controls.panSpeed = 0.5;
+    this.controls.rotateSpeed = 0.5;
   }
 
   private createSceneBackground() {
-    // this.scene.background = new THREE.Color(0xc0c0c0);
+    this.scene.background = new THREE.Color(0xc0c0c0);
 
-    const textureLoader = new THREE.TextureLoader();
-    const texture = textureLoader.load('textures/asphalt.jpg', () => {
-      this.scene.background = texture;
-    });
+    // const textureLoader = new THREE.TextureLoader();
+    // const texture = textureLoader.load('textures/snow.jpg', () => {
+    //   this.scene.background = texture;
+    // });
 
     // const grassTexture = textureLoader.load('textures/green-grass.jpg');
     // const skyTexture = textureLoader.load('textures/sky.jpg');
@@ -111,6 +122,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   private animate() {
     requestAnimationFrame(() => this.animate());
+    this.controls.update(); 
     this.updateCarPosition();
     this.renderer.render(this.scene, this.camera);
   }
