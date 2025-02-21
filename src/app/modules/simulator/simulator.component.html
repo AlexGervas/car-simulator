@@ -4,8 +4,7 @@
 
     <div class="controls" *ngIf="isMobileDevice">
         <div class="up-control">
-            <button (touchstart)="isMovingForward = true" (touchend)="isMovingForward = false"
-                (touchcancel)="isMovingForward = false">
+            <button (touchstart)="isMovingForward = true" (touchend)="isMovingForward = false">
                 <i class="fas fa-arrow-up"></i>
             </button>
         </div>
@@ -19,8 +18,7 @@
             </button>
         </div>
         <div class="down-control">
-            <button (touchstart)="isMovingBackward = true" (touchend)="isMovingBackward = false"
-                (touchcancel)="isMovingBackward = false">
+            <button (touchstart)="isMovingBackward = true" (touchend)="isMovingBackward = false">
                 <i class="fas fa-arrow-down"></i>
             </button>
         </div>

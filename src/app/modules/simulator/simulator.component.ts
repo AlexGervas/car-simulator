@@ -22,7 +22,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public car!: THREE.Object3D; 
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
-  private controls!: OrbitControls;
+  // private controls!: OrbitControls;
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
@@ -42,9 +42,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.loadModel();
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
 
-    if (this.isMobileDevice) {
-      this.controls.enabled = false;
-  }
+  //   if (this.isMobileDevice) {
+  //     this.controls.enabled = false;
+  // }
   }
 
   ngAfterViewInit() {
@@ -135,9 +135,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   private animate() {
     requestAnimationFrame(() => this.animate());
-    if (this.controlsEnabled) {
+    /*if (this.controlsEnabled) {
       this.controls.update();
-    }
+    }*/
     this.updateCarPosition();
     this.updateCameraPosition();
     this.renderer.render(this.scene, this.camera);
@@ -251,6 +251,7 @@ public turnLeft() {
   }
 
   // Управление с мобильного
+  /*
   @HostListener('window:touchstart', ['$event'])
   handleTouchStart(event: TouchEvent) {
     if (this.isMobileDevice && this.car) {
@@ -269,7 +270,7 @@ public turnLeft() {
       this.isMovingForward = false;
       this.isMovingBackward = false;
     }
-  }
+  }*/
 
   @HostListener('window:resize', ['$event'])
   onResize() {
