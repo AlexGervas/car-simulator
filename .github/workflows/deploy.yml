@@ -39,8 +39,15 @@ jobs:
           rm -rf docs/*
           cp -r dist/car-simulator/* ./docs
 
-      - name: Commit and push changes
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Set up SSH
         run: |
           git add docs/*
           git commit -m "Deploy updated docs" || echo "No changes to commit"
-          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/AlexGervas/car-simulator.git gh-pages
+          git push git@github.com:AlexGervas/car-simulator.git gh-pages
