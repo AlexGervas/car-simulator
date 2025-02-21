@@ -27,8 +27,20 @@ jobs:
       - name: Build the project
         run: npm run build
 
-      - name: List files in dist directory
-        run: ls -la dist/car-simulator/docs
+      - name: Checkout gh-pages branch
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+          git fetch origin gh-pages
+          git checkout gh-pages || git checkout --orphan gh-pages
 
-      - name: Deploy to GitHub Pages
-        run: npx angular-cli-ghpages --dir=dist/car-simulator/docs
+      - name: Remove old docs and copy new docs
+        run: |
+          rm -rf docs
+          cp -r ../car-simulator/docs ./docs
+
+      - name: Commit and push changes
+        run: |
+          git add .
+          git commit -m "Deploy updated docs"
+          git push origin gh-pages
