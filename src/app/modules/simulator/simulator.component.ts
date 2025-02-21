@@ -41,6 +41,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.init();
     this.loadModel();
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
+
+    if (this.isMobileDevice) {
+      this.controls.enabled = false;
+  }
   }
 
   ngAfterViewInit() {
@@ -217,6 +221,8 @@ public turnLeft() {
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
+    if (this.isMobileDevice) return;
+
     if (this.car && !this.isGameOver) {
       if (event.key === 'ArrowUp') {
         this.isMovingForward = true;
@@ -236,6 +242,8 @@ public turnLeft() {
 
   @HostListener('window:keyup', ['$event'])
   handleKeyUpEvent(event: KeyboardEvent) {
+    if (this.isMobileDevice) return;
+
     if (event.key === 'ArrowUp') {
       this.isMovingForward = false;
     } else if (event.key === 'ArrowDown') {
@@ -246,7 +254,7 @@ public turnLeft() {
   // Управление с мобильного
   @HostListener('window:touchstart', ['$event'])
   handleTouchStart(event: TouchEvent) {
-    if (this.car) {
+    if (this.isMobileDevice && this.car) {
       const touch = event.touches[0];
       if (touch.clientY < window.innerHeight / 2) {
         this.isMovingForward = true;
@@ -258,21 +266,9 @@ public turnLeft() {
 
   @HostListener('window:touchend', ['$event'])
   handleTouchEnd(event: TouchEvent) {
-    this.isMovingForward = false;
-    this.isMovingBackward = false;
-  }
-
-  @HostListener('window:touchmove', ['$event'])
-  handleTouchMove(event: TouchEvent) {
-    if (this.car) {
-      const touch = event.touches[0];
-      const deltaX = touch.clientX - (window.innerWidth / 2);
-
-      if (deltaX < -50) {
-        this.car.rotation.y += this.turnSpeed;
-      } else if (deltaX > 50) {
-        this.car.rotation.y -= this.turnSpeed;
-      }
+    if (this.isMobileDevice) {
+      this.isMovingForward = false;
+      this.isMovingBackward = false;
     }
   }
 
