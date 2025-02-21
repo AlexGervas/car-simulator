@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build && node rename-browser-to-docs.js",
+    "build": "ng build --base-href 'https://alexgervas.github.io/car-simulator/' && node rename-browser-to-docs.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },

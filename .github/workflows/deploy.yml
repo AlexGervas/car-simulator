@@ -25,10 +25,10 @@ jobs:
         run: npm install -g @angular/cli
 
       - name: Build the project
-        run: ng build --base-href "https://alexgervas.github.io/car-simulator/"
+        run: npm run build
 
       - name: List files in dist directory
-        run: ls -la dist/car-simulator
+        run: ls -la dist/car-simulator/docs
 
       - name: Deploy to GitHub Pages
         run: npx angular-cli-ghpages --dir=dist/car-simulator/docs
