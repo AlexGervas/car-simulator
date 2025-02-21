@@ -37,7 +37,7 @@ jobs:
       - name: Remove old docs and copy new docs
         run: |
           rm -rf docs
-          cp -r ../car-simulator/docs ./docs
+          cp -r docs ./docs
 
       - name: Commit and push changes
         run: |
