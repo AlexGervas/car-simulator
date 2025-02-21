@@ -171,7 +171,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
         newPosition.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
 
-      const carBox = new THREE.Box3().setFromObject(this.car);
+      const collisionMargin = -0.58; 
+      const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
 
       for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
         const coneBox = this.trafficCones.getConeBoxes()[i];
