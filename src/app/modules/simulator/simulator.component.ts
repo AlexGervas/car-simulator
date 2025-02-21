@@ -72,7 +72,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.camera.position.set(0, 2, 5);
     this.camera.lookAt(0, 0, 0);
 
-    this.renderer = new THREE.WebGLRenderer();
     this.renderer = new THREE.WebGLRenderer({ canvas: this.el.nativeElement.querySelector('#webgl-canvas') });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     
@@ -83,14 +82,14 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     directionalLight.position.set(5, 10, 7.5);
     this.scene.add(directionalLight);
 
-    this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+    /*this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.25;
     this.controls.enableZoom = true;
     this.controls.zoomSpeed = 1.0;
     this.controls.enablePan = true;
     this.controls.panSpeed = 0.5;
-    this.controls.rotateSpeed = 0.5;
+    this.controls.rotateSpeed = 0.5;*/
   }
 
   private createSceneBackground() {
@@ -175,7 +174,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
         newPosition.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
 
-      const collisionMargin = -0.58; 
+      const collisionMargin = -0.6; 
       const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
 
       for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
