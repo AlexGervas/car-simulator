@@ -46,8 +46,8 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan github.com >> ~/.ssh/known_hosts
 
-      - name: Set up SSH
+      - name: Deploy to GitHub Pages
         run: |
           git add docs/*
           git commit -m "Deploy updated docs" || echo "No changes to commit"
-          git push git@github.com:AlexGervas/car-simulator.git gh-pages
+          git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/AlexGervas/car-simulator.git gh-pages
