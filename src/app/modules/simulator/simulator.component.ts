@@ -1,8 +1,8 @@
 import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
 import * as THREE from 'three';
-import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader';
+import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DeviceService } from '../../core/services/device.service';
 import { CommonModule } from '@angular/common';
 import { ConeStateService } from '../../core/services/cone-state.service';
@@ -32,6 +32,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public isMobileDevice: boolean = false;
   private isConeFallen: boolean = false;
   private isGameOver: boolean = false;
+  private controlsEnabled: boolean = false; 
 
   constructor(private el: ElementRef, private deviceService: DeviceService, private coneStateService: ConeStateService) { }
 
@@ -52,6 +53,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     } else {
       console.error('TrafficCones is undefined');
     }
+  }
+
+  public startGame() {
+    this.isGameOver = false;
+    this.controlsEnabled = false;
   }
 
   private init() {
@@ -126,7 +132,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   private animate() {
     requestAnimationFrame(() => this.animate());
-    this.controls.update(); 
+    if (this.controlsEnabled) {
+      this.controls.update();
+    }
     this.updateCarPosition();
     this.updateCameraPosition();
     this.renderer.render(this.scene, this.camera);
@@ -173,7 +181,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
           alert('Вы врезались в ' + (i+1) + ' конус!');
           this.coneStateService.setConeFallen(true);
-          this.isGameOver = true; 
+          this.isGameOver = true;
+          this.controlsEnabled = true;
 
           const cone = this.trafficCones.getCones()[i];
 

@@ -4,6 +4,10 @@
   "compileOnSave": false,
   "compilerOptions": {
     "types": ["node"],
+    "typeRoots": [
+      "node_modules/@types",
+      "src/app/core/typings"
+    ],
     "outDir": "./dist/out-tsc",
     "strict": true,
     "noImplicitOverride": true,
@@ -13,14 +17,15 @@
     "skipLibCheck": true,
     "isolatedModules": true,
     "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
     "declaration": false,
     "experimentalDecorators": true,
-    "moduleResolution": "bundler",
+    "moduleResolution": "node",
     "importHelpers": true,
-    "target": "ES2022",
-    "module": "ES2022",
+    "target": "ES6",
+    "module": "ESNext",
     "lib": [
       "ES2022",
       "dom"
