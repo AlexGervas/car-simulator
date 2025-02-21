@@ -41,6 +41,6 @@ jobs:
 
       - name: Commit and push changes
         run: |
-          git add .
-          git commit -m "Deploy updated docs"
+          git add docs/*
+          git commit -m "Deploy updated docs" || echo "No changes to commit"
           git push origin gh-pages
