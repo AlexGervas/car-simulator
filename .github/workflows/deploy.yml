@@ -31,4 +31,4 @@ jobs:
         run: ls -la dist/car-simulator
 
       - name: Deploy to GitHub Pages
-        run: npx angular-cli-ghpages --dir=dist/car-simulator --silent=false
+        run: npx angular-cli-ghpages --dir=dist/car-simulator
