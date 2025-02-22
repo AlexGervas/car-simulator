@@ -6,6 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DeviceService } from '../../core/services/device.service';
 import { CommonModule } from '@angular/common';
 import { ConeStateService } from '../../core/services/cone-state.service';
+import { StopLineService } from '../../core/services/stop-line.service';
 
 @Component({
   selector: 'app-simulator',
@@ -19,22 +20,26 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   @ViewChild('TrafficConesComponent') trafficCones !: TrafficConesComponent;
 
   public camera!: THREE.PerspectiveCamera;
-  public car!: THREE.Object3D; 
+  public car!: THREE.Object3D;
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
   public hitConeCount: number = 0;
+  public conesPassed: number = 0;
 
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
   public isMobileDevice: boolean = false;
   private isConeFallen: boolean = false;
   public isGameOver: boolean = false;
-  private controlsEnabled: boolean = false; 
+  private controlsEnabled: boolean = false;
 
-  constructor(private el: ElementRef, private deviceService: DeviceService, private coneStateService: ConeStateService) { }
+  constructor(private el: ElementRef,
+    private deviceService: DeviceService,
+    private coneStateService: ConeStateService,
+    private stopLineService: StopLineService) { }
 
   ngOnInit() {
     this.isMobileDevice = this.deviceService.isMobile();
@@ -44,11 +49,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   }
 
   ngAfterViewInit() {
-    console.log('TrafficConesComponent:', this.trafficCones);
     if (this.trafficCones) {
       this.trafficCones.setScene(this.scene);
       this.trafficCones.camera = this.camera;
       this.trafficCones.car = this.car;
+
+      this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
+
       this.animate();
     } else {
       console.error('TrafficCones is undefined');
@@ -76,14 +83,14 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.scene = new THREE.Scene();
     this.createSceneBackground();
 
-    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.set(0, 2, 5);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ canvas: this.el.nativeElement.querySelector('#webgl-canvas') });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    
-    const light = new THREE.AmbientLight(0xffffff, 0.5); 
+
+    const light = new THREE.AmbientLight(0xffffff, 0.5);
     this.scene.add(light);
 
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
@@ -125,7 +132,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
       this.car = gltf.scene;
       this.car.scale.set(1, 1, 1);
       this.car.position.set(0, 0, 0);
-      this.car.rotation.y = Math.PI; 
+      this.car.rotation.y = Math.PI;
       this.scene.add(this.car);
     }, undefined, (error) => {
       console.error('Error loading GLTF model:', error);
@@ -170,16 +177,17 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
         newPosition.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
 
-      const collisionMargin = -0.6; 
+      const collisionMargin = -0.6;
       const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
+
+      let collisionDetected = false;
 
       for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
         const coneBox = this.trafficCones.getConeBoxes()[i];
 
         if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen()) {
-          console.log('Collision detected with cone at index:', i);
 
-          alert('Вы врезались в ' + (i+1) + ' конус!');
+          alert('Вы врезались в ' + (i + 1) + ' конус!');
           this.coneStateService.setConeFallen(true);
           this.isGameOver = true;
           this.controlsEnabled = true;
@@ -196,17 +204,56 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
           } else {
             console.error('Cone not found at index:', i);
           }
-          return;
+          collisionDetected = true;
+          break;
         }
       }
 
-      this.car.position.copy(newPosition);
+      if (!collisionDetected) {
+        this.car.position.copy(newPosition);
+      }
     }
   }
 
-public turnLeft() {
+  private createStopLine() {
+    const lastConeIndex = this.trafficCones.getConeBoxes().length - 1;
+    const lastConeBox = this.trafficCones.getConeBoxes()[lastConeIndex];
+
+    const coneBoxes = this.trafficCones.getConeBoxes();
+
+    if (lastConeBox) {
+      console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
+      const geometry = new THREE.BufferGeometry();
+      const vertices = new Float32Array([
+        -15, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
+        15, lastConeBox.max.y - 1, lastConeBox.max.z - 5
+      ]);
+
+      geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+
+      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+      const line = new THREE.Line(geometry, material);
+      this.scene.add(line);
+    }
+  }
+
+  public turnLeft() {
     if (this.car) {
       this.car.rotation.y += this.turnSpeed;
+      this.checkIfAllConesPassed();
+    }
+  }
+
+  private checkIfAllConesPassed() {
+    const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
+    if (lastConeBox && this.car.position.z > lastConeBox.max.z) {
+      if (this.hitConeCount === 0) {
+        alert('Поздравляем! Вы проехали все конусы, не задевая ни одного!');
+      } else {
+        alert('Вы проехали все конусы, но задели ' + this.hitConeCount + ' конусов. Попробуйте еще раз!');
+      }
+      this.isGameOver = true;
+      this.controlsEnabled = true;
     }
   }
 
@@ -257,7 +304,7 @@ public turnLeft() {
   onResize() {
     this.isMobileDevice = this.deviceService.isMobile();
   }
-  
+
   private onWindowResize() {
     this.camera.aspect = window.innerWidth / window.innerHeight;
     this.camera.updateProjectionMatrix();

@@ -2,6 +2,7 @@ import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ConeStateService } from '../../core/services/cone-state.service';
+import { StopLineService } from '../../core/services/stop-line.service';
 
 @Component({
   selector: 'app-traffic-cones',
@@ -22,13 +23,17 @@ export class TrafficConesComponent implements OnChanges {
 
   private coneBoxes: THREE.Box3[] = [];
 
-  constructor(private coneStateService: ConeStateService) {
+  constructor(private coneStateService: ConeStateService, private stopLineService: StopLineService) {
     this.loader = new GLTFLoader();
   }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['car'] && this.car && this.camera) {
-      this.createSnake();
+      this.createSnake().then(() => {
+        this.stopLineService.callCreateStopLine();
+      }).catch(error => {
+        console.error('Error creating snake:', error);
+      });
     }
   }
 
@@ -60,35 +65,41 @@ export class TrafficConesComponent implements OnChanges {
     this.scene = scene;
   }
 
-  private loadConeModel(count: number, spacing: number, distanceFromCar: number) {
+  private loadConeModel(count: number, spacing: number, distanceFromCar: number): Promise<void> {
     const trafficConePath = 'traffic-cone/cone.glb';
+    const promises = [];
 
     for (let i = 0; i < count; i++) {
-      this.loader.load(trafficConePath, (gltf) => {
-        const cone = gltf.scene;
-        this.scene.add(cone);
+      const promise = new Promise<void>((resolve, reject) => {
+        this.loader.load(trafficConePath, (gltf) => {
+          const cone = gltf.scene;
+          this.scene.add(cone);
+          this.cones.push(cone);
 
-        this.cones.push(cone);
-        console.log('Cone added:', cone);
+          const direction = new THREE.Vector3();
+          this.car.getWorldDirection(direction);
+          direction.y = 0;
+          direction.normalize();
 
-        const direction = new THREE.Vector3();
-        this.car.getWorldDirection(direction);
-        direction.y = 0;
-        direction.normalize();
+          const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
+          const xPosition = this.car.position.x - 3;
 
-        const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
-        const xPosition = this.car.position.x - 3;
+          cone.position.set(xPosition, 0.7, zPosition);
+          cone.rotation.y = Math.PI;
 
-        cone.position.set(xPosition, 0.7, zPosition);
-        cone.rotation.y = Math.PI;
-
-        const coneBox = new THREE.Box3().setFromObject(cone);
-        this.coneBoxes.push(coneBox);
-
-      }, undefined, (error) => {
-        console.error('An error occurred while loading the model:', error);
+          const coneBox = new THREE.Box3().setFromObject(cone);
+          this.coneBoxes.push(coneBox);
+          resolve();
+        }, undefined, (error) => {
+          reject(error);
+        });
       });
+      promises.push(promise);
     }
+
+    return Promise.all(promises).then(() => {
+      console.log('All cones loaded');
+    });
   }
 
   public getConeBoxes(): THREE.Box3[] {
@@ -103,18 +114,25 @@ export class TrafficConesComponent implements OnChanges {
     this.loadConeModel(5, 2, 5);
   }
 
-  public createSnake() {
-    if (!this.camera) {
-      console.error('Camera is not defined');
-      return;
-    }
+  public createSnake(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (!this.camera) {
+        reject('Camera is not defined');
+        return;
+      }
+      if (!this.car) {
+        reject('Car is not defined');
+        return;
+      }
 
-    if (!this.car) {
-      console.error('Car is not defined');
-      return;
-    }
-
-    this.loadConeModel(5, 15, 15);
+      this.loadConeModel(5, 15, 15).then(() => {
+        console.log('Cones loaded successfully');
+        resolve();
+      }).catch(error => {
+        console.error('Error loading cones:', error);
+        reject(error);
+      });
+    });
   }
 
   public resetCones() {
