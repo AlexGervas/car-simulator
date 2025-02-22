@@ -1,0 +1,17 @@
+<mat-toolbar color="primary" class="navbar">
+    <span class="menu-logo">CAR SIMULATOR</span>
+    <span class="spacer"></span>
+    <button mat-icon-button (click)="snav.toggle()" class="burger-button">
+        <mat-icon>menu</mat-icon>
+    </button>
+</mat-toolbar>
+
+<mat-sidenav-container class="example-sidenav-container">
+    <mat-sidenav #snav [mode]="'over'" [style.width.px]="250" position="end">
+        <app-sidenav></app-sidenav>
+    </mat-sidenav>
+
+    <mat-sidenav-content>
+        <router-outlet></router-outlet>
+    </mat-sidenav-content>
+</mat-sidenav-container>

@@ -1,0 +1,58 @@
+.example-sidenav-container {
+  height: 100%;
+}
+
+.menu-logo {
+  font-size: 24px;
+  font-weight: bold;
+  color: white;
+}
+
+.spacer {
+  flex: 1 1 auto;
+}
+
+.mat-toolbar {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  background-color: #4169E1;
+  color: white;
+  padding: 0 16px;
+}
+
+mat-sidenav-content {
+  padding-top: 64px;
+  height: calc(100% - 64px);
+  overflow: auto;
+}
+
+button.mat-icon-button {
+  color: white;
+}
+
+button.mat-icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.burger-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+.burger-button mat-icon {
+  font-size: 30px;
+  color: white;
+  transition: transform 0.3s;
+}
+
+.burger-button:hover mat-icon {
+  transform: scale(1.1);
+}
+
+mat-sidenav {
+  margin-top: 64px;
+}
