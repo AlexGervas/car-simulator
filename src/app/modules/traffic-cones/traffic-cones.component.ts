@@ -117,6 +117,12 @@ export class TrafficConesComponent implements OnChanges {
     this.loadConeModel(5, 15, 15);
   }
 
-
+  public resetCones() {
+    this.cones.forEach(cone => {
+      cone.position.set(cone.position.x, 0.7, cone.position.z);
+      cone.rotation.set(0, Math.PI, 0);
+    });
+    this.coneStateService.resetConeState();
+  }
 
 }

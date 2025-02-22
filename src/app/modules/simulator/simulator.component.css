@@ -58,3 +58,29 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+
+.restart-button {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 15px 30px;
+  font-size: 18px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  z-index: 10;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.restart-button:hover {
+  background-color: #45a049;
+}
+
+.restart-button:active {
+  transform: translateY(0);
+}
+

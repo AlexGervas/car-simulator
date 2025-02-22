@@ -23,4 +23,8 @@
             </button>
         </div>
     </div>
+
+    <div class="game-controls" *ngIf="isGameOver">
+        <button (click)="restartGame()" class="restart-button">Начать заново</button>
+    </div>
 </div>

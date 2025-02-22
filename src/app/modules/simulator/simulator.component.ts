@@ -22,7 +22,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public car!: THREE.Object3D; 
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
-  // private controls!: OrbitControls;
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
@@ -31,7 +30,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public isMovingBackward: boolean = false;
   public isMobileDevice: boolean = false;
   private isConeFallen: boolean = false;
-  private isGameOver: boolean = false;
+  public isGameOver: boolean = false;
   private controlsEnabled: boolean = false; 
 
   constructor(private el: ElementRef, private deviceService: DeviceService, private coneStateService: ConeStateService) { }
@@ -41,10 +40,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.init();
     this.loadModel();
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
-
-  //   if (this.isMobileDevice) {
-  //     this.controls.enabled = false;
-  // }
   }
 
   ngAfterViewInit() {
@@ -64,6 +59,17 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.controlsEnabled = false;
   }
 
+  public restartGame() {
+    this.isGameOver = false;
+    this.isMovingForward = false;
+    this.isMovingBackward = false;
+    this.coneStateService.resetConeState();
+    this.trafficCones.resetCones();
+    this.car.position.set(0, 0, 0);
+    this.car.rotation.set(0, Math.PI, 0);
+    this.animate();
+  }
+
   private init() {
     this.scene = new THREE.Scene();
     this.createSceneBackground();
@@ -81,15 +87,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7.5);
     this.scene.add(directionalLight);
-
-    /*this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-    this.controls.enableDamping = true;
-    this.controls.dampingFactor = 0.25;
-    this.controls.enableZoom = true;
-    this.controls.zoomSpeed = 1.0;
-    this.controls.enablePan = true;
-    this.controls.panSpeed = 0.5;
-    this.controls.rotateSpeed = 0.5;*/
   }
 
   private createSceneBackground() {
@@ -135,9 +132,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   private animate() {
     requestAnimationFrame(() => this.animate());
-    /*if (this.controlsEnabled) {
-      this.controls.update();
-    }*/
     this.updateCarPosition();
     this.updateCameraPosition();
     this.renderer.render(this.scene, this.camera);
@@ -251,27 +245,6 @@ public turnLeft() {
   }
 
   // Управление с мобильного
-  /*
-  @HostListener('window:touchstart', ['$event'])
-  handleTouchStart(event: TouchEvent) {
-    if (this.isMobileDevice && this.car) {
-      const touch = event.touches[0];
-      if (touch.clientY < window.innerHeight / 2) {
-        this.isMovingForward = true;
-      } else {
-        this.isMovingBackward = true;
-      }
-    }
-  }
-
-  @HostListener('window:touchend', ['$event'])
-  handleTouchEnd(event: TouchEvent) {
-    if (this.isMobileDevice) {
-      this.isMovingForward = false;
-      this.isMovingBackward = false;
-    }
-  }*/
-
   preventDefault(event: TouchEvent) {
     event.preventDefault();
   }
