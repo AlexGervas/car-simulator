@@ -1,3 +1,7 @@
+<div class="score-container">
+    <p>Сбитые конусы: {{ hitConeCount }}</p>
+</div>
+
 <div class="container">
     <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
     <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera"></app-traffic-cones>

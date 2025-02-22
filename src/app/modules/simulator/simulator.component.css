@@ -84,3 +84,12 @@ button:hover {
   transform: translateY(0);
 }
 
+.score-container {
+  position: absolute;
+  top: 64px;
+  right: 20px;
+  color: rgb(249, 0, 0);
+  font-size: 20px;
+  z-index: 10;
+}
+

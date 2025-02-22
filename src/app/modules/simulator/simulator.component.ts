@@ -25,6 +25,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
+  public hitConeCount: number = 0;
 
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
@@ -63,6 +64,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.isGameOver = false;
     this.isMovingForward = false;
     this.isMovingBackward = false;
+    this.hitConeCount = 0;
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
     this.car.position.set(0, 0, 0);
@@ -181,6 +183,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
           this.coneStateService.setConeFallen(true);
           this.isGameOver = true;
           this.controlsEnabled = true;
+
+          this.hitConeCount++;
 
           const cone = this.trafficCones.getCones()[i];
 
