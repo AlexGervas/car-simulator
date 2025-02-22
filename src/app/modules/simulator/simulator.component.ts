@@ -272,6 +272,10 @@ public turnLeft() {
     }
   }*/
 
+  preventDefault(event: TouchEvent) {
+    event.preventDefault();
+  }
+
   @HostListener('window:resize', ['$event'])
   onResize() {
     this.isMobileDevice = this.deviceService.isMobile();

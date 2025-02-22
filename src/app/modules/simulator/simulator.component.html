@@ -1,5 +1,5 @@
 <div class="container">
-    <canvas #canvas id="webgl-canvas"></canvas>
+    <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
     <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera"></app-traffic-cones>
 
     <div class="controls" *ngIf="isMobileDevice">
