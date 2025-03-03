@@ -4,18 +4,21 @@ import { Injectable } from '@angular/core';
   providedIn: 'root'
 })
 export class ConeStateService {
-  private coneFallen: boolean = false;
+  private coneStates: boolean[] = [];
 
-  public setConeFallen(value: boolean): void {
-    this.coneFallen = value;
+  constructor() {
+    this.coneStates = new Array(5).fill(false);
   }
 
-  public isConeFallen(): boolean {
-    return this.coneFallen;
+  public setConeFallen(index: number): void {
+    this.coneStates[index] = true;
+  }
+
+  public isConeFallen(index: number): boolean {
+    return this.coneStates[index];
   }
 
   public resetConeState(): void {
-    this.coneFallen = false;
+    this.coneStates.fill(false);
   }
-  
 }

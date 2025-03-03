@@ -76,11 +76,6 @@ export class TrafficConesComponent implements OnChanges {
           this.scene.add(cone);
           this.cones.push(cone);
 
-          const direction = new THREE.Vector3();
-          this.car.getWorldDirection(direction);
-          direction.y = 0;
-          direction.normalize();
-
           const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
           const xPosition = this.car.position.x - 3;
 

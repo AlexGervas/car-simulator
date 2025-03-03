@@ -185,22 +185,14 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
       for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
         const coneBox = this.trafficCones.getConeBoxes()[i];
 
-        if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen()) {
-
-          alert('Вы врезались в ' + (i + 1) + ' конус!');
-          this.coneStateService.setConeFallen(true);
-          this.isGameOver = true;
-          this.controlsEnabled = true;
-
+        if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen(i)) {
           this.hitConeCount++;
-
           const cone = this.trafficCones.getCones()[i];
 
           if (cone) {
-            console.log('Cone found for falling:', cone);
-
             const fallDirection = new THREE.Vector3().subVectors(cone.position, this.car.position).normalize();
             this.trafficCones.animateConeFall(cone, fallDirection);
+            this.coneStateService.setConeFallen(i);
           } else {
             console.error('Cone not found at index:', i);
           }
@@ -212,7 +204,24 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
       if (!collisionDetected) {
         this.car.position.copy(newPosition);
       }
+
+      this.checkGameOverConditions();
     }
+  }
+
+  private checkGameOverConditions() {
+    const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
+
+    if (lastConeBox) {
+      const stopLineZ = Math.floor(lastConeBox.max.z - 5);
+
+      if (this.car.position.z < stopLineZ) {
+        alert('Игра окончена! Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.');
+        this.isGameOver = true;
+        this.controlsEnabled = true;
+      }
+    }
+
   }
 
   private createStopLine() {
@@ -240,20 +249,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public turnLeft() {
     if (this.car) {
       this.car.rotation.y += this.turnSpeed;
-      this.checkIfAllConesPassed();
-    }
-  }
-
-  private checkIfAllConesPassed() {
-    const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
-    if (lastConeBox && this.car.position.z > lastConeBox.max.z) {
-      if (this.hitConeCount === 0) {
-        alert('Поздравляем! Вы проехали все конусы, не задевая ни одного!');
-      } else {
-        alert('Вы проехали все конусы, но задели ' + this.hitConeCount + ' конусов. Попробуйте еще раз!');
-      }
-      this.isGameOver = true;
-      this.controlsEnabled = true;
     }
   }
 
