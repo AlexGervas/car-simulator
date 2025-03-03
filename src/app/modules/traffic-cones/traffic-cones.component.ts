@@ -16,10 +16,10 @@ export class TrafficConesComponent implements OnChanges {
   @Input() car!: THREE.Object3D;
 
   public cones: THREE.Object3D[] = [];
+  public initialConePositions: THREE.Vector3[] = [];
   private scene!: THREE.Scene;
   private loader: GLTFLoader;
   private conePositions: THREE.Vector3[] = [];
-  private coneMixers: THREE.AnimationMixer[] = [];
 
   private coneBoxes: THREE.Box3[] = [];
 
@@ -82,6 +82,8 @@ export class TrafficConesComponent implements OnChanges {
           cone.position.set(xPosition, 0.7, zPosition);
           cone.rotation.y = Math.PI;
 
+          this.initialConePositions.push(cone.position.clone());
+
           const coneBox = new THREE.Box3().setFromObject(cone);
           this.coneBoxes.push(coneBox);
           resolve();
@@ -131,9 +133,11 @@ export class TrafficConesComponent implements OnChanges {
   }
 
   public resetCones() {
-    this.cones.forEach(cone => {
-      cone.position.set(cone.position.x, 0.7, cone.position.z);
-      cone.rotation.set(0, Math.PI, 0);
+    this.cones.forEach((cone, index) => {
+      if (this.initialConePositions[index]) {
+        cone.position.copy(this.initialConePositions[index]);
+        cone.rotation.set(0, Math.PI, 0);
+      }
     });
     this.coneStateService.resetConeState();
   }
