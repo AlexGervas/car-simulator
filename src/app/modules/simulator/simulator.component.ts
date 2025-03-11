@@ -23,6 +23,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public car!: THREE.Object3D;
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
+  private floor!: THREE.Mesh;
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
@@ -134,9 +135,39 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
       this.car.position.set(0, 0, 0);
       this.car.rotation.y = Math.PI;
       this.scene.add(this.car);
+      this.updateTiles();
     }, undefined, (error) => {
       console.error('Error loading GLTF model:', error);
     });
+  }
+
+  private createTile(x: number, z: number) {
+    const tileGeometry = new THREE.PlaneGeometry(10, 6); // Размер плитки
+    const tileMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+    const tile = new THREE.Mesh(tileGeometry, tileMaterial);
+    tile.rotation.x = -Math.PI / 2;
+    tile.position.set(x, 0, z);
+    this.scene.add(tile);
+  }
+
+  private updateTiles() {
+    if (!this.car) {
+      return;
+    }
+    const carPositionZ = this.car.position.z;
+    const visibleRange = 100;
+    const tileSize = 6;
+
+    // Delete old tiles
+    this.scene.children.forEach(child => {
+      if (child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) {
+        this.scene.remove(child);
+      }
+    });
+
+    for (let z = carPositionZ - visibleRange; z < carPositionZ + visibleRange; z += tileSize) {
+      this.createTile(-3, z);
+    }
   }
 
   private animate() {
@@ -228,14 +259,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     const lastConeIndex = this.trafficCones.getConeBoxes().length - 1;
     const lastConeBox = this.trafficCones.getConeBoxes()[lastConeIndex];
 
-    const coneBoxes = this.trafficCones.getConeBoxes();
-
     if (lastConeBox) {
       console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
       const geometry = new THREE.BufferGeometry();
       const vertices = new Float32Array([
-        -15, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
-        15, lastConeBox.max.y - 1, lastConeBox.max.z - 5
+        -10, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
+        5, lastConeBox.max.y - 1, lastConeBox.max.z - 5
       ]);
 
       geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
