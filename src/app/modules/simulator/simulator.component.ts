@@ -23,7 +23,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   public car!: THREE.Object3D;
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
-  private floor!: THREE.Mesh;
+  private asphaltTexture!: THREE.Texture;
+
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
   private turnSpeed: number = 0.1;
@@ -102,7 +103,15 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   private createSceneBackground() {
     this.scene.background = new THREE.Color(0xc0c0c0);
 
-    // const textureLoader = new THREE.TextureLoader();
+    const textureLoader = new THREE.TextureLoader();
+    this.asphaltTexture = textureLoader.load('textures/asphalt.jpg', () => {
+      this.updateTiles();
+    })
+    this.asphaltTexture.wrapS = THREE.RepeatWrapping;
+    this.asphaltTexture.wrapT = THREE.RepeatWrapping;
+    this.asphaltTexture.repeat.set(3, 3);
+
+
     // const texture = textureLoader.load('textures/snow.jpg', () => {
     //   this.scene.background = texture;
     // });
@@ -142,8 +151,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   }
 
   private createTile(x: number, z: number) {
-    const tileGeometry = new THREE.PlaneGeometry(10, 6); // Размер плитки
-    const tileMaterial = new THREE.MeshBasicMaterial({ color: 0x00ff00, side: THREE.DoubleSide });
+    const tileGeometry = new THREE.PlaneGeometry(10, 6);
+    const tileMaterial = new THREE.MeshBasicMaterial({ map: this.asphaltTexture, side: THREE.DoubleSide });
     const tile = new THREE.Mesh(tileGeometry, tileMaterial);
     tile.rotation.x = -Math.PI / 2;
     tile.position.set(x, 0, z);
@@ -166,7 +175,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     });
 
     for (let z = carPositionZ - visibleRange; z < carPositionZ + visibleRange; z += tileSize) {
-      this.createTile(-3, z);
+      this.createTile(0, z);
     }
   }
 
@@ -263,7 +272,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
       console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
       const geometry = new THREE.BufferGeometry();
       const vertices = new Float32Array([
-        -10, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
+        -5, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
         5, lastConeBox.max.y - 1, lastConeBox.max.z - 5
       ]);
 

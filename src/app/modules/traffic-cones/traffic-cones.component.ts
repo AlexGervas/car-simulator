@@ -77,7 +77,7 @@ export class TrafficConesComponent implements OnChanges {
           this.cones.push(cone);
 
           const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
-          const xPosition = this.car.position.x - 3;
+          const xPosition = this.car.position.x;
 
           cone.position.set(xPosition, 0.7, zPosition);
           cone.rotation.y = Math.PI;
