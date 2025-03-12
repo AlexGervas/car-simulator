@@ -138,7 +138,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   private loadModel() {
     const loader = new GLTFLoader();
-    loader.load('cars/vw2.glb', (gltf: GLTF) => {
+    loader.load('models/cars/vw2.glb', (gltf: GLTF) => {
       this.car = gltf.scene;
       this.car.scale.set(1, 1, 1);
       this.car.position.set(0, 0, 0);
@@ -270,10 +270,22 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
     if (lastConeBox) {
       console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
+
+      const loader = new GLTFLoader();
+      const finishLinePath = 'models/road-elements/finish_line.glb';
+
+      loader.load(finishLinePath, (gltf) => {
+        const model = gltf.scene;
+        model.position.set(0, lastConeBox.max.y - 1, lastConeBox.max.z - 5);
+        this.scene.add(model);
+      }, undefined, (error) => {
+        console.error('The finish line model is not loaded:', error);
+      })
+
       const geometry = new THREE.BufferGeometry();
       const vertices = new Float32Array([
-        -5, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
-        5, lastConeBox.max.y - 1, lastConeBox.max.z - 5
+        -7, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
+        7, lastConeBox.max.y - 1, lastConeBox.max.z - 5
       ]);
 
       geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));

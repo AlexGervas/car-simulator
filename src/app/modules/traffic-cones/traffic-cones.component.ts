@@ -66,7 +66,7 @@ export class TrafficConesComponent implements OnChanges {
   }
 
   private loadConeModel(count: number, spacing: number, distanceFromCar: number): Promise<void> {
-    const trafficConePath = 'traffic-cone/cone.glb';
+    const trafficConePath = 'models/road-elements/traffic-cone.glb';
     const promises = [];
 
     for (let i = 0; i < count; i++) {
