@@ -37,7 +37,7 @@ jobs:
       - name: Remove old docs and copy new docs
         run: |
           rm -rf docs/*
-          cp -r dist/car-simulator/* ./docs
+          cp -r dist/car-simulator/docs/* ./docs
 
       - name: Set up SSH
         run: |
