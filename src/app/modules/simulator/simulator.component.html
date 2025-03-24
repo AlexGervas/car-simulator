@@ -3,6 +3,7 @@
 </div>
 
 <div class="container">
+    <app-loader></app-loader>
     <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
     <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera"></app-traffic-cones>
 
