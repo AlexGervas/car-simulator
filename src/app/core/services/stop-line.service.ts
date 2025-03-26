@@ -4,15 +4,17 @@ import { Injectable } from '@angular/core';
     providedIn: 'root',
 })
 export class StopLineService {
-    private createStopLineCallback!: () => void;
+    private createStopLineCallback!: () => Promise<void>;
 
-    public setCreateStopLineCallback(callback: () => void) {
+    public setCreateStopLineCallback(callback: () => Promise<void>) {
         this.createStopLineCallback = callback;
     }
 
-    public callCreateStopLine() {
+    public callCreateStopLine(): Promise<void> {
         if (this.createStopLineCallback) {
-            this.createStopLineCallback();
+            return this.createStopLineCallback();
+        } else {
+            return Promise.reject('Create stop line callback is not set');
         }
     }
 }

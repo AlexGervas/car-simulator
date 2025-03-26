@@ -7,17 +7,20 @@ import { DeviceService } from '../../core/services/device.service';
 import { CommonModule } from '@angular/common';
 import { ConeStateService } from '../../core/services/cone-state.service';
 import { StopLineService } from '../../core/services/stop-line.service';
+import { ModelsLoaderService } from '../../core/services/models-loader.service';
+import { LoaderComponent } from '../loader/loader.component';
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [CommonModule, TrafficConesComponent],
+  imports: [CommonModule, LoaderComponent, TrafficConesComponent],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
 export class SimulatorComponent implements OnInit, AfterViewInit {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
-  @ViewChild('TrafficConesComponent') trafficCones !: TrafficConesComponent;
+  @ViewChild('LoaderComponent') loader!: LoaderComponent;
+  @ViewChild('TrafficConesComponent', { static: true }) trafficCones!: TrafficConesComponent;
 
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
@@ -41,12 +44,22 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   constructor(private el: ElementRef,
     private deviceService: DeviceService,
     private coneStateService: ConeStateService,
-    private stopLineService: StopLineService) { }
+    private stopLineService: StopLineService,
+    private modelsLoaderService: ModelsLoaderService) { }
 
   ngOnInit() {
+    this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
     this.init();
-    this.loadModel();
+    Promise.all([
+      this.loadCarModel()
+    ]).then(() => {
+      this.modelsLoaderService.hide();
+      console.log("Машина и стоп линия загружены и лоадер скрыт")
+    }).catch((error) => {
+      console.log("Машина не загружена!!", error)
+      this.modelsLoaderService.hide();
+    });
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
   }
 
@@ -136,17 +149,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     // this.scene.add(sky);
   }
 
-  private loadModel() {
-    const loader = new GLTFLoader();
-    loader.load('models/cars/vw2.glb', (gltf: GLTF) => {
-      this.car = gltf.scene;
-      this.car.scale.set(1, 1, 1);
-      this.car.position.set(0, 0, 0);
-      this.car.rotation.y = Math.PI;
-      this.scene.add(this.car);
-      this.updateTiles();
-    }, undefined, (error) => {
-      console.error('Error loading GLTF model:', error);
+  private loadCarModel(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const loader = new GLTFLoader();
+      loader.load('models/cars/vw2.glb', (gltf: GLTF) => {
+        this.car = gltf.scene;
+        this.car.scale.set(1, 1, 1);
+        this.car.position.set(0, 0, 0);
+        this.car.rotation.y = Math.PI;
+        this.scene.add(this.car);
+        this.updateTiles();
+        resolve();
+      }, undefined, (error) => {
+        console.error('Error loading car model:', error);
+        reject(error);
+      });
     });
   }
 
@@ -185,7 +202,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.updateCameraPosition();
     this.renderer.render(this.scene, this.camera);
   }
-
 
   private updateCameraPosition() {
     if (this.car) {
@@ -264,11 +280,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   }
 
-  private createStopLine() {
-    const lastConeIndex = this.trafficCones.getConeBoxes().length - 1;
-    const lastConeBox = this.trafficCones.getConeBoxes()[lastConeIndex];
+  private createStopLine(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const lastConeIndex = this.trafficCones.getConeBoxes().length - 1;
+      const lastConeBox = this.trafficCones.getConeBoxes()[lastConeIndex];
 
-    if (lastConeBox) {
+      if (!lastConeBox) {
+        reject(new Error('No cones available to create stop line.'));
+        return;
+      }
+
       console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
 
       const loader = new GLTFLoader();
@@ -278,22 +299,27 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
         const model = gltf.scene;
         model.position.set(0, lastConeBox.max.y - 1, lastConeBox.max.z - 5);
         this.scene.add(model);
+        resolve();1
       }, undefined, (error) => {
         console.error('The finish line model is not loaded:', error);
+        reject(error);
       })
 
-      const geometry = new THREE.BufferGeometry();
-      const vertices = new Float32Array([
-        -7, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
-        7, lastConeBox.max.y - 1, lastConeBox.max.z - 5
-      ]);
+      if (lastConeBox) {
+        const geometry = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+          -7, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
+          7, lastConeBox.max.y - 1, lastConeBox.max.z - 5
+        ]);
 
-      geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-      const line = new THREE.Line(geometry, material);
-      this.scene.add(line);
-    }
+        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const line = new THREE.Line(geometry, material);
+        this.scene.add(line);
+      }
+    });
+
   }
 
   public turnLeft() {
