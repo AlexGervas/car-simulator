@@ -65,9 +65,9 @@ export class TrafficConesComponent implements OnChanges {
     this.scene = scene;
   }
 
-  private loadConeModel(count: number, spacing: number, distanceFromCar: number): Promise<void> {
+  public loadConeModel(count: number, spacing: number, distanceFromCar: number): Promise<void> {
     const trafficConePath = 'models/road-elements/traffic-cone.glb';
-    const promises = [];
+    const promises: Promise<void>[] = [];
 
     for (let i = 0; i < count; i++) {
       const promise = new Promise<void>((resolve, reject) => {
@@ -96,6 +96,8 @@ export class TrafficConesComponent implements OnChanges {
 
     return Promise.all(promises).then(() => {
       console.log('All cones loaded');
+    }).catch((error) => {
+      console.error('Error loading some cones:', error)
     });
   }
 

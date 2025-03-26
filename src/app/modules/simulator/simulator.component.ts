@@ -51,9 +51,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
     this.init();
-    Promise.all([this.loadCarModel()]).then(() => {
+    Promise.all([
+      this.loadCarModel()
+    ]).then(() => {
       this.modelsLoaderService.hide();
-      console.log("Машина загружена и лоадер скрыт")
+      console.log("Машина и стоп линия загружены и лоадер скрыт")
     }).catch((error) => {
       console.log("Машина не загружена!!", error)
       this.modelsLoaderService.hide();
@@ -278,11 +280,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
 
   }
 
-  private createStopLine() {
-    const lastConeIndex = this.trafficCones.getConeBoxes().length - 1;
-    const lastConeBox = this.trafficCones.getConeBoxes()[lastConeIndex];
+  private createStopLine(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const lastConeIndex = this.trafficCones.getConeBoxes().length - 1;
+      const lastConeBox = this.trafficCones.getConeBoxes()[lastConeIndex];
 
-    if (lastConeBox) {
+      if (!lastConeBox) {
+        reject(new Error('No cones available to create stop line.'));
+        return;
+      }
+
       console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
 
       const loader = new GLTFLoader();
@@ -292,22 +299,27 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
         const model = gltf.scene;
         model.position.set(0, lastConeBox.max.y - 1, lastConeBox.max.z - 5);
         this.scene.add(model);
+        resolve();1
       }, undefined, (error) => {
         console.error('The finish line model is not loaded:', error);
+        reject(error);
       })
 
-      const geometry = new THREE.BufferGeometry();
-      const vertices = new Float32Array([
-        -7, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
-        7, lastConeBox.max.y - 1, lastConeBox.max.z - 5
-      ]);
+      if (lastConeBox) {
+        const geometry = new THREE.BufferGeometry();
+        const vertices = new Float32Array([
+          -7, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
+          7, lastConeBox.max.y - 1, lastConeBox.max.z - 5
+        ]);
 
-      geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
+        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
 
-      const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-      const line = new THREE.Line(geometry, material);
-      this.scene.add(line);
-    }
+        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+        const line = new THREE.Line(geometry, material);
+        this.scene.add(line);
+      }
+    });
+
   }
 
   public turnLeft() {
