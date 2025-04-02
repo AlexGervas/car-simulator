@@ -11,8 +11,8 @@ import { Router } from '@angular/router';
 export class StartPageComponent {
   constructor(private router: Router) { }
 
-  public startGame() {
-    this.router.navigate(['/game'])
+  public startGame(level: string) {
+    this.router.navigate(['/game'], { queryParams: { level } });
   }
 
 }

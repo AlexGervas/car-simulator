@@ -29,11 +29,7 @@ export class TrafficConesComponent implements OnChanges {
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes['car'] && this.car && this.camera) {
-      this.createSnake().then(() => {
-        this.stopLineService.callCreateStopLine();
-      }).catch(error => {
-        console.error('Error creating snake:', error);
-      });
+      this.stopLineService.callCreateStopLine();
     }
   }
 
@@ -69,6 +65,10 @@ export class TrafficConesComponent implements OnChanges {
     const trafficConePath = 'models/road-elements/traffic-cone.glb';
     const promises: Promise<void>[] = [];
 
+    if (!this.car) {
+      return Promise.reject(new Error("Car is not defined"));
+    }
+
     for (let i = 0; i < count; i++) {
       const promise = new Promise<void>((resolve, reject) => {
         this.loader.load(trafficConePath, (gltf) => {
@@ -76,6 +76,10 @@ export class TrafficConesComponent implements OnChanges {
           this.scene.add(cone);
           this.cones.push(cone);
 
+          if (!this.car) {
+            reject(new Error("Car is not defined after loading cone"));
+            return;
+          }
           const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
           const xPosition = this.car.position.x;
 
@@ -109,28 +113,22 @@ export class TrafficConesComponent implements OnChanges {
     return this.cones;
   }
 
-  public createParallelParking() {
-    this.loadConeModel(5, 2, 5);
+  public createParallelParking(): Promise<void> {
+    console.log('Start Parallel Parking');
+    return this.loadConeModel(2, 2, 5);
   }
 
   public createSnake(): Promise<void> {
-    return new Promise((resolve, reject) => {
+    return this.loadConeModel(5, 15, 15).then(() => {
       if (!this.camera) {
-        reject('Camera is not defined');
+        console.log('Camera is not defined');
         return;
       }
       if (!this.car) {
-        reject('Car is not defined');
+        console.log('Car is not defined');
         return;
       }
-
-      this.loadConeModel(5, 15, 15).then(() => {
-        console.log('Cones loaded successfully');
-        resolve();
-      }).catch(error => {
-        console.error('Error loading cones:', error);
-        reject(error);
-      });
+      return this.stopLineService.callCreateStopLine();
     });
   }
 

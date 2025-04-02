@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
@@ -9,6 +9,7 @@ import { ConeStateService } from '../../core/services/cone-state.service';
 import { StopLineService } from '../../core/services/stop-line.service';
 import { ModelsLoaderService } from '../../core/services/models-loader.service';
 import { LoaderComponent } from '../loader/loader.component';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-simulator',
@@ -17,10 +18,10 @@ import { LoaderComponent } from '../loader/loader.component';
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
-export class SimulatorComponent implements OnInit, AfterViewInit {
+export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewChecked {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
-  @ViewChild('TrafficConesComponent', { static: true }) trafficCones!: TrafficConesComponent;
+  @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
 
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
@@ -42,39 +43,126 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
   private controlsEnabled: boolean = false;
 
   constructor(private el: ElementRef,
+    private route: ActivatedRoute,
     private deviceService: DeviceService,
     private coneStateService: ConeStateService,
     private stopLineService: StopLineService,
     private modelsLoaderService: ModelsLoaderService) { }
 
-  ngOnInit() {
+  async ngOnInit() {
     this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
     this.init();
-    Promise.all([
-      this.loadCarModel()
-    ]).then(() => {
+
+    try {
+      this.car = await this.loadCarModel();
+      console.log("Car is loaded!", this.car);
+    } catch (error) {
+      console.error("Car loading error", error);
       this.modelsLoaderService.hide();
-      console.log("Машина и стоп линия загружены и лоадер скрыт")
-    }).catch((error) => {
-      console.log("Машина не загружена!!", error)
-      this.modelsLoaderService.hide();
+      return;
+    }
+
+    this.route.queryParams.subscribe(params => {
+      const level = params['level'] || 'snake';
+      console.log("Level: ", level);
+
+      const checkTrafficCones = setInterval(() => {
+        if (this.trafficCones) {
+          clearInterval(checkTrafficCones);
+          this.initLevel(level);
+        }
+      }, 0)
     });
+
+    this.startRenderingLoop();
     window.addEventListener('resize', this.onWindowResize.bind(this), false);
   }
 
   ngAfterViewInit() {
+    if (!this.scene) {
+      console.error('Error: the scene is not initialized before being passed to TrafficCones');
+      return;
+    }
+
     if (this.trafficCones) {
       this.trafficCones.setScene(this.scene);
       this.trafficCones.camera = this.camera;
-      this.trafficCones.car = this.car;
-
-      this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
-
-      this.animate();
     } else {
-      console.error('TrafficCones is undefined');
+      console.warn("TrafficConesComponent is not yet available in ngAfterViewInit");
     }
+
+    this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
+  }
+
+  ngAfterViewChecked() {
+    if (this.trafficCones && this.car && !this.trafficCones.car) {
+      setTimeout(() => {
+        this.trafficCones.car = this.car;
+      });
+    }
+  }
+
+  private startRenderingLoop() {
+    if (!this.car) {
+      console.error("Error: Machine not yet loaded in startRenderingLoop");
+      return;
+    }
+
+    this.animate();
+  }
+
+  private initLevel(level: string): Promise<void> {
+    this.modelsLoaderService.show();
+    this.stopLineService.setScene(this.scene);
+
+    return this.clearLevelScene().then(() => {
+      if (level === 'snake') {
+        return this.initSnakeScene();
+      } else {
+        return this.initParallelParkingScene();
+      }
+    }).then(() => {
+      this.modelsLoaderService.hide();
+      console.log(level, ' is loaded');
+    }).catch(error => {
+      console.error(`Scene ${level} loading error:`, error);
+      this.modelsLoaderService.hide();
+    });
+  }
+
+  private clearLevelScene(): Promise<void> {
+    return new Promise((resolve) => {
+      if (!this.trafficCones) {
+        console.warn("TrafficConesComponent is not yet available in clearLevelScene");
+        return resolve();
+      }
+      this.trafficCones.resetCones();
+      this.stopLineService.removeStopLine();
+      resolve();
+    })
+  }
+
+  private initSnakeScene(): Promise<void> {
+    console.log('Initializing the Snake scene');
+    return this.trafficCones.createSnake().then(() => {
+      console.log('The snake scene is ready');
+    }).catch(error => {
+      console.error('Error when initializing Snake scene:', error);
+    });
+  }
+
+  private initParallelParkingScene(): Promise<void> {
+    if (!this.scene) {
+      return Promise.reject('Scene is not initialized');
+    }
+
+    return this.trafficCones.createParallelParking().then(() => {
+      console.log('ParallelParking scene is ready.');
+    })
+      .catch((error) => {
+        console.error('Error initialization of the ParallelParking scene:', error);
+      });
   }
 
   public startGame() {
@@ -149,7 +237,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
     // this.scene.add(sky);
   }
 
-  private loadCarModel(): Promise<void> {
+  private loadCarModel(): Promise<THREE.Object3D> {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       loader.load('models/cars/vw2.glb', (gltf: GLTF) => {
@@ -159,7 +247,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit {
         this.car.rotation.y = Math.PI;
         this.scene.add(this.car);
         this.updateTiles();
-        resolve();
+        resolve(this.car);
       }, undefined, (error) => {
         console.error('Error loading car model:', error);
         reject(error);
