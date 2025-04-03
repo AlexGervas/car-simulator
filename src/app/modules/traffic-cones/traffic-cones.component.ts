@@ -1,4 +1,4 @@
-import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ConeStateService } from '../../core/services/cone-state.service';
@@ -11,7 +11,7 @@ import { StopLineService } from '../../core/services/stop-line.service';
   templateUrl: './traffic-cones.component.html',
   styleUrl: './traffic-cones.component.css'
 })
-export class TrafficConesComponent implements OnChanges {
+export class TrafficConesComponent {
   @Input() camera!: THREE.PerspectiveCamera;
   @Input() car!: THREE.Object3D;
 
@@ -25,12 +25,6 @@ export class TrafficConesComponent implements OnChanges {
 
   constructor(private coneStateService: ConeStateService, private stopLineService: StopLineService) {
     this.loader = new GLTFLoader();
-  }
-
-  ngOnChanges(changes: SimpleChanges) {
-    if (changes['car'] && this.car && this.camera) {
-      this.stopLineService.callCreateStopLine();
-    }
   }
 
   public getConePositions(): THREE.Vector3[] {
@@ -99,7 +93,11 @@ export class TrafficConesComponent implements OnChanges {
     }
 
     return Promise.all(promises).then(() => {
+      if (this.cones.length === 0) {
+        throw new Error("Cones are not loaded!");
+      }
       console.log('All cones loaded');
+      this.stopLineService.callCreateStopLine();
     }).catch((error) => {
       console.error('Error loading some cones:', error)
     });
