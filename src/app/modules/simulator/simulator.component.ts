@@ -42,6 +42,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public isGameOver: boolean = false;
   private controlsEnabled: boolean = false;
 
+  private currentLevel: 'parallelParking' | 'snake' | null = null;
+
   constructor(private el: ElementRef,
     private route: ActivatedRoute,
     private deviceService: DeviceService,
@@ -65,7 +67,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
     this.route.queryParams.subscribe(params => {
       const level = params['level'] || 'snake';
-      console.log("Level: ", level);
+      this.currentLevel = level;
+      console.log("Level: ", this.currentLevel);
 
       const checkTrafficCones = setInterval(() => {
         if (this.trafficCones) {
@@ -353,18 +356,19 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private checkGameOverConditions() {
-    const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
+    if (this.currentLevel === 'snake') {
+      const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
+      if (lastConeBox) {
+        const stopLineZ = Math.floor(lastConeBox.max.z - 5);
 
-    if (lastConeBox) {
-      const stopLineZ = Math.floor(lastConeBox.max.z - 5);
-
-      if (this.car.position.z < stopLineZ) {
-        alert('Игра окончена! Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.');
-        this.isGameOver = true;
-        this.controlsEnabled = true;
+        if (this.car.position.z < stopLineZ) {
+          alert('Игра окончена! Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.');
+          this.isGameOver = true;
+          this.controlsEnabled = true;
+        }
       }
-    }
 
+    }
   }
 
   private createStopLine(): Promise<void> {

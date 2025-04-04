@@ -54,7 +54,7 @@ export class TrafficConesComponent {
     this.scene = scene;
   }
 
-  public loadConeModel(count: number, spacing: number, distanceFromCar: number): Promise<void> {
+  public loadConeModel(count: number, spacing: number, distanceFromCar: number, positions?: THREE.Vector3[], withStopLine: boolean = true): Promise<void> {
     const trafficConePath = 'models/road-elements/traffic-cone.glb';
     const promises: Promise<void>[] = [];
 
@@ -73,10 +73,16 @@ export class TrafficConesComponent {
             reject(new Error("Car is not defined after loading cone"));
             return;
           }
-          const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
-          const xPosition = this.car.position.x;
+          let conePosition: THREE.Vector3;
+          if (positions && positions[i]) {
+            conePosition = positions[i].clone();
+          } else {
+            const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
+            const xPosition = this.car.position.x;
+            conePosition = new THREE.Vector3(xPosition, 0.7, zPosition);
+          }
 
-          cone.position.set(xPosition, 0.7, zPosition);
+          cone.position.copy(conePosition);
           cone.rotation.y = Math.PI;
 
           this.initialConePositions.push(cone.position.clone());
@@ -96,7 +102,9 @@ export class TrafficConesComponent {
         throw new Error("Cones are not loaded!");
       }
       console.log('All cones loaded');
-      this.stopLineService.callCreateStopLine();
+      if(withStopLine) { 
+        this.stopLineService.callCreateStopLine();
+      }
     }).catch((error) => {
       console.error('Error loading some cones:', error)
     });
@@ -112,11 +120,37 @@ export class TrafficConesComponent {
 
   public createParallelParking(): Promise<void> {
     console.log('Start Parallel Parking');
-    return this.loadConeModel(2, 2, 5);
+    if (!this.car) {
+      return Promise.reject("Car not defined");
+    }
+
+    const carX = this.car.position.x;
+    const carZ = this.car.position.z;
+
+    const offsetX = 2;
+    const width = 3;
+    const height = 4;
+
+    const topZ = carZ - height;
+    const bottomZ = carZ - height - 8;
+
+    const centerZ = (topZ + bottomZ) / 2;
+
+    const positions: THREE.Vector3[] = [
+      new THREE.Vector3(carX + offsetX, 0.7, topZ),
+      new THREE.Vector3(carX + offsetX + width, 0.7, topZ),
+
+      new THREE.Vector3(carX + offsetX, 0.7, bottomZ),
+      new THREE.Vector3(carX + offsetX + width, 0.7, bottomZ),
+
+      new THREE.Vector3(carX + offsetX + width, 0.7, centerZ),
+    ];
+
+    return this.loadConeModel(positions.length, 0, 0, positions, false);
   }
 
   public createSnake(): Promise<void> {
-    return this.loadConeModel(5, 15, 15).then(() => {
+    return this.loadConeModel(5, 15, 15, undefined, true).then(() => {
       if (!this.camera) {
         console.log('Camera is not defined');
         return;
