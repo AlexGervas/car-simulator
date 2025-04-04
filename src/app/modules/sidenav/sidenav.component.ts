@@ -12,11 +12,11 @@ import { Router } from '@angular/router';
 export class SidenavComponent {
   constructor(private router: Router) { }
 
-  navigateToStart() {
+  navigateToHome() {
     this.router.navigate(['/']);
   }
 
-  navigateToSimulator() {
-    this.router.navigate(['/game']);
+  startGame(level: string) {
+    this.router.navigate(['/game'], { queryParams: { level } });
   }
 }
