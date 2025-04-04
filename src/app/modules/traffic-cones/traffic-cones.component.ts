@@ -48,7 +48,6 @@ export class TrafficConesComponent {
 
     cone.rotation.y = angle;
     cone.position.add(fallDirection.multiplyScalar(1));
-    this.coneStateService.resetConeState();
   }
 
   public setScene(scene: THREE.Scene) {

@@ -113,6 +113,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private initLevel(level: string): Promise<void> {
+    this.hitConeCount = 0;
     this.modelsLoaderService.show();
     this.stopLineService.setScene(this.scene);
 
@@ -340,8 +341,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           } else {
             console.error('Cone not found at index:', i);
           }
-          collisionDetected = true;
-          break;
         }
       }
 
