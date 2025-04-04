@@ -79,7 +79,7 @@ export class TrafficConesComponent {
           } else {
             const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
             const xPosition = this.car.position.x;
-            conePosition = new THREE.Vector3(xPosition, 0.7, zPosition);
+            conePosition = new THREE.Vector3(xPosition, 0.2, zPosition);
           }
 
           cone.position.copy(conePosition);
@@ -137,13 +137,13 @@ export class TrafficConesComponent {
     const centerZ = (topZ + bottomZ) / 2;
 
     const positions: THREE.Vector3[] = [
-      new THREE.Vector3(carX + offsetX, 0.7, topZ),
-      new THREE.Vector3(carX + offsetX + width, 0.7, topZ),
+      new THREE.Vector3(carX + offsetX, 0.2, topZ),
+      new THREE.Vector3(carX + offsetX + width, 0.2, topZ),
 
-      new THREE.Vector3(carX + offsetX, 0.7, bottomZ),
-      new THREE.Vector3(carX + offsetX + width, 0.7, bottomZ),
+      new THREE.Vector3(carX + offsetX, 0.2, bottomZ),
+      new THREE.Vector3(carX + offsetX + width, 0.2, bottomZ),
 
-      new THREE.Vector3(carX + offsetX + width, 0.7, centerZ),
+      new THREE.Vector3(carX + offsetX + width, 0.2, centerZ),
     ];
 
     return this.loadConeModel(positions.length, 0, 0, positions, false);

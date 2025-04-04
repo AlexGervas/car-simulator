@@ -183,7 +183,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.trafficCones.resetCones();
     this.car.position.set(0, 0, 0);
     this.car.rotation.set(0, Math.PI, 0);
-    this.animate();
   }
 
   private init() {
@@ -260,7 +259,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private createTile(x: number, z: number) {
-    const tileGeometry = new THREE.PlaneGeometry(10, 6);
+    const tileGeometry = new THREE.PlaneGeometry(14, 6);
     const tileMaterial = new THREE.MeshBasicMaterial({ map: this.asphaltTexture, side: THREE.DoubleSide });
     const tile = new THREE.Mesh(tileGeometry, tileMaterial);
     tile.rotation.x = -Math.PI / 2;
@@ -325,7 +324,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         newPosition.add(direction.clone().multiplyScalar(-this.backwardSpeed));
       }
 
-      const collisionMargin = -0.6;
+      const collisionMargin = -0.8;
       const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
 
       let collisionDetected = false;
@@ -359,7 +358,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (this.currentLevel === 'snake') {
       const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
       if (lastConeBox) {
-        const stopLineZ = Math.floor(lastConeBox.max.z - 5);
+        const stopLineZ = Math.floor(lastConeBox.max.z - 8);
 
         if (this.car.position.z < stopLineZ) {
           alert('Игра окончена! Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.');
@@ -388,9 +387,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
       loader.load(finishLinePath, (gltf) => {
         const model = gltf.scene;
-        model.position.set(0, lastConeBox.max.y - 1, lastConeBox.max.z - 5);
+        model.position.set(0, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5);
         this.scene.add(model);
-        resolve();1
+        resolve();
       }, undefined, (error) => {
         console.error('The finish line model is not loaded:', error);
         reject(error);
@@ -399,8 +398,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       if (lastConeBox) {
         const geometry = new THREE.BufferGeometry();
         const vertices = new Float32Array([
-          -7, lastConeBox.max.y - 1, lastConeBox.max.z - 5,
-          7, lastConeBox.max.y - 1, lastConeBox.max.z - 5
+          -7, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5,
+          7, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5
         ]);
 
         geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
