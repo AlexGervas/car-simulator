@@ -130,6 +130,7 @@ export class TrafficConesComponent {
     const offsetX = 2;
     const width = 3;
     const height = 4;
+    const lineWidth = 0.1;
 
     const topZ = carZ - height;
     const bottomZ = carZ - height - 8;
@@ -146,6 +147,42 @@ export class TrafficConesComponent {
       new THREE.Vector3(carX + offsetX + width, 0.2, centerZ),
     ];
 
+    const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    const topLineLength = positions[1].x - positions[0].x;
+    const topLineGeometry = new THREE.PlaneGeometry(topLineLength, lineWidth);
+    const topLine = new THREE.Mesh(topLineGeometry, lineMaterial);
+    topLine.rotation.x = -Math.PI / 2;
+    topLine.position.set((positions[0].x + positions[1].x) / 2, 0.01, positions[0].z);
+    this.scene.add(topLine);
+    
+    const bottomLineLength = positions[3].x - positions[2].x;
+    const bottomLineGeometry = new THREE.PlaneGeometry(bottomLineLength, lineWidth);
+    const bottomLine = new THREE.Mesh(bottomLineGeometry, lineMaterial);
+    bottomLine.rotation.x = -Math.PI / 2;
+    bottomLine.position.set((positions[2].x + positions[3].x) / 2, 0.01, positions[2].z);
+    this.scene.add(bottomLine);
+
+    const rightLineLength = Math.abs(positions[1].z - positions[3].z);
+    const rightLineGeometry = new THREE.PlaneGeometry(lineWidth, rightLineLength);
+    const rightLine = new THREE.Mesh(rightLineGeometry, lineMaterial);
+    rightLine.rotation.x = -Math.PI / 2;
+    rightLine.position.set(positions[1].x,0.01, (positions[1].z + positions[3].z) / 2);
+    this.scene.add(rightLine);
+
+    const dashSize = 0.5;
+    const gapSize = 0.5;
+    const leftLineLength = Math.abs(positions[0].z - positions[2].z);
+    const dashCount = Math.floor(leftLineLength / (dashSize + gapSize));
+    const startZ = positions[0].z;
+
+    for (let i = 0; i < dashCount; i++) {
+      const dashGeometry = new THREE.PlaneGeometry(lineWidth, dashSize);
+      const dash = new THREE.Mesh(dashGeometry, lineMaterial);
+      dash.rotation.x = -Math.PI / 2; dash.position.set(positions[0].x, 0.01, startZ - i * (dashSize + gapSize) - dashSize / 2);
+      this.scene.add(dash);
+    }
+
     return this.loadConeModel(positions.length, 0, 0, positions, false);
   }
 
@@ -161,6 +198,19 @@ export class TrafficConesComponent {
       }
       return this.stopLineService.callCreateStopLine();
     });
+  }
+
+  public hasCrossedEntryLine(): boolean {
+    if (!this.car || this.cones.length < 2) return false;
+
+    const leftCone1 = this.cones[0].position;
+    const leftCone2 = this.cones[1].position;
+
+    const lineVector = new THREE.Vector3().subVectors(leftCone2, leftCone1).normalize();
+    const carVector = new THREE.Vector3().subVectors(this.car.position, leftCone1);
+
+    const dotProduct = lineVector.dot(carVector);
+    return dotProduct > 0;
   }
 
   public resetCones() {

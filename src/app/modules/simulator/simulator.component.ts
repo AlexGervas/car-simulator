@@ -366,7 +366,40 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           this.controlsEnabled = true;
         }
       }
+    } else {
+      if (!this.isMovingForward && !this.isMovingBackward && this.trafficCones.hasCrossedEntryLine()) {
+        let errorMessage = "";
 
+        if (this.hitConeCount > 0) {
+          errorMessage += `Машина задела ${this.hitConeCount} конус(ы) \n`;
+        }
+
+        const carRotationTolerance = 0.1;
+        const carRotation = this.car.rotation.y % (2 * Math.PI);
+        const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
+
+        if (!isParallel) {
+          errorMessage += "Машина не параллельна конусам. ";
+        }
+
+        const carBox = new THREE.Box3().setFromObject(this.car);
+        const pocketMin = new THREE.Vector3(-5, 0, -10);
+        const pocketMax = new THREE.Vector3(5, 0, 0);
+        const parkingPocket = new THREE.Box3(pocketMin, pocketMax);
+
+        if (!parkingPocket.containsBox(carBox)) {
+          errorMessage += "Машина не находится в парковочном кармане. \n";
+        }
+
+        if (errorMessage) {
+          this.isGameOver = true;
+          this.controlsEnabled = true;
+          alert(`Задание не выполнено: ${errorMessage}Попробуйте снова`);
+          return;
+        }
+
+        alert("Поздравляем! Задание выполнено");
+      }
     }
   }
 
