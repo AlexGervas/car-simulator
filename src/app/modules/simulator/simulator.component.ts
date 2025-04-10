@@ -42,7 +42,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public isGameOver: boolean = false;
   private controlsEnabled: boolean = false;
 
-  private currentLevel: 'parallelParking' | 'snake' | null = null;
+  private currentLevel: 'parallel-parking' | 'snake' | null = null;
+  private stopCheckTimeout: number | null = null;
+  private isCheckingConditions: boolean = false;
 
   constructor(private el: ElementRef,
     private route: ActivatedRoute,
@@ -366,41 +368,63 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           this.controlsEnabled = true;
         }
       }
-    } else {
-      if (!this.isMovingForward && !this.isMovingBackward && this.trafficCones.hasCrossedEntryLine()) {
-        let errorMessage = "";
-
-        if (this.hitConeCount > 0) {
-          errorMessage += `Машина задела ${this.hitConeCount} конус(ы) \n`;
+    } else if (this.currentLevel === "parallel-parking") {
+      if (!this.isMovingForward && !this.isMovingBackward) {
+        if (this.trafficCones.checkCarInsideParkingPocket()) {
+          this.startParkingCheck();
+        } else {
+          this.resetParkingCheck();
         }
-
-        const carRotationTolerance = 0.1;
-        const carRotation = this.car.rotation.y % (2 * Math.PI);
-        const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
-
-        if (!isParallel) {
-          errorMessage += "Машина не параллельна конусам. ";
-        }
-
-        const carBox = new THREE.Box3().setFromObject(this.car);
-        const pocketMin = new THREE.Vector3(-5, 0, -10);
-        const pocketMax = new THREE.Vector3(5, 0, 0);
-        const parkingPocket = new THREE.Box3(pocketMin, pocketMax);
-
-        if (!parkingPocket.containsBox(carBox)) {
-          errorMessage += "Машина не находится в парковочном кармане. \n";
-        }
-
-        if (errorMessage) {
-          this.isGameOver = true;
-          this.controlsEnabled = true;
-          alert(`Задание не выполнено: ${errorMessage}Попробуйте снова`);
-          return;
-        }
-
-        alert("Поздравляем! Задание выполнено");
+      } else {
+        this.resetParkingCheck();
       }
     }
+  }
+
+  private startParkingCheck(): void {
+    if (this.stopCheckTimeout !== null || this.isCheckingConditions) {
+      return;
+    }
+
+    this.stopCheckTimeout = window.setTimeout(() => {
+      this.isCheckingConditions = true;
+      let errorMessage = "";
+
+      if (this.hitConeCount > 0) {
+        errorMessage += `Машина задела ${this.hitConeCount} конус(ы) \n`;
+      }
+
+      const carRotationTolerance = 0.1;
+      const carRotation = this.car.rotation.y % (2 * Math.PI);
+      const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
+      if (!isParallel) {
+        errorMessage += "Машина не параллельна конусам. ";
+      }
+
+      const { preciseMatch, nearMatch } = this.trafficCones.checkCarInsideParkingPocket();
+      if (!preciseMatch && nearMatch) {
+        errorMessage += "Машина находится не точно в кармане, но допустимо.\n";
+      } else if (!preciseMatch) {
+        errorMessage += "Машина не находится в парковочном кармане.\n";
+      }
+
+      if (errorMessage) {
+        this.isGameOver = true;
+        this.controlsEnabled = true;
+        alert(`Задание не выполнено: ${errorMessage}Попробуйте снова`);
+      } else {
+        alert("Поздравляем! Задание выполнено");
+      }
+      this.isCheckingConditions = false;
+    }, 2000);
+  }
+
+  private resetParkingCheck(): void {
+    if (this.stopCheckTimeout !== null) {
+      clearTimeout(this.stopCheckTimeout);
+      this.stopCheckTimeout = null;
+    }
+    this.isCheckingConditions = false;
   }
 
   private createStopLine(): Promise<void> {

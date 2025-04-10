@@ -20,6 +20,7 @@ export class TrafficConesComponent {
   private scene!: THREE.Scene;
   private loader: GLTFLoader;
   private conePositions: THREE.Vector3[] = [];
+  private parkingPocket: THREE.Box3 | null = null;
 
   private coneBoxes: THREE.Box3[] = [];
 
@@ -147,6 +148,11 @@ export class TrafficConesComponent {
       new THREE.Vector3(carX + offsetX + width, 0.2, centerZ),
     ];
 
+    this.parkingPocket = new THREE.Box3(
+      new THREE.Vector3(positions[0].x, 0, positions[2].z),
+      new THREE.Vector3(positions[1].x, 2, positions[0].z)
+    );
+
     const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
     const topLineLength = positions[1].x - positions[0].x;
@@ -212,6 +218,31 @@ export class TrafficConesComponent {
     const dotProduct = lineVector.dot(carVector);
     return dotProduct > 0;
   }
+
+  public checkCarInsideParkingPocket(): { preciseMatch: boolean; nearMatch: boolean } {
+    if (!this.car || !this.parkingPocket) return { preciseMatch: false, nearMatch: false };;
+
+    const carBox = new THREE.Box3().setFromObject(this.car);
+
+    const tolerance = 0.5;
+    const { preciseBox, expandedBox } = this.createParkingZones(tolerance);
+
+    const preciseMatch = preciseBox.containsBox(carBox);
+    const nearMatch = expandedBox.intersectsBox(carBox);
+
+    return { preciseMatch, nearMatch };
+  }
+
+  public createParkingZones(tolerance: number): { preciseBox: THREE.Box3; expandedBox: THREE.Box3 } {
+    if (!this.parkingPocket) {
+      throw new Error("Parking pocket is not defined.");
+    }
+
+    const preciseBox = this.parkingPocket.clone();
+    const expandedBox = this.parkingPocket.clone().expandByScalar(tolerance);
+    return { preciseBox, expandedBox };
+  }
+
 
   public resetCones() {
     this.cones.forEach((cone, index) => {
