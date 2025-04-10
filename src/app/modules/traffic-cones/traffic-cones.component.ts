@@ -193,7 +193,7 @@ export class TrafficConesComponent {
   }
 
   public createSnake(): Promise<void> {
-    return this.loadConeModel(5, 15, 15, undefined, true).then(() => {
+    return this.loadConeModel(1, 15, 15, undefined, true).then(() => {
       if (!this.camera) {
         console.log('Camera is not defined');
         return;

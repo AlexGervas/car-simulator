@@ -2,7 +2,6 @@ import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, 
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { DeviceService } from '../../core/services/device.service';
 import { CommonModule } from '@angular/common';
 import { ConeStateService } from '../../core/services/cone-state.service';
@@ -10,6 +9,8 @@ import { StopLineService } from '../../core/services/stop-line.service';
 import { ModelsLoaderService } from '../../core/services/models-loader.service';
 import { LoaderComponent } from '../loader/loader.component';
 import { ActivatedRoute } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
+import { DialogComponent } from '../../shared/dialog/dialog.component';
 
 @Component({
   selector: 'app-simulator',
@@ -51,7 +52,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private deviceService: DeviceService,
     private coneStateService: ConeStateService,
     private stopLineService: StopLineService,
-    private modelsLoaderService: ModelsLoaderService) { }
+    private modelsLoaderService: ModelsLoaderService,
+    private dialog: MatDialog) { }
 
   async ngOnInit() {
     this.modelsLoaderService.show();
@@ -363,7 +365,15 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         const stopLineZ = Math.floor(lastConeBox.max.z - 8);
 
         if (this.car.position.z < stopLineZ) {
-          alert('Игра окончена! Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.');
+          this.dialog.open(DialogComponent, {
+            width: '300px',
+            position: { top: '10%' },
+            data: {
+              title: 'Игра окончена',
+              message: 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.',
+              showButtons: false
+            }
+          })
           this.isGameOver = true;
           this.controlsEnabled = true;
         }
@@ -391,14 +401,14 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       let errorMessage = "";
 
       if (this.hitConeCount > 0) {
-        errorMessage += `Машина задела ${this.hitConeCount} конус(ы) \n`;
+        errorMessage += `Машина задела ${this.hitConeCount} конус(ы). \n`;
       }
 
       const carRotationTolerance = 0.1;
       const carRotation = this.car.rotation.y % (2 * Math.PI);
       const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
       if (!isParallel) {
-        errorMessage += "Машина не параллельна конусам. ";
+        errorMessage += "Машина не параллельна конусам.\n";
       }
 
       const { preciseMatch, nearMatch } = this.trafficCones.checkCarInsideParkingPocket();
@@ -411,9 +421,25 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       if (errorMessage) {
         this.isGameOver = true;
         this.controlsEnabled = true;
-        alert(`Задание не выполнено: ${errorMessage}Попробуйте снова`);
+        this.dialog.open(DialogComponent, {
+          width: '300px',
+          position: { top: '10%' },
+          data: {
+            title: 'Задание не выполнено',
+            message: `${errorMessage} Попробуйте снова.`,
+            showButtons: false
+          }
+        });
       } else {
-        alert("Поздравляем! Задание выполнено");
+        this.dialog.open(DialogComponent, {
+          width: '300px',
+          position: { top: '10%' },
+          data: {
+            title: 'Поздравляем!',
+            message: 'Задание выполнено',
+            showButtons: false
+          }
+        })
       }
       this.isCheckingConditions = false;
     }, 2000);
