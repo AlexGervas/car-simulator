@@ -43,6 +43,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public isGameOver: boolean = false;
   private controlsEnabled: boolean = false;
 
+  public exerciseStarted: boolean = false;
+  public checkDialogShown: boolean = false;
+  public stoppedOnce: boolean = false;
+  public temporaryBlockDialog: boolean = false;
+  public isResultDialogShown: boolean = false;
+
   private currentLevel: 'parallel-parking' | 'snake' | null = null;
   private stopCheckTimeout: number | null = null;
   private isCheckingConditions: boolean = false;
@@ -161,6 +167,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private initParallelParkingScene(): Promise<void> {
+    this.exerciseStarted = false;
+    this.checkDialogShown = false;
+    this.stoppedOnce = false;
+    this.isCheckingConditions = false;
+    
     if (!this.scene) {
       return Promise.reject('Scene is not initialized');
     }
@@ -187,6 +198,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.trafficCones.resetCones();
     this.car.position.set(0, 0, 0);
     this.car.rotation.set(0, Math.PI, 0);
+
+    this.checkDialogShown = false;
+    this.stoppedOnce = false;
+    this.isCheckingConditions = false;
+    this.isResultDialogShown = false;
+    this.temporaryBlockDialog = false;
+    this.dialog.closeAll();
   }
 
   private init() {
@@ -380,24 +398,70 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       }
     } else if (this.currentLevel === "parallel-parking") {
       if (!this.isMovingForward && !this.isMovingBackward) {
-        if (this.trafficCones.checkCarInsideParkingPocket()) {
-          this.startParkingCheck();
-        } else {
-          this.resetParkingCheck();
+        if (this.exerciseStarted && !this.checkDialogShown) {
+          if (this.shouldShowCheckDialog()) {
+            this.showCheckDialog();
+          }
         }
       } else {
-        this.resetParkingCheck();
+        this.exerciseStarted = true;
       }
     }
   }
 
+  private shouldShowCheckDialog(): boolean {
+    if (this.checkDialogShown || this.isCheckingConditions || this.temporaryBlockDialog || this.isResultDialogShown) {
+      return false;
+    }
+
+    if (!this.exerciseStarted) {
+      return false;
+    }
+
+    const { preciseMatch, nearMatch } = this.trafficCones.checkCarInsideParkingPocket();
+
+    return preciseMatch || nearMatch;
+  }
+
+  private showCheckDialog(): void {
+    this.checkDialogShown = true;
+
+    const dialogRef = this.dialog.open(DialogComponent, {
+      width: '300px',
+      position: { top: '10%' },
+      data: {
+        title: 'Остановились',
+        message: 'Можно проверять задание?',
+        showButtons: true
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((result: boolean) => {
+      this.checkDialogShown = false;
+      if (result) {
+        this.startParkingCheck();
+      } else {
+        this.stoppedOnce = false;
+        this.temporaryBlockDialog = true;
+
+        const interval = setInterval(() => {
+          if (this.isMovingForward || this.isMovingBackward) {
+            this.temporaryBlockDialog = false;
+            clearInterval(interval);
+          }
+        }, 100);
+      }
+    });
+  }
+
   private startParkingCheck(): void {
-    if (this.stopCheckTimeout !== null || this.isCheckingConditions) {
+    if (this.isCheckingConditions) {
       return;
     }
 
+    this.isCheckingConditions = true;
+
     this.stopCheckTimeout = window.setTimeout(() => {
-      this.isCheckingConditions = true;
       let errorMessage = "";
 
       if (this.hitConeCount > 0) {
@@ -419,6 +483,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       }
 
       if (errorMessage) {
+        this.isResultDialogShown = true;
         this.isGameOver = true;
         this.controlsEnabled = true;
         this.dialog.open(DialogComponent, {
@@ -431,6 +496,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           }
         });
       } else {
+        this.isResultDialogShown = true;
         this.dialog.open(DialogComponent, {
           width: '300px',
           position: { top: '10%' },
@@ -443,14 +509,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       }
       this.isCheckingConditions = false;
     }, 2000);
-  }
-
-  private resetParkingCheck(): void {
-    if (this.stopCheckTimeout !== null) {
-      clearTimeout(this.stopCheckTimeout);
-      this.stopCheckTimeout = null;
-    }
-    this.isCheckingConditions = false;
   }
 
   private createStopLine(): Promise<void> {

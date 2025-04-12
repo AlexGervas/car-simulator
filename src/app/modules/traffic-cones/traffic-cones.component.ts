@@ -193,7 +193,7 @@ export class TrafficConesComponent {
   }
 
   public createSnake(): Promise<void> {
-    return this.loadConeModel(1, 15, 15, undefined, true).then(() => {
+    return this.loadConeModel(5, 15, 15, undefined, true).then(() => {
       if (!this.camera) {
         console.log('Camera is not defined');
         return;
@@ -204,19 +204,6 @@ export class TrafficConesComponent {
       }
       return this.stopLineService.callCreateStopLine();
     });
-  }
-
-  public hasCrossedEntryLine(): boolean {
-    if (!this.car || this.cones.length < 2) return false;
-
-    const leftCone1 = this.cones[0].position;
-    const leftCone2 = this.cones[1].position;
-
-    const lineVector = new THREE.Vector3().subVectors(leftCone2, leftCone1).normalize();
-    const carVector = new THREE.Vector3().subVectors(this.car.position, leftCone1);
-
-    const dotProduct = lineVector.dot(carVector);
-    return dotProduct > 0;
   }
 
   public checkCarInsideParkingPocket(): { preciseMatch: boolean; nearMatch: boolean } {
