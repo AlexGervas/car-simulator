@@ -50,6 +50,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public isResultDialogShown: boolean = false;
 
   private currentLevel: 'parallel-parking' | 'snake' | null = null;
+  private wheels: Record<string, THREE.Object3D> = {};
+
   private stopCheckTimeout: number | null = null;
   private isCheckingConditions: boolean = false;
 
@@ -270,6 +272,19 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.car.scale.set(1, 1, 1);
         this.car.position.set(0, 0, 0);
         this.car.rotation.y = Math.PI;
+
+        this.car.traverse((child) => {
+          if (child.name === 'Obj_polo17wheel') {
+            this.wheels['frontRight'] = child;
+          } else if (child.name === "polo17wheel003") {
+            this.wheels['frontLeft'] = child;
+          } else if (child.name === "polo17wheel001") {
+            this.wheels['backRight'] = child;
+          } else if (child.name === "polo17wheel002") {
+            this.wheels['backLeft'] = child;
+          }
+        })
+
         this.scene.add(this.car);
         this.updateTiles();
         resolve(this.car);
@@ -338,13 +353,20 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       direction.normalize();
 
       const newPosition = this.car.position.clone();
+      let distance = 0;
 
       if (this.isMovingForward) {
-        newPosition.add(direction.clone().multiplyScalar(this.forwardSpeed));
+        const moveStep = this.forwardSpeed;
+        newPosition.add(direction.clone().multiplyScalar(moveStep));
+        distance = moveStep;
       }
       if (this.isMovingBackward) {
-        newPosition.add(direction.clone().multiplyScalar(-this.backwardSpeed));
+        const moveStep = -this.backwardSpeed;
+        newPosition.add(direction.clone().multiplyScalar(moveStep));
+        distance = moveStep;
       }
+
+      this.rotateWheels(distance);
 
       const collisionMargin = -0.8;
       const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
@@ -373,6 +395,22 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       }
 
       this.checkGameOverConditions();
+    }
+  }
+
+  private rotateWheels(distance: number): void {
+    const rotationAngle = distance / 0.5;
+    if (this.wheels['frontLeft']) {
+      this.wheels['frontLeft'].rotation.x -= rotationAngle;
+    }
+    if (this.wheels['frontRight']) {
+      this.wheels['frontRight'].rotation.x -= rotationAngle;
+    }
+    if (this.wheels['backLeft']) {
+      this.wheels['backLeft'].rotation.x -= rotationAngle;
+    }
+    if (this.wheels['backRight']) {
+      this.wheels['backRight'].rotation.x -= rotationAngle;
     }
   }
 
