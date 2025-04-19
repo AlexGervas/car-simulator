@@ -32,12 +32,15 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private forwardSpeed: number = 0.04;
   private backwardSpeed: number = 0.02;
-  private turnSpeed: number = 0.1;
+  private turnSpeed: number = 0.01;
   public hitConeCount: number = 0;
   public conesPassed: number = 0;
+  private frontWheelAngle: number = 0;
 
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
+  private isTurningLeft: boolean = false;
+  private isTurningRight: boolean = false;
   public isMobileDevice: boolean = false;
   private isConeFallen: boolean = false;
   public isGameOver: boolean = false;
@@ -267,23 +270,29 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private loadCarModel(): Promise<THREE.Object3D> {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
-      loader.load('models/cars/vw2.glb', (gltf: GLTF) => {
+      loader.load('models/cars/vw_polo_final.glb', (gltf: GLTF) => {
         this.car = gltf.scene;
         this.car.scale.set(1, 1, 1);
         this.car.position.set(0, 0, 0);
         this.car.rotation.y = Math.PI;
 
+        const box = new THREE.Box3().setFromObject(this.car);
+        const size = box.getSize(new THREE.Vector3());
+        const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
+        this.car.scale.multiplyScalar(scaleFactor * 5);
+
         this.car.traverse((child) => {
-          if (child.name === 'Obj_polo17wheel') {
+          if (child.name === 'Wheel_1_R') {
             this.wheels['frontRight'] = child;
-          } else if (child.name === "polo17wheel003") {
+          } else if (child.name === "Wheel_1_L") {
             this.wheels['frontLeft'] = child;
-          } else if (child.name === "polo17wheel001") {
+          } else if (child.name === "Wheel_2_R") {
             this.wheels['backRight'] = child;
-          } else if (child.name === "polo17wheel002") {
+          } else if (child.name === "Wheel_2_L") {
             this.wheels['backLeft'] = child;
           }
         })
+        console.log("wheels: ", this.wheels)
 
         this.scene.add(this.car);
         this.updateTiles();
@@ -359,14 +368,24 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         const moveStep = this.forwardSpeed;
         newPosition.add(direction.clone().multiplyScalar(moveStep));
         distance = moveStep;
-      }
+      } 
       if (this.isMovingBackward) {
         const moveStep = -this.backwardSpeed;
         newPosition.add(direction.clone().multiplyScalar(moveStep));
         distance = moveStep;
       }
 
-      this.rotateWheels(distance);
+      if (this.isMovingForward || this.isMovingBackward) {
+        this.car.position.copy(newPosition);
+        this.rotateWheels(distance);
+      }
+
+      if ((this.isMovingForward || this.isMovingBackward) && this.isTurningLeft) {
+        this.car.rotation.y += this.turnSpeed;
+      }
+      if ((this.isMovingForward || this.isMovingBackward) && this.isTurningRight) {
+        this.car.rotation.y -= this.turnSpeed;
+      }
 
       const collisionMargin = -0.8;
       const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
@@ -399,18 +418,34 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private rotateWheels(distance: number): void {
-    const rotationAngle = distance / 0.5;
-    if (this.wheels['frontLeft']) {
-      this.wheels['frontLeft'].rotation.x -= rotationAngle;
-    }
-    if (this.wheels['frontRight']) {
-      this.wheels['frontRight'].rotation.x -= rotationAngle;
-    }
+    const rotationAngle = distance / (2 * Math.PI * 0.5);
     if (this.wheels['backLeft']) {
-      this.wheels['backLeft'].rotation.x -= rotationAngle;
+      this.wheels['backLeft'].rotateX(-rotationAngle);
     }
     if (this.wheels['backRight']) {
-      this.wheels['backRight'].rotation.x -= rotationAngle;
+      this.wheels['backRight'].rotateX(-rotationAngle);
+    }
+    
+    if (this.wheels['frontLeft']) {
+      this.wheels['frontLeft'].rotateX(-rotationAngle);
+    }
+    if (this.wheels['frontRight']) {
+      this.wheels['frontRight'].rotateX(-rotationAngle);
+    }
+  }
+
+  private updateFrontWheels() {
+    if (this.wheels) {
+      if (this.wheels['frontLeft']) {
+        this.wheels['frontLeft'].rotation.x = 0;
+        this.wheels['frontLeft'].rotation.y = 0;
+        this.wheels['frontLeft'].rotation.z = this.frontWheelAngle;
+      }
+      if (this.wheels['frontRight']) {
+        this.wheels['frontRight'].rotation.x = 0;
+        this.wheels['frontRight'].rotation.y = 0;
+        this.wheels['frontRight'].rotation.z = this.frontWheelAngle;
+      }
     }
   }
 
@@ -594,12 +629,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public turnLeft() {
     if (this.car) {
       this.car.rotation.y += this.turnSpeed;
+      // this.frontWheelAngle += this.turnSpeed; // Увеличиваем угол поворота
+      // this.updateFrontWheels(); // Обновляем положение передних колес
     }
   }
 
   public turnRight() {
     if (this.car) {
       this.car.rotation.y -= this.turnSpeed;
+      // this.frontWheelAngle -= this.turnSpeed; // Уменьшаем угол поворота
+      // this.updateFrontWheels(); // Обновляем положение передних колес
     }
   }
 
@@ -613,13 +652,15 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       } else if (event.key === 'ArrowDown') {
         this.isMovingBackward = true;
       } else if (event.key === 'ArrowLeft') {
-        if (this.isMovingForward || this.isMovingBackward) {
-          this.car.rotation.y += this.turnSpeed;
-        }
+        this.isTurningLeft = true;
+        this.isTurningRight = false;
+        this.frontWheelAngle = Math.PI / 6;
+        this.updateFrontWheels();
       } else if (event.key === 'ArrowRight') {
-        if (this.isMovingForward || this.isMovingBackward) {
-          this.car.rotation.y -= this.turnSpeed;
-        }
+        this.isTurningRight = true;
+        this.isTurningLeft = false;
+        this.frontWheelAngle = -Math.PI / 6;
+        this.updateFrontWheels();
       }
     }
   }
@@ -632,6 +673,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.isMovingForward = false;
     } else if (event.key === 'ArrowDown') {
       this.isMovingBackward = false;
+    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+      this.isTurningLeft = false;
+      this.isTurningRight = false;
+      this.frontWheelAngle = 0;
+      this.updateFrontWheels();
     }
   }
 

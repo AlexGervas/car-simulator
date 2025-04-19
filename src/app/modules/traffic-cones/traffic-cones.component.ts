@@ -207,15 +207,17 @@ export class TrafficConesComponent {
   }
 
   public checkCarInsideParkingPocket(): { preciseMatch: boolean; nearMatch: boolean } {
-    if (!this.car || !this.parkingPocket) return { preciseMatch: false, nearMatch: false };;
+    if (!this.car || !this.parkingPocket) return { preciseMatch: false, nearMatch: false };
 
     const carBox = new THREE.Box3().setFromObject(this.car);
 
     const tolerance = 0.5;
     const { preciseBox, expandedBox } = this.createParkingZones(tolerance);
+    const carCenter = carBox.getCenter(new THREE.Vector3());
+    preciseBox.expandByScalar(0.5);
 
     const preciseMatch = preciseBox.containsBox(carBox);
-    const nearMatch = expandedBox.intersectsBox(carBox);
+    const nearMatch = expandedBox.intersectsBox(carBox) && expandedBox.containsPoint(carCenter);
 
     return { preciseMatch, nearMatch };
   }
