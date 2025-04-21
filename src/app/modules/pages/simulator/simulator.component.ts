@@ -1,16 +1,16 @@
 import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
-import { DeviceService } from '../../core/services/device.service';
+import { TrafficConesComponent } from '../../components/traffic-cones/traffic-cones.component';
+import { DeviceService } from '../../../core/services/device.service';
 import { CommonModule } from '@angular/common';
-import { ConeStateService } from '../../core/services/cone-state.service';
-import { StopLineService } from '../../core/services/stop-line.service';
-import { ModelsLoaderService } from '../../core/services/models-loader.service';
-import { LoaderComponent } from '../loader/loader.component';
+import { ConeStateService } from '../../../core/services/cone-state.service';
+import { StopLineService } from '../../../core/services/stop-line.service';
+import { ModelsLoaderService } from '../../../core/services/models-loader.service';
+import { LoaderComponent } from '../../../shared/loader/loader.component';
 import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
-import { DialogComponent } from '../../shared/dialog/dialog.component';
+import { DialogComponent } from '../../../shared/dialog/dialog.component';
 
 @Component({
   selector: 'app-simulator',

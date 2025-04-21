@@ -15,4 +15,8 @@ export class StartPageComponent {
     this.router.navigate(['/game'], { queryParams: { level } });
   }
 
+  public openModelViewer(): void {
+    this.router.navigate(['model-viewer'])
+  }
+
 }

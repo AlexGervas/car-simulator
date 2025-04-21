@@ -1,8 +1,8 @@
 import { Component, Input } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { ConeStateService } from '../../core/services/cone-state.service';
-import { StopLineService } from '../../core/services/stop-line.service';
+import { ConeStateService } from '../../../core/services/cone-state.service';
+import { StopLineService } from '../../../core/services/stop-line.service';
 
 @Component({
   selector: 'app-traffic-cones',
