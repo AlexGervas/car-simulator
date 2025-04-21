@@ -380,11 +380,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.rotateWheels(distance);
       }
 
-      if ((this.isMovingForward || this.isMovingBackward) && this.isTurningLeft) {
+      if (this.isMovingForward && this.isTurningLeft) {
         this.car.rotation.y += this.turnSpeed;
-      }
-      if ((this.isMovingForward || this.isMovingBackward) && this.isTurningRight) {
+      } else if (this.isMovingForward && this.isTurningRight) {
         this.car.rotation.y -= this.turnSpeed;
+      }
+
+      if (this.isMovingBackward && this.isTurningLeft) {
+        this.car.rotation.y -= this.turnSpeed;
+      } else if (this.isMovingBackward && this.isTurningRight) {
+        this.car.rotation.y += this.turnSpeed;
       }
 
       const collisionMargin = -0.8;
