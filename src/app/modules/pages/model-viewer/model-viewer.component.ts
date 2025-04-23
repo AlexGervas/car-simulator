@@ -1,4 +1,4 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
@@ -17,10 +17,28 @@ export class ModelViewerComponent implements OnInit {
   private camera!: THREE.PerspectiveCamera;
   private renderer!: THREE.WebGLRenderer;
   private controls!: OrbitControls;
+  private raycaster = new THREE.Raycaster();
+  private mouse = new THREE.Vector2();
   private model!: THREE.Object3D;
+  private frontLeftDoor!: THREE.Object3D;
+  private frontRightDoor!: THREE.Object3D;
+  private backLeftDoor!: THREE.Object3D;
+  private backRightDoor!: THREE.Object3D;
+  private carTrunk!: THREE.Object3D;
+  private carHood!: THREE.Object3D;
+
   private animationFrameId!: number;
 
-  constructor(private el: ElementRef,) { }
+  private isFrontLeftDoorOpen = false;
+  private isFrontRightDoorOpen = false;
+  private isBackLeftDoorOpen = false;
+  private isBackRightDoorOpen = false;
+  private isCarTrunkOpen = false;
+  private isCarHoodOpen = false;
+
+  private doorGroups: { [key: string]: THREE.Object3D[] } = {};
+
+  constructor(private el: ElementRef) { }
 
   ngOnInit(): void {
     this.initScene();
@@ -76,12 +94,48 @@ export class ModelViewerComponent implements OnInit {
       const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
       this.model.scale.multiplyScalar(scaleFactor * 6);
 
+      this.frontLeftDoor = this.model.getObjectByName('polo17_door_FL')!;
+      this.frontRightDoor = this.model.getObjectByName('polo17_door_FR')!;
+      this.backLeftDoor = this.model.getObjectByName('polo17_door_RL')!;
+      this.backRightDoor = this.model.getObjectByName('polo17_door_RR')!;
+
+      this.carTrunk = this.model.getObjectByName('polo17_trunk')!;
+      this.carHood = this.model.getObjectByName('polo17_hood')!;
+
+      this.doorGroups = {
+        polo17_door_FL: [
+          this.model.getObjectByName('polo17_doorglass_FL001')!,
+          this.model.getObjectByName('polo17_doorpanel_FL')!,
+          this.model.getObjectByName('polo17_mirror_L')!
+        ],
+        polo17_door_FR: [
+          this.model.getObjectByName('polo17_doorglass_FL')!,
+          this.model.getObjectByName('polo17_doorpanel_FR')!,
+          this.model.getObjectByName('polo17_mirror_R')!
+        ],
+        polo17_door_RL: [
+          this.model.getObjectByName('polo17_doorglass_RR005')!,
+          this.model.getObjectByName('polo17_doorpanel_RL')!
+        ],
+        polo17_door_RR: [
+          this.model.getObjectByName('polo17_doorglass_RR004')!,
+          this.model.getObjectByName('polo17_doorpanel_RR')!
+        ]
+      }
+
       this.scene.add(this.model);
     }, undefined, (error) => {
       console.error('Error loading model:', error);
     });
   }
 
+  private animate(): void {
+    this.animationFrameId = requestAnimationFrame(() => this.animate());
+    this.controls.update();
+    this.renderer.render(this.scene, this.camera);
+  }
+
+  @HostListener('window:resize', [])
   private onWindowResize(): void {
     const container = this.viewerContainer.nativeElement;
     this.camera.aspect = container.clientWidth / container.clientHeight;
@@ -89,10 +143,61 @@ export class ModelViewerComponent implements OnInit {
     this.renderer.setSize(container.clientWidth, container.clientHeight);
   }
 
-  private animate(): void {
-    this.animationFrameId = requestAnimationFrame(() => this.animate());
-    this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+  @HostListener('click', ['$event'])
+  private onClick(event: MouseEvent): void {
+    const rect = this.viewerContainer.nativeElement.getBoundingClientRect();
+    this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+    this.raycaster.setFromCamera(this.mouse, this.camera);
+    const intersects = this.raycaster.intersectObjects(this.model.children, true);
+    console.log(111, intersects);
+
+    if (intersects.length > 0) {
+      const clickedObject = intersects[0].object;
+
+      let parent = clickedObject.parent;
+      while (parent) {
+        if (parent.name === this.frontLeftDoor.name) {
+          this.isFrontLeftDoorOpen = this.toggleDoor(this.frontLeftDoor, this.isFrontLeftDoorOpen, -1);
+          return;
+        } else if (parent.name === this.frontRightDoor.name) {
+          this.isFrontRightDoorOpen = this.toggleDoor(this.frontRightDoor, this.isFrontRightDoorOpen, 1);
+          return;
+        } else if (parent.name == this.backLeftDoor.name) {
+          this.isBackLeftDoorOpen = this.toggleDoor(this.backLeftDoor, this.isBackLeftDoorOpen, -1);
+          return;
+        } else if (parent.name === this.backRightDoor.name) {
+          this.isBackRightDoorOpen = this.toggleDoor(this.backRightDoor, this.isBackRightDoorOpen, 1);
+          return;
+        } else if (parent.name === this.carTrunk.name) {
+          this.isCarTrunkOpen = this.toggleDoor(this.carTrunk, this.isCarTrunkOpen, 1);
+          return;
+        } else if (parent.name.includes(this.carHood.name)) {
+          this.isCarHoodOpen = this.toggleDoor(this.carHood, this.isCarHoodOpen, -1);
+          return;
+        }
+        parent = parent.parent;
+      }
+
+    }
+  }
+
+  private toggleDoor(door: THREE.Object3D, isOpen: boolean, direction: number): boolean {
+    const rotation = isOpen ? 0 : THREE.MathUtils.degToRad(45) * direction;
+
+    if (door.name === "polo17_trunk" || door.name === "polo17_hood") {
+      door.rotation.x = rotation;
+    } else {
+      door.rotation.z = rotation
+    }
+
+    const relatedObjects = this.doorGroups[door.name] || [];
+    for (const obj of relatedObjects) {
+      obj.rotation.z = rotation;
+    }
+
+    return !isOpen;
   }
 
 }
