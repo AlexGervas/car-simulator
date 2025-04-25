@@ -2,6 +2,7 @@ import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader';
 
 @Component({
   selector: 'app-model-viewer',
@@ -48,31 +49,44 @@ export class ModelViewerComponent implements OnInit {
 
   private initScene(): void {
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xc0c0c0);
+    // this.scene.background = new THREE.Color(0xc0c0c0);
 
     const container = this.viewerContainer.nativeElement;
-    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(70, container.clientWidth / container.clientHeight, 0.1, 1000);
     this.camera.position.set(2, 3, 5);
     this.camera.lookAt(0, 0, 0);
 
     this.renderer = new THREE.WebGLRenderer({ antialias: true });
     this.renderer.setSize(container.clientWidth, container.clientHeight);
+    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     container.appendChild(this.renderer.domElement);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 2);
-    directionalLight.position.set(0, 10, 0);
-    directionalLight.castShadow = true;
-    this.scene.add(directionalLight);
+    const rgbeLoader = new RGBELoader();
+    // small_hangar_01_4k, rooftop_night_4k
+    rgbeLoader.load('hdri/small_hangar_01_4k.hdr', (texture) => {
+      texture.mapping = THREE.EquirectangularReflectionMapping;
+      this.scene.background = texture;
+      this.scene.environment = texture;
+    });
 
-    const directionalLightRight = new THREE.DirectionalLight(0xffffff, 1.5);
-    directionalLightRight.position.set(10, 5, 10);
-    this.scene.add(directionalLightRight);
-    const directionalLightLeft = new THREE.DirectionalLight(0xffffff, 1.5);
-    directionalLightLeft.position.set(-10, 5, 10);
-    this.scene.add(directionalLightLeft);
+    const planeGeometry = new THREE.PlaneGeometry(100, 100);
+    const planeMaterial = new THREE.MeshStandardMaterial({
+      color: 0x808080,
+      transparent: true,
+      opacity: 0.6
+    });
+    const plane = new THREE.Mesh(planeGeometry, planeMaterial);
+    plane.rotation.x = - Math.PI / 2;
+    this.scene.add(plane);
 
     const ambientLight = new THREE.AmbientLight(0x404040, 1.2);
     this.scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    directionalLight.position.set(10, 10, 10);
+    directionalLight.castShadow = true;
+    this.scene.add(directionalLight);
 
     this.controls = new OrbitControls(this.camera, this.renderer.domElement);
     this.controls.enableDamping = true;
@@ -92,7 +106,7 @@ export class ModelViewerComponent implements OnInit {
       const box = new THREE.Box3().setFromObject(this.model);
       const size = box.getSize(new THREE.Vector3());
       const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
-      this.model.scale.multiplyScalar(scaleFactor * 6);
+      this.model.scale.multiplyScalar(scaleFactor * 8);
 
       this.frontLeftDoor = this.model.getObjectByName('polo17_door_FL')!;
       this.frontRightDoor = this.model.getObjectByName('polo17_door_FR')!;
