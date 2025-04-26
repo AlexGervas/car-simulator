@@ -12,11 +12,7 @@ export class StartPageComponent {
   constructor(private router: Router) { }
 
   public startGame(level: string) {
-    this.router.navigate(['/game'], { queryParams: { level } });
-  }
-
-  public openModelViewer(): void {
-    this.router.navigate(['model-viewer'])
+    this.router.navigate(['/game/simulator'], { queryParams: { level } });
   }
 
 }
