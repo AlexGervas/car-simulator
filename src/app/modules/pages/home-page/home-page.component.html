@@ -1,3 +1,8 @@
-<button (click)="openStartGame()">Start game</button>
-<button (click)="openModelViewer()">Car inspection</button>
-<button (click)="openSettings()">Settings</button>
+<div class="container">
+    <mat-card class="card">
+        <button mat-raised-button color="primary" class="action-button" (click)="openStartGame()">Start Game</button>
+        <button mat-raised-button color="accent" class="action-button" (click)="openModelViewer()">Car
+            Inspection</button>
+        <button mat-raised-button color="warn" class="action-button" (click)="openSettings()">Settings</button>
+    </mat-card>
+</div>
