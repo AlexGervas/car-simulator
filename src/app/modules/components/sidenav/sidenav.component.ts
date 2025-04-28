@@ -16,7 +16,7 @@ export class SidenavComponent {
     this.router.navigate(['/']);
   }
 
-  startGame(level: string) {
-    this.router.navigate(['/game'], { queryParams: { level } });
+  navigateToLevelsPage() {
+    this.router.navigate(['/game']);
   }
 }
