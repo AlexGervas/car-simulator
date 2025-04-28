@@ -1,0 +1,56 @@
+.map-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.paper-texture {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: url('/textures/white-paper-texture.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    z-index: -1;
+}
+
+.map-button {
+    position: absolute;
+    background: none;
+    border: none;
+    cursor: pointer;
+    transform: translate(-50%, -50%);
+}
+
+.map-button img {
+    width: 200px;
+    height: 200px;
+    transition: transform 0.3s ease;
+}
+
+.map-button img:hover {
+    transform: scale(1.6);
+}
+
+@media (max-width: 768px) {
+    .map-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 20px;
+    }
+
+    .map-button {
+        position: static;
+        transform: none;
+    }
+
+    .map-button img {
+        width: 150px;
+        height: 150px;
+    }
+}

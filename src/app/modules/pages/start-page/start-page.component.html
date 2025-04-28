@@ -1,3 +1,13 @@
-<button (click)="startGame('snake')">Start snake</button>
-<button (click)="startGame('parallel-parking')">Start parallel parking</button>
-<button (click)="startGame('garage')">Start garage</button>
+<div class="map-container">
+    <div class="paper-texture"></div>
+
+    <button class="map-button" style="top: 20%; left: 30%;" (click)="startGame('snake')">
+        <img src="svg/snake.svg" alt="Snake Level" />
+    </button>
+    <button class="map-button" style="top: 20%; left: 60%;" (click)="startGame('parallel-parking')">
+        <img src="svg/parallel_parking.svg" alt="Parallel Parking Level" />
+    </button>
+    <button class="map-button" style="top: 60%; left: 60%;" (click)="startGame('garage')">
+        <img src="svg/garage_with_red_car.svg" alt="Garage Level" />
+    </button>
+</div>
