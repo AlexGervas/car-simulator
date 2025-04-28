@@ -119,8 +119,7 @@ export class TrafficConesComponent {
     return this.cones;
   }
 
-  public createParallelParking(): Promise<void> {
-    console.log('Start Parallel Parking');
+  private createParkingScene(offsetX: number, width: number, height: number, gap: number): Promise<void> {
     if (!this.car) {
       return Promise.reject("Car not defined");
     }
@@ -128,13 +127,10 @@ export class TrafficConesComponent {
     const carX = this.car.position.x;
     const carZ = this.car.position.z;
 
-    const offsetX = 2;
-    const width = 3;
-    const height = 4;
     const lineWidth = 0.1;
 
     const topZ = carZ - height;
-    const bottomZ = carZ - height - 8;
+    const bottomZ = carZ - height - gap;
 
     const centerZ = (topZ + bottomZ) / 2;
 
@@ -161,7 +157,7 @@ export class TrafficConesComponent {
     topLine.rotation.x = -Math.PI / 2;
     topLine.position.set((positions[0].x + positions[1].x) / 2, 0.01, positions[0].z);
     this.scene.add(topLine);
-    
+
     const bottomLineLength = positions[3].x - positions[2].x;
     const bottomLineGeometry = new THREE.PlaneGeometry(bottomLineLength, lineWidth);
     const bottomLine = new THREE.Mesh(bottomLineGeometry, lineMaterial);
@@ -173,7 +169,7 @@ export class TrafficConesComponent {
     const rightLineGeometry = new THREE.PlaneGeometry(lineWidth, rightLineLength);
     const rightLine = new THREE.Mesh(rightLineGeometry, lineMaterial);
     rightLine.rotation.x = -Math.PI / 2;
-    rightLine.position.set(positions[1].x,0.01, (positions[1].z + positions[3].z) / 2);
+    rightLine.position.set(positions[1].x, 0.01, (positions[1].z + positions[3].z) / 2);
     this.scene.add(rightLine);
 
     const dashSize = 0.5;
@@ -185,11 +181,22 @@ export class TrafficConesComponent {
     for (let i = 0; i < dashCount; i++) {
       const dashGeometry = new THREE.PlaneGeometry(lineWidth, dashSize);
       const dash = new THREE.Mesh(dashGeometry, lineMaterial);
-      dash.rotation.x = -Math.PI / 2; dash.position.set(positions[0].x, 0.01, startZ - i * (dashSize + gapSize) - dashSize / 2);
+      dash.rotation.x = -Math.PI / 2;
+      dash.position.set(positions[0].x, 0.01, startZ - i * (dashSize + gapSize) - dashSize / 2);
       this.scene.add(dash);
     }
 
     return this.loadConeModel(positions.length, 0, 0, positions, false);
+  }
+
+  public createParallelParking(): Promise<void> {
+    console.log('Start Parallel Parking');
+    return this.createParkingScene(3, 3, 4, 8);
+  }
+
+  public createGarage(): Promise<void> {
+    console.log('Start Garage');
+    return this.createParkingScene(4, 6, 4, 4);
   }
 
   public createSnake(): Promise<void> {

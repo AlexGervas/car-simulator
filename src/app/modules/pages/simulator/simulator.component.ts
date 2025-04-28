@@ -52,7 +52,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public temporaryBlockDialog: boolean = false;
   public isResultDialogShown: boolean = false;
 
-  private currentLevel: 'parallel-parking' | 'snake' | null = null;
+  private currentLevel: 'parallel-parking' | 'snake' | 'garage' | null = null;
   private wheels: Record<string, THREE.Object3D> = {};
 
   private stopCheckTimeout: number | null = null;
@@ -138,8 +138,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     return this.clearLevelScene().then(() => {
       if (level === 'snake') {
         return this.initSnakeScene();
-      } else {
+      } else if (level === 'parallel-parking') {
         return this.initParallelParkingScene();
+      } else {
+        return this.initGarageScene();
       }
     }).then(() => {
       this.modelsLoaderService.hide();
@@ -187,6 +189,20 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       .catch((error) => {
         console.error('Error initialization of the ParallelParking scene:', error);
       });
+  }
+
+  private initGarageScene(): Promise<void> {
+    this.exerciseStarted = false;
+    this.checkDialogShown = false;
+    this.stoppedOnce = false;
+    this.isCheckingConditions = false;
+
+    console.log('Initializing the Garage scene');
+    return this.trafficCones.createGarage().then(() => {
+      console.log('Garage scene is ready.');
+    }).catch(error => {
+      console.error('Error initialization of the Garage scene:', error);
+    });
   }
 
   public startGame() {
@@ -474,7 +490,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           this.controlsEnabled = true;
         }
       }
-    } else if (this.currentLevel === "parallel-parking") {
+    } else if (this.currentLevel === "parallel-parking" || this.currentLevel === "garage") {
       if (!this.isMovingForward && !this.isMovingBackward) {
         if (this.exerciseStarted && !this.checkDialogShown) {
           if (this.shouldShowCheckDialog()) {
@@ -546,11 +562,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         errorMessage += `Машина задела ${this.hitConeCount} конус(ы). \n`;
       }
 
-      const carRotationTolerance = 0.1;
-      const carRotation = this.car.rotation.y % (2 * Math.PI);
-      const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
-      if (!isParallel) {
-        errorMessage += "Машина не параллельна конусам.\n";
+      if (this.currentLevel === 'parallel-parking') {
+        const carRotationTolerance = 0.1;
+        const carRotation = this.car.rotation.y % (2 * Math.PI);
+        const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
+        if (!isParallel) {
+          errorMessage += "Машина не параллельна конусам.\n";
+        }
       }
 
       const { preciseMatch, nearMatch } = this.trafficCones.checkCarInsideParkingPocket();
