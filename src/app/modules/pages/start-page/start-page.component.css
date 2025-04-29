@@ -25,6 +25,31 @@
     transform: translate(-50%, -50%);
 }
 
+.map-button::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(20, 4, 141, 0.851);
+    color: #fff;
+    padding: 5px 8px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: nowrap;
+    box-shadow: 0 2px 4px rgba(3, 7, 116, 0.3);
+    z-index: 10;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    pointer-events: none;
+}
+
+.map-button:hover::after {
+    opacity: 1;
+    visibility: visible;
+}
+
 .map-button img {
     width: 200px;
     height: 200px;
