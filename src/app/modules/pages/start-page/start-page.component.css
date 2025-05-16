@@ -78,4 +78,9 @@
         width: 150px;
         height: 150px;
     }
+
+    .map-button::after {
+        display: none;
+    }
+
 }

@@ -5,7 +5,7 @@
 <div class="container">
     <app-loader></app-loader>
     <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
-    <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera"></app-traffic-cones>
+    <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera" [world]="world"></app-traffic-cones>
 
     <div class="controls" *ngIf="isMobileDevice">
         <div class="up-control">

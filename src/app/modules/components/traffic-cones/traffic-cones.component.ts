@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ConeStateService } from '../../../core/services/cone-state.service';
 import { StopLineService } from '../../../core/services/stop-line.service';
+import * as CANNON from 'cannon-es';
 
 @Component({
   selector: 'app-traffic-cones',
@@ -14,6 +15,7 @@ import { StopLineService } from '../../../core/services/stop-line.service';
 export class TrafficConesComponent {
   @Input() camera!: THREE.PerspectiveCamera;
   @Input() car!: THREE.Object3D;
+  @Input() world!: CANNON.World;
 
   public cones: THREE.Object3D[] = [];
   public initialConePositions: THREE.Vector3[] = [];
@@ -23,6 +25,7 @@ export class TrafficConesComponent {
   private parkingPocket: THREE.Box3 | null = null;
 
   private coneBoxes: THREE.Box3[] = [];
+  private bridgeBody?: CANNON.Body;
 
   constructor(private coneStateService: ConeStateService, private stopLineService: StopLineService) {
     this.loader = new GLTFLoader();
@@ -103,7 +106,7 @@ export class TrafficConesComponent {
         throw new Error("Cones are not loaded!");
       }
       console.log('All cones loaded');
-      if(withStopLine) { 
+      if (withStopLine) {
         this.stopLineService.callCreateStopLine();
       }
     }).catch((error) => {
@@ -190,12 +193,10 @@ export class TrafficConesComponent {
   }
 
   public createParallelParking(): Promise<void> {
-    console.log('Start Parallel Parking');
     return this.createParkingScene(3, 3, 4, 8);
   }
 
   public createGarage(): Promise<void> {
-    console.log('Start Garage');
     return this.createParkingScene(4, 6, 4, 4);
   }
 
@@ -210,6 +211,34 @@ export class TrafficConesComponent {
         return;
       }
       return this.stopLineService.callCreateStopLine();
+    });
+  }
+
+  public createSteepGrade(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const loader = new GLTFLoader();
+      const bridgePath = 'models/road-elements/bridge.glb';
+
+      loader.load(bridgePath, (gltf) => {
+        const model = gltf.scene;
+        model.scale.set(0.5, 0.5, 0.5);
+        model.position.set(-2, 0, -30);
+        model.rotateY(Math.PI / 2);
+
+        const bridgeShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 20));
+        this.bridgeBody = new CANNON.Body({
+          mass: 0,
+          shape: bridgeShape,
+          position: new CANNON.Vec3(-2, 0, -30),
+        });
+
+        this.world.addBody(this.bridgeBody);
+
+        this.scene.add(model);
+        resolve();
+      }, undefined, (error) => {
+        reject(error);
+      });
     });
   }
 

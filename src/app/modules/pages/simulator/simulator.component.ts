@@ -11,6 +11,7 @@ import { LoaderComponent } from '../../../shared/loader/loader.component';
 import { ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogComponent } from '../../../shared/dialog/dialog.component';
+import * as CANNON from 'cannon-es';
 
 @Component({
   selector: 'app-simulator',
@@ -24,15 +25,23 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
 
+  public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
+  private carBody!: CANNON.Body;
+  private vehicle!: CANNON.RaycastVehicle;
   private scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
   private asphaltTexture!: THREE.Texture;
 
-  private forwardSpeed: number = 0.04;
-  private backwardSpeed: number = 0.02;
-  private turnSpeed: number = 0.01;
+  private currentSpeed: number = 0;
+  private accelerationRate: number = 1;
+  private decelerationRate: number = 1;
+  private turnRate: number = 1;
+  private maxSpeed: number = 5;
+  private wheelKeys: string[] = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
+
+  private turnSpeed: number = 1;
   public hitConeCount: number = 0;
   public conesPassed: number = 0;
   private frontWheelAngle: number = 0;
@@ -52,8 +61,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public temporaryBlockDialog: boolean = false;
   public isResultDialogShown: boolean = false;
 
-  private currentLevel: 'parallel-parking' | 'snake' | 'garage' | null = null;
+  private currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' | null = null;
   private wheels: Record<string, THREE.Object3D> = {};
+  private wheelData: Record<string, { radius: number; position: THREE.Vector3 }> = {};
+  private clock!: THREE.Clock;
 
   private stopCheckTimeout: number | null = null;
   private isCheckingConditions: boolean = false;
@@ -69,6 +80,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   async ngOnInit() {
     this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
+    this.clock = new THREE.Clock();
+    this.world = new CANNON.World();
+    this.world.gravity.set(0, -9.82, 0);
     this.init();
 
     try {
@@ -87,6 +101,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
       const checkTrafficCones = setInterval(() => {
         if (this.trafficCones) {
+          this.trafficCones.world = this.world;
           clearInterval(checkTrafficCones);
           this.initLevel(level);
         }
@@ -140,8 +155,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         return this.initSnakeScene();
       } else if (level === 'parallel-parking') {
         return this.initParallelParkingScene();
-      } else {
+      } else if(level === 'garage') {
         return this.initGarageScene();
+      } else {
+        return this.initSteepGradeScene();
       }
     }).then(() => {
       this.modelsLoaderService.hide();
@@ -205,6 +222,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     });
   }
 
+  private initSteepGradeScene(): Promise<void> {
+    return this.trafficCones.createSteepGrade();
+  }
+
   public startGame() {
     this.isGameOver = false;
     this.controlsEnabled = false;
@@ -257,33 +278,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.asphaltTexture.wrapS = THREE.RepeatWrapping;
     this.asphaltTexture.wrapT = THREE.RepeatWrapping;
     this.asphaltTexture.repeat.set(3, 3);
-
-
-    // const texture = textureLoader.load('textures/snow.jpg', () => {
-    //   this.scene.background = texture;
-    // });
-
-    // const grassTexture = textureLoader.load('textures/green-grass.jpg');
-    // const skyTexture = textureLoader.load('textures/sky.jpg');
-
-    // const grassGeometry = new THREE.PlaneGeometry(100, 100);
-    // const grassMaterial = new THREE.MeshBasicMaterial({ map: grassTexture });
-    // const grass = new THREE.Mesh(grassGeometry, grassMaterial);
-    // grass.rotation.x = -Math.PI / 2;
-    // grass.position.y = 0;
-
-    // this.scene.add(grass);
-
-    // const skyGeometry = new THREE.PlaneGeometry(100, 100);
-    // const skyMaterial = new THREE.MeshBasicMaterial({ map: skyTexture, side: THREE.BackSide });
-    // const sky = new THREE.Mesh(skyGeometry, skyMaterial);
-    // sky.rotation.x = Math.PI / 2;
-    // sky.position.y = 50;
-
-    // this.scene.add(sky);
   }
 
-  private loadCarModel(): Promise<THREE.Object3D> {
+  private async loadCarModel(): Promise<THREE.Object3D> {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       loader.load('models/cars/vw_polo_final.glb', (gltf: GLTF) => {
@@ -296,19 +293,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         const size = box.getSize(new THREE.Vector3());
         const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
         this.car.scale.multiplyScalar(scaleFactor * 5);
+        const finalHeight = size.y * scaleFactor * 5;
 
-        this.car.traverse((child) => {
-          if (child.name === 'Wheel_1_R') {
-            this.wheels['frontRight'] = child;
-          } else if (child.name === "Wheel_1_L") {
-            this.wheels['frontLeft'] = child;
-          } else if (child.name === "Wheel_2_R") {
-            this.wheels['backRight'] = child;
-          } else if (child.name === "Wheel_2_L") {
-            this.wheels['backLeft'] = child;
-          }
-        })
-        console.log("wheels: ", this.wheels)
+        this.createPhysicsCarBody(finalHeight);
+        this.createPhysicsGroundBody();
+        this.createPhysicsWheels(scaleFactor);
 
         this.scene.add(this.car);
         this.updateTiles();
@@ -318,6 +307,82 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         reject(error);
       });
     });
+  }
+
+  private createPhysicsCarBody(finalHeight: number): void {
+    const carShape = new CANNON.Box(new CANNON.Vec3(2, 0.5, 3));
+    this.carBody = new CANNON.Body({ mass: 150, position: new CANNON.Vec3(0, finalHeight / 2, 0), shape: carShape });
+    this.carBody.quaternion.setFromEuler(0, Math.PI, 0);
+    this.world.addBody(this.carBody);
+
+    this.vehicle = new CANNON.RaycastVehicle({
+      chassisBody: this.carBody,
+      indexRightAxis: 0,
+      indexUpAxis: 1,
+      indexForwardAxis: 2
+    });
+  }
+
+  private createPhysicsGroundBody(): void {
+    const groundMaterial = new CANNON.Material('groundMaterial');
+    const groundBody = new CANNON.Body({
+      mass: 0,
+      material: groundMaterial,
+    });
+    groundBody.addShape(new CANNON.Plane());
+    groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
+    this.world.addBody(groundBody);
+
+    const wheelMaterial = new CANNON.Material('wheelMaterial');
+    const contactMaterial = new CANNON.ContactMaterial(groundMaterial, wheelMaterial, {
+      friction: 0.5,
+      restitution: 0.1
+    });
+    this.world.addContactMaterial(contactMaterial);
+  }
+
+  private createPhysicsWheels(scaleFactor: number): void {
+    this.car.traverse((child) => {
+      if (child.name === 'Wheel_1_R') {
+        this.wheels['frontRight'] = child;
+      } else if (child.name === "Wheel_1_L") {
+        this.wheels['frontLeft'] = child;
+      } else if (child.name === "Wheel_2_R") {
+        this.wheels['backRight'] = child;
+      } else if (child.name === "Wheel_2_L") {
+        this.wheels['backLeft'] = child;
+      }
+
+      if (['Wheel_1_R', 'Wheel_1_L', 'Wheel_2_R', 'Wheel_2_L'].includes(child.name)) {
+        const wheelBox = new THREE.Box3().setFromObject(child);
+        const wheelSize = wheelBox.getSize(new THREE.Vector3());
+        const radius = Math.max(wheelSize.x, wheelSize.y, wheelSize.z) / 2 * scaleFactor * 5;
+        this.wheelData[child.name] = {
+          radius,
+          position: child.position.clone()
+        };
+      }
+    });
+    console.log("wheels: ", this.wheels)
+
+    Object.keys(this.wheelData).forEach((wheelName) => {
+      const wheel = this.wheelData[wheelName];
+
+      this.vehicle.addWheel({
+        chassisConnectionPointLocal: new CANNON.Vec3(wheel.position.x, wheel.position.y, wheel.position.z),
+        axleLocal: new CANNON.Vec3(-1, 0, 0),
+        directionLocal: new CANNON.Vec3(0, -1, 0),
+        radius: wheel.radius,
+        suspensionRestLength: 0.2,
+        suspensionStiffness: 20,
+        maxSuspensionForce: 50,
+        dampingRelaxation: 1,
+        dampingCompression: 20,
+        frictionSlip: 20
+      });
+    });
+
+    this.vehicle.addToWorld(this.world);
   }
 
   private createTile(x: number, z: number) {
@@ -349,9 +414,22 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
+  private animatePhysics(deltaTime: number): void {
+    const fixedTimeStep = 1 / 60;
+    const maxSubSteps = 3;
+    this.world.step(fixedTimeStep, deltaTime, maxSubSteps);
+
+    if (this.carBody) {
+      this.car.position.set(this.carBody.position.x, this.carBody.position.y, this.carBody.position.z);
+      this.car.quaternion.set(this.carBody.quaternion.x, this.carBody.quaternion.y, this.carBody.quaternion.z, this.carBody.quaternion.w);
+    }
+  }
+
   private animate() {
     requestAnimationFrame(() => this.animate());
-    this.updateCarPosition();
+    const deltaTime = this.clock.getDelta();
+    this.animatePhysics(deltaTime);
+    this.updateCarPosition(deltaTime);
     this.updateCameraPosition();
     this.renderer.render(this.scene, this.camera);
   }
@@ -370,102 +448,114 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
-  private updateCarPosition() {
+  private updateCarPosition(deltaTime: number) {
     if (this.car && !this.isGameOver) {
       const direction = new THREE.Vector3();
       this.car.getWorldDirection(direction);
       direction.y = 0;
       direction.normalize();
 
-      const newPosition = this.car.position.clone();
-      let distance = 0;
-
       if (this.isMovingForward) {
-        const moveStep = this.forwardSpeed;
-        newPosition.add(direction.clone().multiplyScalar(moveStep));
-        distance = moveStep;
-      } 
-      if (this.isMovingBackward) {
-        const moveStep = -this.backwardSpeed;
-        newPosition.add(direction.clone().multiplyScalar(moveStep));
-        distance = moveStep;
-      }
-
-      if (this.isMovingForward || this.isMovingBackward) {
-        this.car.position.copy(newPosition);
-        this.rotateWheels(distance);
-      }
-
-      if (this.isMovingForward && this.isTurningLeft) {
-        this.car.rotation.y += this.turnSpeed;
-      } else if (this.isMovingForward && this.isTurningRight) {
-        this.car.rotation.y -= this.turnSpeed;
-      }
-
-      if (this.isMovingBackward && this.isTurningLeft) {
-        this.car.rotation.y -= this.turnSpeed;
-      } else if (this.isMovingBackward && this.isTurningRight) {
-        this.car.rotation.y += this.turnSpeed;
-      }
-
-      const collisionMargin = -0.8;
-      const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
-
-      let collisionDetected = false;
-
-      for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
-        const coneBox = this.trafficCones.getConeBoxes()[i];
-
-        if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen(i)) {
-          this.hitConeCount++;
-          const cone = this.trafficCones.getCones()[i];
-
-          if (cone) {
-            const fallDirection = new THREE.Vector3().subVectors(cone.position, this.car.position).normalize();
-            this.trafficCones.animateConeFall(cone, fallDirection);
-            this.coneStateService.setConeFallen(i);
-          } else {
-            console.error('Cone not found at index:', i);
-          }
+        this.currentSpeed += this.accelerationRate * deltaTime;
+      } else if (this.isMovingBackward) {
+        this.currentSpeed -= this.decelerationRate * deltaTime;
+      } else {
+        if (this.currentSpeed > 0) {
+          this.currentSpeed -= this.decelerationRate * deltaTime;
+        } else if (this.currentSpeed < 0) {
+          this.currentSpeed += this.decelerationRate * deltaTime;
         }
       }
 
-      if (!collisionDetected) {
-        this.car.position.copy(newPosition);
+      this.currentSpeed = Math.max(-this.maxSpeed, Math.min(this.currentSpeed, this.maxSpeed));
+
+      const currentVelocity = this.carBody.velocity;
+      this.carBody.velocity.set(direction.x * this.currentSpeed, currentVelocity.y, direction.z * this.currentSpeed);
+
+      if (this.isMovingForward) {
+        if (this.isTurningLeft) {
+          this.carBody.angularVelocity.y = this.turnRate;
+        } else if (this.isTurningRight) {
+          this.carBody.angularVelocity.y = -this.turnRate;
+        } else {
+          this.carBody.angularVelocity.y = 0;
+        }
+      } else if (this.isMovingBackward) {
+        if (this.isTurningLeft) {
+          this.carBody.angularVelocity.y = -this.turnRate;
+        } else if (this.isTurningRight) {
+          this.carBody.angularVelocity.y = this.turnRate;
+        } else {
+          this.carBody.angularVelocity.y = 0;
+        }
+      } else {
+        this.carBody.angularVelocity.y = 0;
       }
 
+      const euler = new CANNON.Vec3();
+      this.carBody.quaternion.toEuler(euler);
+      this.carBody.quaternion.setFromEuler(0, euler.y, 0);
+
+      this.car.position.copy(this.carBody.position);
+      this.car.quaternion.copy(this.carBody.quaternion);
+
+      this.rotateWheels();
+
+      this.checkCollisionWithCones();
       this.checkGameOverConditions();
     }
   }
 
-  private rotateWheels(distance: number): void {
-    const rotationAngle = distance / (2 * Math.PI * 0.5);
-    if (this.wheels['backLeft']) {
-      this.wheels['backLeft'].rotateX(-rotationAngle);
+  private checkCollisionWithCones() {
+    const collisionMargin = -0.8;
+    const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
+
+    let collisionDetected = false;
+
+    for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
+      const coneBox = this.trafficCones.getConeBoxes()[i];
+
+      if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen(i)) {
+        this.hitConeCount++;
+        const cone = this.trafficCones.getCones()[i];
+
+        if (cone) {
+          const fallDirection = new THREE.Vector3().subVectors(cone.position, this.car.position).normalize();
+          this.trafficCones.animateConeFall(cone, fallDirection);
+          this.coneStateService.setConeFallen(i);
+        } else {
+          console.error('Cone not found at index:', i);
+        }
+      }
     }
-    if (this.wheels['backRight']) {
-      this.wheels['backRight'].rotateX(-rotationAngle);
-    }
-    
-    if (this.wheels['frontLeft']) {
-      this.wheels['frontLeft'].rotateX(-rotationAngle);
-    }
-    if (this.wheels['frontRight']) {
-      this.wheels['frontRight'].rotateX(-rotationAngle);
-    }
+
+    /*if (!collisionDetected) {
+      this.car.position.copy(newPosition);
+    }*/
+  }
+
+  private rotateWheels(): void {
+    this.vehicle.wheelInfos.forEach((wheel, index) => {
+      const key = this.wheelKeys[index];
+      const wheelObject = this.wheels[key];
+
+      if (wheelObject) {
+        const { position, quaternion } = wheel.worldTransform;
+        wheelObject.position.set(position.x, position.y, position.z);
+        const rotationAngle = wheel.deltaRotation;
+        wheelObject.rotateX(rotationAngle);
+      }
+    });
   }
 
   private updateFrontWheels() {
     if (this.wheels) {
+      const frontWheelAngle = this.isTurningLeft ? Math.PI / 6 : this.isTurningRight ? -Math.PI / 6 : 0;
       if (this.wheels['frontLeft']) {
-        this.wheels['frontLeft'].rotation.x = 0;
-        this.wheels['frontLeft'].rotation.y = 0;
-        this.wheels['frontLeft'].rotation.z = this.frontWheelAngle;
+        this.wheels['frontLeft'].rotation.set(0, 0, frontWheelAngle);
       }
       if (this.wheels['frontRight']) {
-        this.wheels['frontRight'].rotation.x = 0;
-        this.wheels['frontRight'].rotation.y = 0;
-        this.wheels['frontRight'].rotation.z = this.frontWheelAngle;
+        this.wheels['frontRight'].rotation.set(0, 0, frontWheelAngle);
       }
     }
   }
