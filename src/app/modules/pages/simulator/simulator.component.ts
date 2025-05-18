@@ -45,6 +45,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public hitConeCount: number = 0;
   public conesPassed: number = 0;
   private frontWheelAngle: number = 0;
+  private finalHeight: number = 0;
+  private scaleFactor: number = 0;
 
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
@@ -241,6 +243,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.car.position.set(0, 0, 0);
     this.car.rotation.set(0, Math.PI, 0);
 
+    if (this.carBody) {
+      this.world.removeBody(this.carBody);
+    }
+    this.createPhysicsCarBody(this.finalHeight);
+    this.currentSpeed = 0;
+    this.vehicle.wheelInfos.forEach(wheel => {
+      wheel.deltaRotation = 0;
+    });
+    this.createPhysicsWheels(this.scaleFactor);
+
     this.checkDialogShown = false;
     this.stoppedOnce = false;
     this.isCheckingConditions = false;
@@ -291,13 +303,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
         const box = new THREE.Box3().setFromObject(this.car);
         const size = box.getSize(new THREE.Vector3());
-        const scaleFactor = 1 / Math.max(size.x, size.y, size.z);
-        this.car.scale.multiplyScalar(scaleFactor * 5);
-        const finalHeight = size.y * scaleFactor * 5;
+        this.scaleFactor = 1 / Math.max(size.x, size.y, size.z);
+        this.car.scale.multiplyScalar(this.scaleFactor * 5);
+        this.finalHeight = size.y * this.scaleFactor * 5;
 
-        this.createPhysicsCarBody(finalHeight);
+        this.createPhysicsCarBody(this.finalHeight);
         this.createPhysicsGroundBody();
-        this.createPhysicsWheels(scaleFactor);
+        this.createPhysicsWheels(this.scaleFactor);
 
         this.scene.add(this.car);
         this.updateTiles();
@@ -540,6 +552,18 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       const wheelObject = this.wheels[key];
 
       if (wheelObject) {
+        const wheelRadius = wheel.radius;
+        const speedFactor = Math.abs(this.currentSpeed) / this.maxSpeed;
+        const desiredDeltaRotation = (this.currentSpeed / wheelRadius) * (1 / 60);
+
+        if (Math.abs(this.currentSpeed) < 0.1) {
+          wheel.deltaRotation = Math.max(0, wheel.deltaRotation - (this.decelerationRate * speedFactor / wheelRadius));
+        } else {
+          const interpolationFactor = 0.00001;
+          wheel.deltaRotation += (desiredDeltaRotation - wheel.deltaRotation) * interpolationFactor;
+        }
+        wheel.deltaRotation = Math.max(-2, Math.min(2, wheel.deltaRotation));
+
         const { position, quaternion } = wheel.worldTransform;
         wheelObject.position.set(position.x, position.y, position.z);
         const rotationAngle = wheel.deltaRotation;
