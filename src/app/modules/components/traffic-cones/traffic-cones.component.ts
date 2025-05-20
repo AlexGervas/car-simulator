@@ -4,6 +4,7 @@ import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ConeStateService } from '../../../core/services/cone-state.service';
 import { StopLineService } from '../../../core/services/stop-line.service';
 import * as CANNON from 'cannon-es';
+import { SimulatorComponent } from '../../pages/simulator/simulator.component';
 
 @Component({
   selector: 'app-traffic-cones',
@@ -17,7 +18,10 @@ export class TrafficConesComponent {
   @Input() car!: THREE.Object3D;
   @Input() world!: CANNON.World;
 
+  public static GROUP_CONE = 2;
+
   public cones: THREE.Object3D[] = [];
+  public coneBodies: CANNON.Body[] = [];
   public initialConePositions: THREE.Vector3[] = [];
   private scene!: THREE.Scene;
   private loader: GLTFLoader;
@@ -70,6 +74,7 @@ export class TrafficConesComponent {
       const promise = new Promise<void>((resolve, reject) => {
         this.loader.load(trafficConePath, (gltf) => {
           const cone = gltf.scene;
+          cone.scale.set(1, 1, 1);
           this.scene.add(cone);
           this.cones.push(cone);
 
@@ -83,13 +88,15 @@ export class TrafficConesComponent {
           } else {
             const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
             const xPosition = this.car.position.x;
-            conePosition = new THREE.Vector3(xPosition, 0.2, zPosition);
+            conePosition = new THREE.Vector3(xPosition, 0.3, zPosition);
           }
 
           cone.position.copy(conePosition);
           cone.rotation.y = Math.PI;
 
           this.initialConePositions.push(cone.position.clone());
+
+          this.createPhysicsConeModel(conePosition);
 
           const coneBox = new THREE.Box3().setFromObject(cone);
           this.coneBoxes.push(coneBox);
@@ -112,6 +119,20 @@ export class TrafficConesComponent {
     }).catch((error) => {
       console.error('Error loading some cones:', error)
     });
+  }
+
+  private createPhysicsConeModel(position: THREE.Vector3): void {
+    const coneShape = new CANNON.Cylinder(0.01, 0.01, 0.3, 8);
+    const coneBody = new CANNON.Body({
+      mass: 1,
+      position: new CANNON.Vec3(position.x, position.y, position.z),
+      collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
+      collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_GROUND,
+      material: new CANNON.Material({ restitution: 0.5 })
+    });
+    coneBody.addShape(coneShape);
+    this.world.addBody(coneBody);
+    this.coneBodies.push(coneBody);
   }
 
   public getConeBoxes(): THREE.Box3[] {

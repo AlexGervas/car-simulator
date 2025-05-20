@@ -25,6 +25,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
 
+  public static GROUP_CAR = 1;
+  public static GROUP_GROUND = 4;
+
   public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
@@ -36,7 +39,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private currentSpeed: number = 0;
   private accelerationRate: number = 1;
-  private decelerationRate: number = 1;
+  private decelerationRate: number = 5;
   private turnRate: number = 1;
   private maxSpeed: number = 5;
   private wheelKeys: string[] = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
@@ -323,7 +326,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private createPhysicsCarBody(finalHeight: number): void {
     const carShape = new CANNON.Box(new CANNON.Vec3(2, 0.5, 3));
-    this.carBody = new CANNON.Body({ mass: 150, position: new CANNON.Vec3(0, finalHeight / 2, 0), shape: carShape });
+    this.carBody = new CANNON.Body({ 
+      mass: 150, 
+      position: new CANNON.Vec3(0, finalHeight / 2, 0), 
+      shape: carShape,
+      collisionFilterGroup: SimulatorComponent.GROUP_CAR,
+      collisionFilterMask: SimulatorComponent.GROUP_GROUND | TrafficConesComponent.GROUP_CONE
+    });
     this.carBody.quaternion.setFromEuler(0, Math.PI, 0);
     this.world.addBody(this.carBody);
 
@@ -340,6 +349,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     const groundBody = new CANNON.Body({
       mass: 0,
       material: groundMaterial,
+      collisionFilterGroup: SimulatorComponent.GROUP_GROUND,
+      collisionFilterMask: SimulatorComponent.GROUP_CAR | TrafficConesComponent.GROUP_CONE
     });
     groundBody.addShape(new CANNON.Plane());
     groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
@@ -467,6 +478,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       direction.y = 0;
       direction.normalize();
 
+      const maxReverseSpeed = this.maxSpeed / 4;
+
       if (this.isMovingForward) {
         this.currentSpeed += this.accelerationRate * deltaTime;
       } else if (this.isMovingBackward) {
@@ -479,7 +492,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         }
       }
 
-      this.currentSpeed = Math.max(-this.maxSpeed, Math.min(this.currentSpeed, this.maxSpeed));
+      this.currentSpeed = Math.max(-maxReverseSpeed, Math.min(this.currentSpeed, this.maxSpeed));
 
       const currentVelocity = this.carBody.velocity;
       this.carBody.velocity.set(direction.x * this.currentSpeed, currentVelocity.y, direction.z * this.currentSpeed);
@@ -519,31 +532,37 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private checkCollisionWithCones() {
-    const collisionMargin = -0.8;
+    const collisionMargin = 0.05;
     const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
+    const distanceThreshold = 1;
 
-    let collisionDetected = false;
-
-    for (let i = 0; i < this.trafficCones.getConeBoxes().length; i++) {
+    for (let i = 0; i < this.trafficCones.coneBodies.length; i++) {
+      const coneBody = this.trafficCones.coneBodies[i];
       const coneBox = this.trafficCones.getConeBoxes()[i];
+
+      const cone = this.trafficCones.getCones()[i];
+      const distance = this.car.position.distanceTo(cone.position);
+
+      if (distance > distanceThreshold) {
+        continue;
+      }
 
       if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen(i)) {
         this.hitConeCount++;
-        const cone = this.trafficCones.getCones()[i];
 
         if (cone) {
           const fallDirection = new THREE.Vector3().subVectors(cone.position, this.car.position).normalize();
+          fallDirection.y = 0.3;
           this.trafficCones.animateConeFall(cone, fallDirection);
           this.coneStateService.setConeFallen(i);
+
+          const force = new CANNON.Vec3(fallDirection.x * 10, 5, fallDirection.z * 10);
+          coneBody.applyForce(force, coneBody.position);
         } else {
           console.error('Cone not found at index:', i);
         }
       }
     }
-
-    /*if (!collisionDetected) {
-      this.car.position.copy(newPosition);
-    }*/
   }
 
   private rotateWheels(): void {
