@@ -13,11 +13,12 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogComponent } from '../../../shared/dialog/dialog.component';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
+import { BridgeComponent } from '../../components/bridge/bridge.component';
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [CommonModule, LoaderComponent, TrafficConesComponent],
+  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
@@ -25,21 +26,19 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
+  @ViewChild(BridgeComponent) bridge!: BridgeComponent;
 
   public static GROUP_CAR = 1;
   public static GROUP_GROUND = 4;
-  public static GROUP_BRIDGE = 8;
 
   public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
   private carBody!: CANNON.Body;
   private vehicle!: CANNON.RaycastVehicle;
-  private scene!: THREE.Scene;
+  public scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
   private asphaltTexture!: THREE.Texture;
-  private bridgeBody!: CANNON.Body;
-  private bridgeShape!: CANNON.Trimesh;
 
   private currentSpeed: number = 0;
   private accelerationRate: number = 1;
@@ -232,117 +231,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private initSteepGradeScene(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const loader = new GLTFLoader();
-      const bridgePath = 'models/road-elements/bridge.glb';
-
-      loader.load(bridgePath, (gltf) => {
-        const model = gltf.scene;
-        model.scale.set(0.001, 0.001, 0.001);
-        model.position.set(-4, 0, -70);
-        model.rotateY(Math.PI / 2);
-        this.scene.add(model);
-
-        this.createPhysicsSteepGrade(model);
-        resolve();
-      }, undefined, (error) => {
-        reject(error);
-      });
-
+    return this.bridge.createBridge().then(() => {
+      console.log("Bridge model and physics was added!");
     });
-  }
-
-  private createPhysicsSteepGrade(model: THREE.Object3D): void {
-    const roadVertices: number[] = [];
-    const roadIndices: number[] = [];
-
-    const findObjectByName = (object: THREE.Object3D, name: string): THREE.Mesh | null => {
-      if ((object as THREE.Mesh).isMesh && object.name === name) {
-        return object as THREE.Mesh;
-      }
-
-      for (const child of object.children) {
-        const found = findObjectByName(child, name);
-        if (found) return found;
-      }
-
-      return null;
-    };
-
-    const roadMesh = findObjectByName(model, "Plane003");
-
-    const geometry = roadMesh!.geometry as THREE.BufferGeometry;
-    const positionAttribute = geometry.getAttribute("position");
-    const worldScale = new THREE.Vector3();
-    model.getWorldScale(worldScale);
-
-    const roadWorldPosition = new THREE.Vector3();
-    roadMesh!.getWorldPosition(roadWorldPosition);
-
-    if (positionAttribute) {
-      const tempVector = new THREE.Vector3();
-      for (let i = 0; i < positionAttribute.count; i++) {
-        tempVector.set(
-          positionAttribute.getX(i),
-          positionAttribute.getY(i),
-          positionAttribute.getZ(i)
-        );
-        tempVector.x *= 0.65;
-
-        tempVector.multiply(worldScale);
-        tempVector.applyAxisAngle(new THREE.Vector3(0, 0, 1), Math.PI / 2);
-        roadVertices.push(tempVector.x, tempVector.y, tempVector.z);
-      }
-    }
-
-    const indices = geometry.getIndex();
-    if (indices) {
-      roadIndices.push(...indices.array);
-    }
-
-    if (roadVertices.length === 0 || roadIndices.length === 0) {
-      console.error("No valid geometry found for road physics!");
-      return;
-    }
-
-    this.bridgeShape = new CANNON.Trimesh(roadVertices, roadIndices);
-    const bridgeMaterial = new CANNON.Material("bridgeMaterial");
-
-    this.bridgeBody = new CANNON.Body({
-      mass: 0,
-      material: bridgeMaterial,
-      position: new CANNON.Vec3(roadWorldPosition.x, roadWorldPosition.y, roadWorldPosition.z),
-      collisionFilterGroup: SimulatorComponent.GROUP_BRIDGE,
-      collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_GROUND,
-    });
-
-    const worldQuaternion = new THREE.Quaternion();
-    model.getWorldQuaternion(worldQuaternion);
-
-    this.bridgeBody.quaternion.set(
-      worldQuaternion.x,
-      worldQuaternion.y,
-      worldQuaternion.z,
-      worldQuaternion.w
-    );
-
-    const rotationQuaternionX = new CANNON.Quaternion();
-    rotationQuaternionX.setFromAxisAngle(new CANNON.Vec3(1, 0, 0), -Math.PI / 2);
-    const rotationQuaternionY = new CANNON.Quaternion();
-    rotationQuaternionY.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI);
-    this.bridgeBody.quaternion = rotationQuaternionY.mult(rotationQuaternionX);
-
-    this.bridgeBody.addShape(this.bridgeShape);
-    this.world.addBody(this.bridgeBody);
-
-    const wheelMaterial = new CANNON.Material("wheelMaterial");
-    const bridgeWheelContactMaterial = new CANNON.ContactMaterial(bridgeMaterial, wheelMaterial, {
-      friction: 0.6,
-      restitution: 0,
-      contactEquationStiffness: 1e8,
-      contactEquationRelaxation: 3,
-    });
-    this.world.addContactMaterial(bridgeWheelContactMaterial);
   }
 
   public startGame() {
@@ -445,7 +336,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       position: new CANNON.Vec3(0, finalHeight / 2, 0), 
       shape: carShape,
       collisionFilterGroup: SimulatorComponent.GROUP_CAR,
-      collisionFilterMask: SimulatorComponent.GROUP_GROUND | SimulatorComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
+      collisionFilterMask: SimulatorComponent.GROUP_GROUND | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
     });
     this.carBody.quaternion.setFromEuler(0, Math.PI, 0);
     this.world.addBody(this.carBody);
@@ -464,7 +355,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       mass: 0,
       material: groundMaterial,
       collisionFilterGroup: SimulatorComponent.GROUP_GROUND,
-      collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
+      collisionFilterMask: SimulatorComponent.GROUP_CAR | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
     });
     groundBody.addShape(new CANNON.Plane());
     groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
@@ -641,21 +532,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.carBody.quaternion.toEuler(euler);
       this.carBody.quaternion.setFromEuler(0, euler.y, 0);
 
-      if (this.bridgeBody) {
-        const isOnBridge = this.checkIfOnBridge(this.carBody.position);
+      if (this.bridge) {
+        const isOnBridge = this.bridge.checkIfOnBridge(this.carBody.position);
 
         if (isOnBridge) {
-          const bridgeHeight = this.getBridgeHeightAtPosition(this.carBody.position);
+          const bridgeHeight = this.bridge.getBridgeHeightAtPosition(this.carBody.position);
           const offsetY = 0.5;
           this.carBody.position.y = bridgeHeight + offsetY;
 
           const forwardPosition = this.carBody.position.clone();
           forwardPosition.z += 1;
-          const forwardHeight = this.getBridgeHeightAtPosition(forwardPosition);
+          const forwardHeight = this.bridge.getBridgeHeightAtPosition(forwardPosition);
 
           const backwardPosition = this.carBody.position.clone();
           backwardPosition.z -= 1;
-          const backwardHeight = this.getBridgeHeightAtPosition(backwardPosition);
+          const backwardHeight = this.bridge.getBridgeHeightAtPosition(backwardPosition);
 
           const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
           const tiltQuaternion = new CANNON.Quaternion();
@@ -674,37 +565,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.checkCollisionWithCones();
       this.checkGameOverConditions();
     }
-  }
-
-  private checkIfOnBridge(position: CANNON.Vec3): boolean {
-    const rayStart = new CANNON.Vec3(position.x, position.y + 10, position.z);
-    const rayEnd = new CANNON.Vec3(position.x, position.y - 10, position.z);
-
-    const ray = new CANNON.Ray(rayStart, rayEnd);
-    const result = new CANNON.RaycastResult();
-
-    if (this.bridgeBody) {
-      ray.intersectBody(this.bridgeBody, result);
-    }
-
-    return result.hasHit;
-  }
-
-  private getBridgeHeightAtPosition(position: CANNON.Vec3): number {
-    const rayStart = new CANNON.Vec3(position.x, position.y + 10, position.z);
-    const rayEnd = new CANNON.Vec3(position.x, position.y - 10, position.z);
-
-    const ray = new CANNON.Ray(rayStart, rayEnd);
-    const result = new CANNON.RaycastResult();
-
-    if (this.bridgeBody) {
-      ray.intersectBody(this.bridgeBody, result);
-    }
-
-    if (result.hasHit) {
-      return result.hitPointWorld.y;
-    }
-    return position.y;
   }
 
   private checkCollisionWithCones() {
