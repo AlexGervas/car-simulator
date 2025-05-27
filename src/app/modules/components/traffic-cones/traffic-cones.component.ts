@@ -29,7 +29,6 @@ export class TrafficConesComponent {
   private parkingPocket: THREE.Box3 | null = null;
 
   private coneBoxes: THREE.Box3[] = [];
-  private bridgeBody?: CANNON.Body;
 
   constructor(private coneStateService: ConeStateService, private stopLineService: StopLineService) {
     this.loader = new GLTFLoader();
@@ -232,34 +231,6 @@ export class TrafficConesComponent {
         return;
       }
       return this.stopLineService.callCreateStopLine();
-    });
-  }
-
-  public createSteepGrade(): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const loader = new GLTFLoader();
-      const bridgePath = 'models/road-elements/bridge.glb';
-
-      loader.load(bridgePath, (gltf) => {
-        const model = gltf.scene;
-        model.scale.set(0.5, 0.5, 0.5);
-        model.position.set(-2, 0, -30);
-        model.rotateY(Math.PI / 2);
-
-        const bridgeShape = new CANNON.Box(new CANNON.Vec3(5, 0.5, 20));
-        this.bridgeBody = new CANNON.Body({
-          mass: 0,
-          shape: bridgeShape,
-          position: new CANNON.Vec3(-2, 0, -30),
-        });
-
-        this.world.addBody(this.bridgeBody);
-
-        this.scene.add(model);
-        resolve();
-      }, undefined, (error) => {
-        reject(error);
-      });
     });
   }
 
