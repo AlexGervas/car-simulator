@@ -330,7 +330,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private createPhysicsCarBody(finalHeight: number): void {
-    const carShape = new CANNON.Box(new CANNON.Vec3(1, 0.5, 2.5));
+    const carShape = new CANNON.Box(new CANNON.Vec3(0.8, 0.3, 2.5));
     this.carBody = new CANNON.Body({ 
       mass: 150, 
       position: new CANNON.Vec3(0, finalHeight / 2, 0), 
@@ -451,6 +451,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.car.position.set(this.carBody.position.x, this.carBody.position.y, this.carBody.position.z);
       this.car.quaternion.set(this.carBody.quaternion.x, this.carBody.quaternion.y, this.carBody.quaternion.z, this.carBody.quaternion.w);
     }
+
+    this.trafficCones.coneBodies.forEach((body, index) => {
+      const cone = this.trafficCones.getCones()[index];
+      cone.position.set(body.position.x, body.position.y, body.position.z);
+      cone.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
+    });
   }
 
   private animate() {
@@ -460,10 +466,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.updateCarPosition(deltaTime);
     this.updateCameraPosition();
 
-    const cannonDebugger = CannonDebugger(this.scene, this.world, {
-      color: 0xff0000,
-    });
-    cannonDebugger.update();
+    // const cannonDebugger = CannonDebugger(this.scene, this.world, {
+    //   color: 0xff0000,
+    // });
+    // cannonDebugger.update();
 
     this.renderer.render(this.scene, this.camera);
   }
@@ -568,34 +574,35 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private checkCollisionWithCones() {
-    const collisionMargin = 0.05;
-    const carBox = new THREE.Box3().setFromObject(this.car).expandByScalar(collisionMargin);
-    const distanceThreshold = 1;
+    const collisionThreshold = 2;
+    const positionShiftThreshold = 0.1;
 
     for (let i = 0; i < this.trafficCones.coneBodies.length; i++) {
       const coneBody = this.trafficCones.coneBodies[i];
-      const coneBox = this.trafficCones.getConeBoxes()[i];
-
       const cone = this.trafficCones.getCones()[i];
-      const distance = this.car.position.distanceTo(cone.position);
 
-      if (distance > distanceThreshold) {
+      const distance = this.carBody.position.distanceTo(coneBody.position);
+
+      if (distance > collisionThreshold) {
         continue;
       }
 
-      if (carBox.intersectsBox(coneBox) && !this.coneStateService.isConeFallen(i)) {
-        this.hitConeCount++;
+      if (!this.coneStateService.isConeFallen(i)) {
+        const initialPosition = this.trafficCones.getInitialConePositions()[i];
+        const positionShift = coneBody.position.vsub(initialPosition).length();
 
-        if (cone) {
-          const fallDirection = new THREE.Vector3().subVectors(cone.position, this.car.position).normalize();
-          fallDirection.y = 0.3;
-          this.trafficCones.animateConeFall(cone, fallDirection);
+        if (positionShift > positionShiftThreshold) {
+          this.hitConeCount++;
           this.coneStateService.setConeFallen(i);
 
-          const force = new CANNON.Vec3(fallDirection.x * 10, 5, fallDirection.z * 10);
-          coneBody.applyForce(force, coneBody.position);
-        } else {
-          console.error('Cone not found at index:', i);
+          const fallDirection = new CANNON.Vec3(
+            coneBody.position.x - this.carBody.position.x,
+            0.1,
+            coneBody.position.z - this.carBody.position.z
+          ).unit();
+
+          const impulse = new CANNON.Vec3(fallDirection.x * 0.2, 0.5, fallDirection.z * 0.2);
+          coneBody.applyImpulse(impulse, coneBody.position);
         }
       }
     }

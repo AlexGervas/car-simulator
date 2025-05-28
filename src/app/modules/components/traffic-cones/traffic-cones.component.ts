@@ -48,13 +48,10 @@ export class TrafficConesComponent {
     return null;
   }
 
-  public animateConeFall(cone: THREE.Object3D, fallDirection: THREE.Vector3) {
-    cone.position.y = 0;
-    cone.rotation.x = Math.PI / 2;
-    const angle = Math.atan2(fallDirection.x, fallDirection.z);
-
-    cone.rotation.y = angle;
-    cone.position.add(fallDirection.multiplyScalar(1));
+  public getInitialConePositions(): CANNON.Vec3[] {
+    return this.initialConePositions.map(
+      position => new CANNON.Vec3(position.x, position.y, position.z)
+    );
   }
 
   public setScene(scene: THREE.Scene) {
@@ -90,10 +87,10 @@ export class TrafficConesComponent {
             conePosition = new THREE.Vector3(xPosition, 0.3, zPosition);
           }
 
-          cone.position.copy(conePosition);
+          cone.position.set(conePosition.x, conePosition.y, conePosition.z);
           cone.rotation.y = Math.PI;
 
-          this.initialConePositions.push(cone.position.clone());
+          this.initialConePositions.push(cone.position.clone());      
 
           this.createPhysicsConeModel(conePosition);
 
@@ -121,9 +118,9 @@ export class TrafficConesComponent {
   }
 
   private createPhysicsConeModel(position: THREE.Vector3): void {
-    const coneShape = new CANNON.Cylinder(0.01, 0.01, 0.3, 8);
+    const coneShape = new CANNON.Cylinder(0.1, 0.2, 0.6, 8);
     const coneBody = new CANNON.Body({
-      mass: 1,
+      mass: 10,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
       collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_GROUND,
@@ -260,12 +257,21 @@ export class TrafficConesComponent {
     return { preciseBox, expandedBox };
   }
 
-
   public resetCones() {
     this.cones.forEach((cone, index) => {
       if (this.initialConePositions[index]) {
         cone.position.copy(this.initialConePositions[index]);
         cone.rotation.set(0, Math.PI, 0);
+
+        const coneBody = this.coneBodies[index];
+        coneBody.position.set(
+          this.initialConePositions[index].x,
+          this.initialConePositions[index].y,
+          this.initialConePositions[index].z
+        );
+        coneBody.velocity.set(0, 0, 0);
+        coneBody.angularVelocity.set(0, 0, 0);
+        coneBody.quaternion.setFromEuler(0, Math.PI, 0);
       }
     });
     this.coneStateService.resetConeState();
