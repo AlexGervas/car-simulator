@@ -1,7 +1,7 @@
 import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { TrafficConesComponent } from '../../components/traffic-cones/traffic-cones.component';
+import { TrafficConesComponent } from '../../entities/traffic-cones/traffic-cones.component';
 import { DeviceService } from '../../../core/services/device.service';
 import { CommonModule } from '@angular/common';
 import { ConeStateService } from '../../../core/services/cone-state.service';
@@ -13,8 +13,8 @@ import { MatDialog } from '@angular/material/dialog';
 import { DialogComponent } from '../../../shared/dialog/dialog.component';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
-import { BridgeComponent } from '../../components/bridge/bridge.component';
-import { GroundComponent } from '../../components/ground/ground.component';
+import { BridgeComponent } from '../../entities/bridge/bridge.component';
+import { GroundComponent } from '../../entities/ground/ground.component';
 
 @Component({
   selector: 'app-simulator',

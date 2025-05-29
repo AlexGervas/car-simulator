@@ -2,7 +2,7 @@ import { Component, Input } from '@angular/core';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { SimulatorComponent } from '../../pages/simulator/simulator.component';
-import { BridgeComponent } from '../bridge/bridge.component';
+import { BridgeComponent } from '../../entities/bridge/bridge.component';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
 
 @Component({
