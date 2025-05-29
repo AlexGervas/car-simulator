@@ -84,7 +84,7 @@ export class TrafficConesComponent {
           } else {
             const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
             const xPosition = this.car.position.x;
-            conePosition = new THREE.Vector3(xPosition, 0.3, zPosition);
+            conePosition = new THREE.Vector3(xPosition, 0.1, zPosition);
           }
 
           cone.position.set(conePosition.x, conePosition.y, conePosition.z);
@@ -118,13 +118,13 @@ export class TrafficConesComponent {
   }
 
   private createPhysicsConeModel(position: THREE.Vector3): void {
-    const coneShape = new CANNON.Cylinder(0.1, 0.2, 0.6, 8);
+    const coneShape = new CANNON.Cylinder(0.1, 0.2, 0.5, 8);
     const coneBody = new CANNON.Body({
-      mass: 10,
+      mass: 15,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
       collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_GROUND,
-      material: new CANNON.Material({ restitution: 0.5 })
+      material: new CANNON.Material({ restitution: 0.2 })
     });
     coneBody.addShape(coneShape);
     this.world.addBody(coneBody);
@@ -155,13 +155,13 @@ export class TrafficConesComponent {
     const centerZ = (topZ + bottomZ) / 2;
 
     const positions: THREE.Vector3[] = [
-      new THREE.Vector3(carX + offsetX, 0.2, topZ),
-      new THREE.Vector3(carX + offsetX + width, 0.2, topZ),
+      new THREE.Vector3(carX + offsetX, 0.1, topZ),
+      new THREE.Vector3(carX + offsetX + width, 0.1, topZ),
 
-      new THREE.Vector3(carX + offsetX, 0.2, bottomZ),
-      new THREE.Vector3(carX + offsetX + width, 0.2, bottomZ),
+      new THREE.Vector3(carX + offsetX, 0.1, bottomZ),
+      new THREE.Vector3(carX + offsetX + width, 0.1, bottomZ),
 
-      new THREE.Vector3(carX + offsetX + width, 0.2, centerZ),
+      new THREE.Vector3(carX + offsetX + width, 0.1, centerZ),
     ];
 
     this.parkingPocket = new THREE.Box3(
