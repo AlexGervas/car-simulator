@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as CANNON from 'cannon-es';
 import { SimulatorComponent } from '../../pages/simulator/simulator.component';
+import { GroundComponent } from '../ground/ground.component';
 
 @Component({
   selector: 'app-bridge',
@@ -104,7 +105,7 @@ export class BridgeComponent {
       material: bridgeMaterial,
       position: new CANNON.Vec3(roadWorldPosition.x, roadWorldPosition.y, roadWorldPosition.z),
       collisionFilterGroup: BridgeComponent.GROUP_BRIDGE,
-      collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_GROUND,
+      collisionFilterMask: SimulatorComponent.GROUP_CAR | GroundComponent.GROUP_GROUND,
     });
 
     const worldQuaternion = new THREE.Quaternion();

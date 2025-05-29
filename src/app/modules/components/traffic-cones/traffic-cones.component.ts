@@ -5,6 +5,7 @@ import { ConeStateService } from '../../../core/services/cone-state.service';
 import { StopLineService } from '../../../core/services/stop-line.service';
 import * as CANNON from 'cannon-es';
 import { SimulatorComponent } from '../../pages/simulator/simulator.component';
+import { GroundComponent } from '../ground/ground.component';
 
 @Component({
   selector: 'app-traffic-cones',
@@ -123,7 +124,7 @@ export class TrafficConesComponent {
       mass: 15,
       position: new CANNON.Vec3(position.x, position.y, position.z),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
-      collisionFilterMask: SimulatorComponent.GROUP_CAR | SimulatorComponent.GROUP_GROUND,
+      collisionFilterMask: SimulatorComponent.GROUP_CAR | GroundComponent.GROUP_GROUND,
       material: new CANNON.Material({ restitution: 0.2 })
     });
     coneBody.addShape(coneShape);

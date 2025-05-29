@@ -14,11 +14,12 @@ import { DialogComponent } from '../../../shared/dialog/dialog.component';
 import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
 import { BridgeComponent } from '../../components/bridge/bridge.component';
+import { GroundComponent } from '../../components/ground/ground.component';
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent],
+  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent, GroundComponent],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
@@ -27,9 +28,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
   @ViewChild(BridgeComponent) bridge!: BridgeComponent;
+  @ViewChild(GroundComponent) ground!: GroundComponent;
 
   public static GROUP_CAR = 1;
-  public static GROUP_GROUND = 4;
 
   public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
@@ -38,7 +39,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private vehicle!: CANNON.RaycastVehicle;
   public scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
-  private asphaltTexture!: THREE.Texture;
 
   private currentSpeed: number = 0;
   private accelerationRate: number = 1;
@@ -100,6 +100,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       console.error("Car loading error", error);
       this.modelsLoaderService.hide();
       return;
+    }
+
+    if (this.ground) {
+      this.ground.loadGroundModel();
+    } else {
+      console.error('GroundComponent is not initialized yet');
     }
 
     this.route.queryParams.subscribe(params => {
@@ -271,7 +277,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private init() {
     this.scene = new THREE.Scene();
-    this.createSceneBackground();
+    this.scene.background = new THREE.Color(0xc0c0c0);
 
     this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
     this.camera.position.set(0, 2, 5);
@@ -286,18 +292,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
     directionalLight.position.set(5, 10, 7.5);
     this.scene.add(directionalLight);
-  }
-
-  private createSceneBackground() {
-    this.scene.background = new THREE.Color(0xc0c0c0);
-
-    const textureLoader = new THREE.TextureLoader();
-    this.asphaltTexture = textureLoader.load('textures/asphalt.jpg', () => {
-      this.updateTiles();
-    })
-    this.asphaltTexture.wrapS = THREE.RepeatWrapping;
-    this.asphaltTexture.wrapT = THREE.RepeatWrapping;
-    this.asphaltTexture.repeat.set(3, 3);
   }
 
   private async loadCarModel(): Promise<THREE.Object3D> {
@@ -316,11 +310,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.finalHeight = size.y * this.scaleFactor * 5;
 
         this.createPhysicsCarBody(this.finalHeight);
-        this.createPhysicsGroundBody();
+        this.ground.createPhysicsGroundBody();
         this.createPhysicsWheels(this.scaleFactor);
 
         this.scene.add(this.car);
-        this.updateTiles();
+        this.ground.updateTiles();
         resolve(this.car);
       }, undefined, (error) => {
         console.error('Error loading car model:', error);
@@ -336,7 +330,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       position: new CANNON.Vec3(0, finalHeight / 2, 0), 
       shape: carShape,
       collisionFilterGroup: SimulatorComponent.GROUP_CAR,
-      collisionFilterMask: SimulatorComponent.GROUP_GROUND | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
+      collisionFilterMask: GroundComponent.GROUP_GROUND | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
     });
     this.carBody.quaternion.setFromEuler(0, Math.PI, 0);
     this.world.addBody(this.carBody);
@@ -347,26 +341,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       indexUpAxis: 1,
       indexForwardAxis: 2
     });
-  }
-
-  private createPhysicsGroundBody(): void {
-    const groundMaterial = new CANNON.Material('groundMaterial');
-    const groundBody = new CANNON.Body({
-      mass: 0,
-      material: groundMaterial,
-      collisionFilterGroup: SimulatorComponent.GROUP_GROUND,
-      collisionFilterMask: SimulatorComponent.GROUP_CAR | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
-    });
-    groundBody.addShape(new CANNON.Plane());
-    groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);
-    this.world.addBody(groundBody);
-
-    const wheelMaterial = new CANNON.Material('wheelMaterial');
-    const contactMaterial = new CANNON.ContactMaterial(groundMaterial, wheelMaterial, {
-      friction: 0.5,
-      restitution: 0.1
-    });
-    this.world.addContactMaterial(contactMaterial);
   }
 
   private createPhysicsWheels(scaleFactor: number): void {
@@ -411,35 +385,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     });
 
     this.vehicle.addToWorld(this.world);
-  }
-
-  private createTile(x: number, z: number) {
-    const tileGeometry = new THREE.PlaneGeometry(14, 6);
-    const tileMaterial = new THREE.MeshBasicMaterial({ map: this.asphaltTexture, side: THREE.DoubleSide });
-    const tile = new THREE.Mesh(tileGeometry, tileMaterial);
-    tile.rotation.x = -Math.PI / 2;
-    tile.position.set(x, 0, z);
-    this.scene.add(tile);
-  }
-
-  private updateTiles() {
-    if (!this.car) {
-      return;
-    }
-    const carPositionZ = this.car.position.z;
-    const visibleRange = 100;
-    const tileSize = 6;
-
-    // Delete old tiles
-    this.scene.children.forEach(child => {
-      if (child instanceof THREE.Mesh && child.geometry instanceof THREE.PlaneGeometry) {
-        this.scene.remove(child);
-      }
-    });
-
-    for (let z = carPositionZ - visibleRange; z < carPositionZ + visibleRange; z += tileSize) {
-      this.createTile(0, z);
-    }
   }
 
   private animatePhysics(deltaTime: number): void {
