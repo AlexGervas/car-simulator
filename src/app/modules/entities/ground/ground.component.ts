@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
-import { SimulatorComponent } from '../../pages/simulator/simulator.component';
+import { CarComponent } from '../car/car.component';
 import { BridgeComponent } from '../../entities/bridge/bridge.component';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
 
@@ -39,7 +39,7 @@ export class GroundComponent {
       mass: 0,
       material: groundMaterial,
       collisionFilterGroup: GroundComponent.GROUP_GROUND,
-      collisionFilterMask: SimulatorComponent.GROUP_CAR | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
+      collisionFilterMask: CarComponent.GROUP_CAR | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
     });
     groundBody.addShape(new CANNON.Plane());
     groundBody.quaternion.setFromEuler(-Math.PI / 2, 0, 0);

@@ -5,6 +5,7 @@
 <div class="container">
     <app-loader></app-loader>
     <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
+    <app-car [scene]="scene" [world]="world" (carLoaded)="onCarLoaded($event)"></app-car>
     <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera" [world]="world"></app-traffic-cones>
     <app-bridge #BridgeComponent [scene]="scene" [world]="world"></app-bridge>
     <app-ground #GroundComponent [car]="car" [scene]="scene" [world]="world"></app-ground>
