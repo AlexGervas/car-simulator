@@ -44,8 +44,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
-  private isTurningLeft: boolean = false;
-  private isTurningRight: boolean = false;
+  public isTurningLeft: boolean = false;
+  public isTurningRight: boolean = false;
   public isMobileDevice: boolean = false;
   public isConeFallen: boolean = false;
   public isGameOver: boolean = false;
@@ -589,19 +589,25 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   public turnLeft() {
-    if (this.car) {
-      this.car.rotation.y += this.turnSpeed;
-      // this.frontWheelAngle += this.turnSpeed; // Увеличиваем угол поворота
-      // this.updateFrontWheels(); // Обновляем положение передних колес
-    }
+    this.isTurningLeft = true;
+    this.isTurningRight = false;
+    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+  }
+
+  public stopTurningLeft() {
+    this.isTurningLeft = false;
+    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
   }
 
   public turnRight() {
-    if (this.car) {
-      this.car.rotation.y -= this.turnSpeed;
-      // this.frontWheelAngle -= this.turnSpeed; // Уменьшаем угол поворота
-      // this.updateFrontWheels(); // Обновляем положение передних колес
-    }
+    this.isTurningRight = true;
+    this.isTurningLeft = false;
+    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+  }
+
+  public stopTurningRight() {
+    this.isTurningRight = false;
+    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
   }
 
   @HostListener('window:keydown', ['$event'])

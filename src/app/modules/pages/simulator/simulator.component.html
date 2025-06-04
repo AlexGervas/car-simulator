@@ -12,21 +12,25 @@
 
     <div class="controls" *ngIf="isMobileDevice">
         <div class="up-control">
-            <button (touchstart)="isMovingForward = true" (touchend)="isMovingForward = false">
+            <button (touchstart)="isMovingForward = true; preventDefault($event)"
+                (touchend)="isMovingForward = false; preventDefault($event)">
                 <i class="fas fa-arrow-up"></i>
             </button>
         </div>
         <div class="turn-controls">
-            <button (touchstart)="turnLeft()">
+            <button (touchstart)="turnLeft(); preventDefault($event)"
+                (touchend)="stopTurningLeft(); preventDefault($event)">
                 <i class="fas fa-arrow-left"></i>
             </button>
             <div class="empty-space"></div>
-            <button (touchstart)="turnRight()">
+            <button (touchstart)="turnRight(); preventDefault($event)"
+                (touchend)="stopTurningRight(); preventDefault($event)">
                 <i class="fas fa-arrow-right"></i>
             </button>
         </div>
         <div class="down-control">
-            <button (touchstart)="isMovingBackward = true" (touchend)="isMovingBackward = false">
+            <button (touchstart)="isMovingBackward = true; preventDefault($event)"
+                (touchend)="isMovingBackward = false; preventDefault($event)">
                 <i class="fas fa-arrow-down"></i>
             </button>
         </div>
