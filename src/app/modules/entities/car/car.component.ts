@@ -27,19 +27,19 @@ export class CarComponent implements OnInit {
 
   public car!: THREE.Object3D;
   private carBody!: CANNON.Body;
-  private vehicle!: CANNON.RaycastVehicle;
+  public vehicle!: CANNON.RaycastVehicle;
   private wheels: Record<string, THREE.Object3D> = {};
   private wheelData: Record<string, { radius: number; position: THREE.Vector3 }> = {};
 
-  private currentSpeed: number = 0;
+  public currentSpeed: number = 0;
   private accelerationRate: number = 1;
   private decelerationRate: number = 5;
   private turnRate: number = 1;
   private maxSpeed: number = 5;
   private wheelKeys: string[] = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
 
-  private finalHeight: number = 0;
-  private scaleFactor: number = 0;
+  public finalHeight: number = 0;
+  public scaleFactor: number = 0;
 
   constructor() { }
 
@@ -287,5 +287,10 @@ export class CarComponent implements OnInit {
       }
     }
   }
-  
+
+  public resetCarPosition(): void {
+    this.car.position.set(0, 0, 0);
+    this.car.rotation.set(0, Math.PI, 0);
+  }
+
 }

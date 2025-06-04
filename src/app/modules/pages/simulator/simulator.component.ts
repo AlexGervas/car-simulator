@@ -36,17 +36,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
   private carBody!: CANNON.Body;
-  private vehicle!: CANNON.RaycastVehicle;
   public scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
 
-  private currentSpeed: number = 0;
-
   private turnSpeed: number = 1;
   public hitConeCount: number = 0;
-  private frontWheelAngle: number = 0;
-  private finalHeight: number = 0;
-  private scaleFactor: number = 0;
 
   public isMovingForward: boolean = false;
   public isMovingBackward: boolean = false;
@@ -276,18 +270,25 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.hitConeCount = 0;
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
-    this.car.position.set(0, 0, 0);
-    this.car.rotation.set(0, Math.PI, 0);
+
+    if (this.carComponent) {
+      this.carComponent.resetCarPosition();      
+    }
 
     if (this.carBody) {
       this.world.removeBody(this.carBody);
     }
-    this.carComponent.createPhysicsCarBody(this.finalHeight);
-    this.currentSpeed = 0;
-    this.vehicle.wheelInfos.forEach(wheel => {
-      wheel.deltaRotation = 0;
-    });
-    this.carComponent.createPhysicsWheels(this.scaleFactor);
+    if (this.carComponent) {
+      this.carComponent.createPhysicsCarBody(this.carComponent.finalHeight);
+    }
+    this.carComponent.currentSpeed = 0;
+
+    if (this.carComponent) {
+      this.carComponent.vehicle.wheelInfos.forEach(wheel => {
+        wheel.deltaRotation = 0;
+      });
+      this.carComponent.createPhysicsWheels(this.carComponent.scaleFactor);
+    }
 
     this.checkDialogShown = false;
     this.stoppedOnce = false;
@@ -615,12 +616,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       } else if (event.key === 'ArrowLeft') {
         this.isTurningLeft = true;
         this.isTurningRight = false;
-        this.frontWheelAngle = Math.PI / 6;
         this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
       } else if (event.key === 'ArrowRight') {
         this.isTurningRight = true;
         this.isTurningLeft = false;
-        this.frontWheelAngle = -Math.PI / 6;
         this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
       }
     }
@@ -637,7 +636,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       this.isTurningLeft = false;
       this.isTurningRight = false;
-      this.frontWheelAngle = 0;
       this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
     }
   }
