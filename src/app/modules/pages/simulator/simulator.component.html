@@ -11,12 +11,6 @@
     <app-ground #GroundComponent [car]="car" [scene]="scene" [world]="world"></app-ground>
 
     <div class="controls" *ngIf="isMobileDevice">
-        <div class="up-control">
-            <button (touchstart)="isMovingForward = true; preventDefault($event)"
-                (touchend)="isMovingForward = false; preventDefault($event)">
-                <i class="fas fa-arrow-up"></i>
-            </button>
-        </div>
         <div class="turn-controls">
             <button (touchstart)="turnLeft(); preventDefault($event)"
                 (touchend)="stopTurningLeft(); preventDefault($event)">
@@ -28,6 +22,13 @@
                 <i class="fas fa-arrow-right"></i>
             </button>
         </div>
+        <div class="up-control">
+            <button (touchstart)="isMovingForward = true; preventDefault($event)"
+                (touchend)="isMovingForward = false; preventDefault($event)">
+                <i class="fas fa-arrow-up"></i>
+            </button>
+        </div>
+
         <div class="down-control">
             <button (touchstart)="isMovingBackward = true; preventDefault($event)"
                 (touchend)="isMovingBackward = false; preventDefault($event)">
