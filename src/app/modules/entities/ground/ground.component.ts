@@ -67,7 +67,7 @@ export class GroundComponent {
       return;
     }
     const carPositionZ = this.car.position.z;
-    const visibleRange = 100;
+    const visibleRange = 200;
     const tileSize = 6;
 
     // Delete old tiles

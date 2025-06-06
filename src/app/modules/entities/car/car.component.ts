@@ -26,7 +26,7 @@ export class CarComponent implements OnInit {
   public static GROUP_CAR = 1;
 
   public car!: THREE.Object3D;
-  private carBody!: CANNON.Body;
+  public carBody!: CANNON.Body;
   public vehicle!: CANNON.RaycastVehicle;
   private wheels: Record<string, THREE.Object3D> = {};
   private wheelData: Record<string, { radius: number; position: THREE.Vector3 }> = {};
@@ -40,6 +40,7 @@ export class CarComponent implements OnInit {
 
   public finalHeight: number = 0;
   public scaleFactor: number = 0;
+  private isOnBridge: boolean = false; 
 
   constructor() { }
 
@@ -216,18 +217,20 @@ export class CarComponent implements OnInit {
       this.carBody.quaternion.setFromEuler(0, euler.y, 0);
 
       if (this.bridge) {
-        const isOnBridge = this.bridge.checkIfOnBridge(this.carBody.position);
+        const carPosition = this.carBody.position;
+        const currentlyOnBridge = this.bridge.checkIfOnBridge(carPosition);
 
-        if (isOnBridge) {
-          const bridgeHeight = this.bridge.getBridgeHeightAtPosition(this.carBody.position);
+        if (currentlyOnBridge) {
+          this.isOnBridge = true;
+          const bridgeHeight = this.bridge.getBridgeHeightAtPosition(carPosition);
           const offsetY = 0.5;
           this.carBody.position.y = bridgeHeight + offsetY;
 
-          const forwardPosition = this.carBody.position.clone();
+          const forwardPosition = carPosition.clone();
           forwardPosition.z += 1;
           const forwardHeight = this.bridge.getBridgeHeightAtPosition(forwardPosition);
 
-          const backwardPosition = this.carBody.position.clone();
+          const backwardPosition = carPosition.clone();
           backwardPosition.z -= 1;
           const backwardHeight = this.bridge.getBridgeHeightAtPosition(backwardPosition);
 
@@ -237,6 +240,13 @@ export class CarComponent implements OnInit {
 
           const currentRotation = this.carBody.quaternion.clone();
           this.carBody.quaternion = currentRotation.mult(tiltQuaternion);
+        } else if (this.isOnBridge) {
+          if (this.bridge.lastVertexPosition && carPosition.z > this.bridge.lastVertexPosition.z) {
+            console.log("Машина проехала весь мост!");
+            this.gameOverCheck.emit();
+            this.carCheckCollisionWithCones.emit(this.carBody.position);
+          }
+          this.isOnBridge = false;
         }
       }
 
@@ -245,8 +255,8 @@ export class CarComponent implements OnInit {
 
       this.rotateWheels();
 
-      this.carCheckCollisionWithCones.emit(this.carBody.position);
-      this.gameOverCheck.emit();
+      // this.carCheckCollisionWithCones.emit(this.carBody.position);
+      // this.gameOverCheck.emit();
     }
   }
 

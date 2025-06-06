@@ -35,7 +35,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
   public car!: THREE.Object3D;
-  private carBody!: CANNON.Body;
+  public carBody!: CANNON.Body;
   public scene!: THREE.Scene;
   private renderer!: THREE.WebGLRenderer;
 
@@ -62,6 +62,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private stopCheckTimeout: number | null = null;
   private isCheckingConditions: boolean = false;
+  private isOnBridge: boolean = false;
 
   constructor(private el: ElementRef,
     private route: ActivatedRoute,
@@ -438,6 +439,20 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         }
       } else {
         this.exerciseStarted = true;
+      }
+    } else if (this.currentLevel === 'steep-grade') {
+      if (!this.bridge.hasCrossedBridge) {
+        this.dialog.open(DialogComponent, {
+          width: '300px',
+          position: { top: '10%' },
+          data: {
+            title: 'Поздравляем!',
+            message: 'Вы успешно проехали мост!',
+            showButtons: false
+          }
+        });
+        this.isGameOver = true;
+        this.controlsEnabled = true;
       }
     }
   }

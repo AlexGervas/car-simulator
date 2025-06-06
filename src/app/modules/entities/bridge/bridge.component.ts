@@ -21,6 +21,9 @@ export class BridgeComponent {
   private bridgeBody!: CANNON.Body;
   private bridgeShape!: CANNON.Trimesh;
 
+  public hasCrossedBridge: boolean = false;
+  public lastVertexPosition: CANNON.Vec3 | null = null;
+
   constructor() { }
 
   public createBridge(): Promise<void> {
@@ -44,6 +47,30 @@ export class BridgeComponent {
     });
   }
 
+  public getLastVertexPosition(geometry: THREE.BufferGeometry): CANNON.Vec3 | null {
+    const positionAttribute = geometry.getAttribute("position");
+    if (!positionAttribute) {
+      console.error("No position attribute found in geometry.");
+      return null;
+    }
+
+    let lastVertex: CANNON.Vec3 | null = null;
+    let minZ = Infinity;
+
+    for (let i = 0; i < positionAttribute.count; i++) {
+      const x = positionAttribute.getX(i);
+      const y = positionAttribute.getY(i);
+      const z = positionAttribute.getZ(i);
+
+      if (z < minZ) {
+        minZ = z;
+        lastVertex = new CANNON.Vec3(x, y, z);
+      }
+    }
+
+    return lastVertex;
+  }
+
   private createPhysicsSteepGrade(model: THREE.Object3D): void {
     const roadVertices: number[] = [];
     const roadIndices: number[] = [];
@@ -64,6 +91,8 @@ export class BridgeComponent {
     const roadMesh = findObjectByName(model, "Plane003");
 
     const geometry = roadMesh!.geometry as THREE.BufferGeometry;
+    this.lastVertexPosition = this.getLastVertexPosition(geometry);
+
     const positionAttribute = geometry.getAttribute("position");
     const worldScale = new THREE.Vector3();
     model.getWorldScale(worldScale);
@@ -166,6 +195,15 @@ export class BridgeComponent {
       return result.hitPointWorld.y;
     }
     return position.y;
+  }
+
+  public hasCarCrossedBridge(carPosition: CANNON.Vec3): boolean {
+    const isOnBridge = this.checkIfOnBridge(carPosition);
+    if (isOnBridge && this.lastVertexPosition && carPosition.z > this.lastVertexPosition.z) {
+      this.hasCrossedBridge = true;
+      return true;
+    }
+    return false;
   }
 
 }
