@@ -18,7 +18,7 @@ export class BridgeComponent {
 
   public static GROUP_BRIDGE = 8;
 
-  private bridgeBody!: CANNON.Body;
+  public bridgeBody!: CANNON.Body;
   private bridgeShape!: CANNON.Trimesh;
 
   public hasCrossedBridge: boolean = false;
@@ -195,15 +195,6 @@ export class BridgeComponent {
       return result.hitPointWorld.y;
     }
     return position.y;
-  }
-
-  public hasCarCrossedBridge(carPosition: CANNON.Vec3): boolean {
-    const isOnBridge = this.checkIfOnBridge(carPosition);
-    if (isOnBridge && this.lastVertexPosition && carPosition.z > this.lastVertexPosition.z) {
-      this.hasCrossedBridge = true;
-      return true;
-    }
-    return false;
   }
 
 }

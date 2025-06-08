@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TrafficConesComponent } from '../../entities/traffic-cones/traffic-cones.component';
@@ -29,8 +29,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild(CarComponent, { static: false }) carComponent!: CarComponent;
   @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
-  @ViewChild(BridgeComponent) bridge!: BridgeComponent;
   @ViewChild(GroundComponent) ground!: GroundComponent;
+
+  @ViewChild('dynamicComponents', { read: ViewContainerRef, static: true }) dynamicComponents!: ViewContainerRef;
+  private bridgeComponentInstance?: BridgeComponent;
 
   public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
@@ -69,6 +71,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private deviceService: DeviceService,
     private coneStateService: ConeStateService,
     private stopLineService: StopLineService,
+    private componentFactoryResolver: ComponentFactoryResolver,
     private modelsLoaderService: ModelsLoaderService,
     private dialog: MatDialog) { }
 
@@ -135,10 +138,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.carComponent.ground = this.ground;
     }
 
-    if (this.carComponent && this.bridge) {
-      this.carComponent.bridge = this.bridge;
-    }
-
     this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
   }
 
@@ -176,28 +175,25 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.animate();
   }
 
-  private initLevel(level: string): Promise<void> {
+  private async initLevel(level: string): Promise<void> {
     this.hitConeCount = 0;
     this.modelsLoaderService.show();
     this.stopLineService.setScene(this.scene);
 
-    return this.clearLevelScene().then(() => {
-      if (level === 'snake') {
-        return this.initSnakeScene();
-      } else if (level === 'parallel-parking') {
-        return this.initParallelParkingScene();
-      } else if (level === 'garage') {
-        return this.initGarageScene();
-      } else {
-        return this.initSteepGradeScene();
-      }
-    }).then(() => {
-      this.modelsLoaderService.hide();
-      console.log(level, ' is loaded');
-    }).catch(error => {
-      console.error(`Scene ${level} loading error:`, error);
-      this.modelsLoaderService.hide();
-    });
+    await this.clearLevelScene();
+
+    if (level === 'snake') {
+      await this.initSnakeScene();
+    } else if (level === 'parallel-parking') {
+      await this.initParallelParkingScene();
+    } else if (level === 'garage') {
+      await this.initGarageScene();
+    } else {
+      await this.initSteepGradeScene();
+    }
+
+    this.modelsLoaderService.hide();
+    console.log(level, ' is loaded');
   }
 
   private clearLevelScene(): Promise<void> {
@@ -212,16 +208,17 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     })
   }
 
-  private initSnakeScene(): Promise<void> {
+  private async initSnakeScene(): Promise<void> {
     console.log('Initializing the Snake scene');
-    return this.trafficCones.createSnake().then(() => {
+    try {
+      await this.trafficCones.createSnake();
       console.log('The snake scene is ready');
-    }).catch(error => {
+    } catch (error) {
       console.error('Error when initializing Snake scene:', error);
-    });
+    }
   }
 
-  private initParallelParkingScene(): Promise<void> {
+  private async initParallelParkingScene(): Promise<void> {
     this.exerciseStarted = false;
     this.checkDialogShown = false;
     this.stoppedOnce = false;
@@ -231,32 +228,47 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       return Promise.reject('Scene is not initialized');
     }
 
-    return this.trafficCones.createParallelParking().then(() => {
+    try {
+      this.trafficCones.createParallelParking();
       console.log('ParallelParking scene is ready.');
-    })
-      .catch((error) => {
-        console.error('Error initialization of the ParallelParking scene:', error);
-      });
+    } catch {
+      console.error('Error initialization of the ParallelParking scene:');
+    }
   }
 
-  private initGarageScene(): Promise<void> {
+  private async initGarageScene(): Promise<void> {
     this.exerciseStarted = false;
     this.checkDialogShown = false;
     this.stoppedOnce = false;
     this.isCheckingConditions = false;
-
-    console.log('Initializing the Garage scene');
-    return this.trafficCones.createGarage().then(() => {
+    try {
+      this.trafficCones.createGarage();
       console.log('Garage scene is ready.');
-    }).catch(error => {
-      console.error('Error initialization of the Garage scene:', error);
-    });
+    } catch {
+      console.error('Error initialization of the Garage scene');
+    }
   }
 
-  private initSteepGradeScene(): Promise<void> {
-    return this.bridge.createBridge().then(() => {
-      console.log("Bridge model and physics was added!");
-    });
+  private async initSteepGradeScene(): Promise<void> {
+    if (!this.bridgeComponentInstance) {
+      const factory = this.componentFactoryResolver.resolveComponentFactory(BridgeComponent);
+      const bridgeComponentRef = this.dynamicComponents?.createComponent(factory);
+      this.bridgeComponentInstance = bridgeComponentRef?.instance;
+
+      if (!this.bridgeComponentInstance) {
+        console.error('BridgeComponent instance not created.');
+        return;
+      }
+
+      this.bridgeComponentInstance.scene = this.scene;
+      this.bridgeComponentInstance.world = this.world;
+
+      await this.bridgeComponentInstance.createBridge();
+    }
+
+    if (this.carComponent) {
+      this.carComponent.bridge = this.bridgeComponentInstance;
+    }
   }
 
   public startGame() {
@@ -411,49 +423,66 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private checkGameOverConditions() {
-    if (this.currentLevel === 'snake') {
-      const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
-      if (lastConeBox) {
-        const stopLineZ = Math.floor(lastConeBox.max.z - 8);
+    switch (this.currentLevel) {
+      case 'snake':
+        this.handleSnakeLevelGameOver();
+        break;
+      case 'parallel-parking':
+      case 'garage':
+        this.handleParkingLevelGameOver();
+        break;
+      case 'steep-grade':
+        // this.handleSteepGradeLevelGameOver();
+        break;
+    }
+  }
 
-        if (this.carComponent.car.position.z < stopLineZ) {
-          this.dialog.open(DialogComponent, {
-            width: '300px',
-            position: { top: '10%' },
-            data: {
-              title: 'Игра окончена',
-              message: 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.',
-              showButtons: false
-            }
-          });
-          this.isGameOver = true;
-          this.controlsEnabled = true;
-        }
-      }
-    } else if (this.currentLevel === "parallel-parking" || this.currentLevel === "garage") {
-      if (!this.isMovingForward && !this.isMovingBackward) {
-        if (this.exerciseStarted && !this.checkDialogShown) {
-          if (this.shouldShowCheckDialog()) {
-            this.showCheckDialog();
-          }
-        }
-      } else {
-        this.exerciseStarted = true;
-      }
-    } else if (this.currentLevel === 'steep-grade') {
-      if (!this.bridge.hasCrossedBridge) {
+  private handleSnakeLevelGameOver(): void {
+    const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
+    if (lastConeBox) {
+      const stopLineZ = Math.floor(lastConeBox.max.z - 8);
+
+      if (this.carComponent.car.position.z < stopLineZ) {
         this.dialog.open(DialogComponent, {
           width: '300px',
           position: { top: '10%' },
           data: {
-            title: 'Поздравляем!',
-            message: 'Вы успешно проехали мост!',
+            title: 'Игра окончена',
+            message: 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.',
             showButtons: false
           }
         });
         this.isGameOver = true;
         this.controlsEnabled = true;
       }
+    }
+  }
+
+  private handleParkingLevelGameOver(): void {
+    if (!this.isMovingForward && !this.isMovingBackward) {
+      if (this.exerciseStarted && !this.checkDialogShown) {
+        if (this.shouldShowCheckDialog()) {
+          this.showCheckDialog();
+        }
+      }
+    } else {
+      this.exerciseStarted = true;
+    }
+  }
+
+  private handleSteepGradeLevelGameOver(): void {
+    if (!this.bridgeComponentInstance?.hasCrossedBridge) {
+      this.dialog.open(DialogComponent, {
+        width: '300px',
+        position: { top: '10%' },
+        data: {
+          title: 'Поздравляем!',
+          message: 'Вы успешно проехали мост!',
+          showButtons: false
+        }
+      });
+      this.isGameOver = true;
+      this.controlsEnabled = true;
     }
   }
 

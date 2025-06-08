@@ -167,97 +167,110 @@ export class CarComponent implements OnInit {
       return;
     }
 
-    if (this.car && !isGameOver) {
-      const direction = new THREE.Vector3();
-      this.car.getWorldDirection(direction);
-      direction.y = 0;
-      direction.normalize();
+    if (isGameOver) return;
 
-      const maxReverseSpeed = this.maxSpeed / 4;
+    this.updateCarSpeed(deltaTime, isMovingForward, isMovingBackward);
+    this.updateCarRotation(isMovingForward, isMovingBackward, isTurningLeft, isTurningRight);
 
-      if (isMovingForward) {
-        this.currentSpeed += this.accelerationRate * deltaTime;
-      } else if (isMovingBackward) {
-        this.currentSpeed -= this.decelerationRate * deltaTime;
-      } else {
-        if (this.currentSpeed > 0) {
-          this.currentSpeed -= this.decelerationRate * deltaTime;
-        } else if (this.currentSpeed < 0) {
-          this.currentSpeed += this.decelerationRate * deltaTime;
+    // let hasCrossedBridge = false;
+    
+    if (this.bridge?.bridgeBody) {
+      const carPosition = this.carBody.position;
+      const currentlyOnBridge = this.bridge.checkIfOnBridge(carPosition);
+
+      if (currentlyOnBridge) {
+        this.isOnBridge = true;
+        const bridgeHeight = this.bridge.getBridgeHeightAtPosition(carPosition);
+
+        const offsetY = 0.5;
+        this.carBody.position.y = bridgeHeight + offsetY;
+
+        const forwardPosition = carPosition.clone();
+        forwardPosition.z += 1;
+        const forwardHeight = this.bridge.getBridgeHeightAtPosition(forwardPosition);
+
+        const backwardPosition = carPosition.clone();
+        backwardPosition.z -= 1;
+        const backwardHeight = this.bridge.getBridgeHeightAtPosition(backwardPosition);
+
+        const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
+        const tiltQuaternion = new CANNON.Quaternion();
+        tiltQuaternion.setFromEuler(tiltAngle, 0, 0);
+
+        const currentRotation = this.carBody.quaternion.clone();
+        this.carBody.quaternion = currentRotation.mult(tiltQuaternion);
+      } else if (this.isOnBridge) {
+        if (this.bridge.lastVertexPosition && carPosition.z > this.bridge.lastVertexPosition.z) {
+          console.log("Машина проехала весь мост!");
+          // hasCrossedBridge = true;
         }
+        this.isOnBridge = false;
       }
+    }
 
-      this.currentSpeed = Math.max(-maxReverseSpeed, Math.min(this.currentSpeed, this.maxSpeed));
+    this.car.position.copy(this.carBody.position);
+    this.car.quaternion.copy(this.carBody.quaternion);
 
-      const currentVelocity = this.carBody.velocity;
-      this.carBody.velocity.set(direction.x * this.currentSpeed, currentVelocity.y, direction.z * this.currentSpeed);
+    this.rotateWheels();
 
-      if (isMovingForward) {
-        if (isTurningLeft) {
-          this.carBody.angularVelocity.y = this.turnRate;
-        } else if (isTurningRight) {
-          this.carBody.angularVelocity.y = -this.turnRate;
-        } else {
-          this.carBody.angularVelocity.y = 0;
-        }
-      } else if (isMovingBackward) {
-        if (isTurningLeft) {
-          this.carBody.angularVelocity.y = -this.turnRate;
-        } else if (isTurningRight) {
-          this.carBody.angularVelocity.y = this.turnRate;
-        } else {
-          this.carBody.angularVelocity.y = 0;
-        }
+    this.carCheckCollisionWithCones.emit(this.carBody.position);
+
+    // if (this.bridge && this.bridge.bridgeBody) {
+    //   if (hasCrossedBridge) {
+    //     this.gameOverCheck.emit();
+    //   }
+    // } else {
+    //   this.gameOverCheck.emit();
+    // }
+
+    this.carCheckCollisionWithCones.emit(this.carBody.position);
+    this.gameOverCheck.emit();
+  }
+
+  private updateCarSpeed(deltaTime: number, isMovingForward: boolean, isMovingBackward: boolean): void {
+    const direction = new THREE.Vector3();
+    this.car.getWorldDirection(direction);
+    direction.y = 0;
+    direction.normalize();
+
+    const maxReverseSpeed = this.maxSpeed / 4;
+
+    if (isMovingForward) {
+      this.currentSpeed += this.accelerationRate * deltaTime;
+    } else if (isMovingBackward) {
+      this.currentSpeed -= this.decelerationRate * deltaTime;
+    } else {
+      if (this.currentSpeed > 0) {
+        this.currentSpeed -= this.decelerationRate * deltaTime;
+      } else if (this.currentSpeed < 0) {
+        this.currentSpeed += this.decelerationRate * deltaTime;
+      }
+    }
+
+    this.currentSpeed = Math.max(-maxReverseSpeed, Math.min(this.currentSpeed, this.maxSpeed));
+
+    const currentVelocity = this.carBody.velocity;
+    this.carBody.velocity.set(direction.x * this.currentSpeed, currentVelocity.y, direction.z * this.currentSpeed);
+
+  }
+
+  private updateCarRotation(isMovingForward: boolean, isMovingBackward: boolean, isTurningLeft: boolean, isTurningRight: boolean): void {
+    if (isMovingForward || isMovingBackward) {
+      const turnDirection = isMovingForward ? 1 : -1;
+      if (isTurningLeft) {
+        this.carBody.angularVelocity.y = this.turnRate * turnDirection;
+      } else if (isTurningRight) {
+        this.carBody.angularVelocity.y = -this.turnRate * turnDirection;
       } else {
         this.carBody.angularVelocity.y = 0;
       }
-
-      const euler = new CANNON.Vec3();
-      this.carBody.quaternion.toEuler(euler);
-      this.carBody.quaternion.setFromEuler(0, euler.y, 0);
-
-      if (this.bridge) {
-        const carPosition = this.carBody.position;
-        const currentlyOnBridge = this.bridge.checkIfOnBridge(carPosition);
-
-        if (currentlyOnBridge) {
-          this.isOnBridge = true;
-          const bridgeHeight = this.bridge.getBridgeHeightAtPosition(carPosition);
-          const offsetY = 0.5;
-          this.carBody.position.y = bridgeHeight + offsetY;
-
-          const forwardPosition = carPosition.clone();
-          forwardPosition.z += 1;
-          const forwardHeight = this.bridge.getBridgeHeightAtPosition(forwardPosition);
-
-          const backwardPosition = carPosition.clone();
-          backwardPosition.z -= 1;
-          const backwardHeight = this.bridge.getBridgeHeightAtPosition(backwardPosition);
-
-          const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
-          const tiltQuaternion = new CANNON.Quaternion();
-          tiltQuaternion.setFromEuler(tiltAngle, 0, 0);
-
-          const currentRotation = this.carBody.quaternion.clone();
-          this.carBody.quaternion = currentRotation.mult(tiltQuaternion);
-        } else if (this.isOnBridge) {
-          if (this.bridge.lastVertexPosition && carPosition.z > this.bridge.lastVertexPosition.z) {
-            console.log("Машина проехала весь мост!");
-            this.gameOverCheck.emit();
-            this.carCheckCollisionWithCones.emit(this.carBody.position);
-          }
-          this.isOnBridge = false;
-        }
-      }
-
-      this.car.position.copy(this.carBody.position);
-      this.car.quaternion.copy(this.carBody.quaternion);
-
-      this.rotateWheels();
-
-      // this.carCheckCollisionWithCones.emit(this.carBody.position);
-      // this.gameOverCheck.emit();
+    } else {
+      this.carBody.angularVelocity.y = 0;
     }
+
+    const euler = new CANNON.Vec3();
+    this.carBody.quaternion.toEuler(euler);
+    this.carBody.quaternion.setFromEuler(0, euler.y, 0);
   }
 
   private rotateWheels(): void {
