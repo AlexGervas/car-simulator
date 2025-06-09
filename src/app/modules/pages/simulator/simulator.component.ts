@@ -59,12 +59,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public temporaryBlockDialog: boolean = false;
   public isResultDialogShown: boolean = false;
 
-  private currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' | null = null;
+  public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' | null = null;
   private clock!: THREE.Clock;
 
   private stopCheckTimeout: number | null = null;
   private isCheckingConditions: boolean = false;
-  private isOnBridge: boolean = false;
 
   constructor(private el: ElementRef,
     private route: ActivatedRoute,
@@ -269,6 +268,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (this.carComponent) {
       this.carComponent.bridge = this.bridgeComponentInstance;
     }
+
+    this.bridgeComponentInstance.hasCrossedBridge = false;
+    if (this.carComponent) {
+      this.bridgeComponentInstance.isOnBridge = false;
+    }
   }
 
   public startGame() {
@@ -283,6 +287,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.hitConeCount = 0;
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
+
+    // Сброс состояния моста
+    if (this.bridgeComponentInstance) {
+      this.bridgeComponentInstance.hasCrossedBridge = false;
+      this.bridgeComponentInstance.isOnBridge = false;
+    }
 
     if (this.carComponent) {
       this.carComponent.resetCarPosition();      
@@ -432,7 +442,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.handleParkingLevelGameOver();
         break;
       case 'steep-grade':
-        // this.handleSteepGradeLevelGameOver();
+        this.handleSteepGradeLevelGameOver();
         break;
     }
   }
@@ -471,7 +481,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   }
 
   private handleSteepGradeLevelGameOver(): void {
-    if (!this.bridgeComponentInstance?.hasCrossedBridge) {
+    if (this.bridgeComponentInstance?.hasCrossedBridge) {
       this.dialog.open(DialogComponent, {
         width: '300px',
         position: { top: '10%' },

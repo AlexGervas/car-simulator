@@ -22,6 +22,7 @@ export class BridgeComponent {
   private bridgeShape!: CANNON.Trimesh;
 
   public hasCrossedBridge: boolean = false;
+  public isOnBridge: boolean = false; 
   public lastVertexPosition: CANNON.Vec3 | null = null;
 
   constructor() { }
