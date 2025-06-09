@@ -172,39 +172,9 @@ export class CarComponent implements OnInit {
 
     this.updateCarSpeed(deltaTime, isMovingForward, isMovingBackward);
     this.updateCarRotation(isMovingForward, isMovingBackward, isTurningLeft, isTurningRight);
-    
+
     if (this.currentLevel === 'steep-grade' && this.bridge?.bridgeBody) {
-      const carPosition = this.carBody.position;
-      const currentlyOnBridge = this.bridge.checkIfOnBridge(carPosition);
-
-      if (currentlyOnBridge) {
-        this.bridge.isOnBridge = true;
-        const bridgeHeight = this.bridge.getBridgeHeightAtPosition(carPosition);
-
-        const offsetY = 0.5;
-        this.carBody.position.y = bridgeHeight + offsetY;
-
-        const forwardPosition = carPosition.clone();
-        forwardPosition.z += 1;
-        const forwardHeight = this.bridge.getBridgeHeightAtPosition(forwardPosition);
-
-        const backwardPosition = carPosition.clone();
-        backwardPosition.z -= 1;
-        const backwardHeight = this.bridge.getBridgeHeightAtPosition(backwardPosition);
-
-        const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
-        const tiltQuaternion = new CANNON.Quaternion();
-        tiltQuaternion.setFromEuler(tiltAngle, 0, 0);
-
-        const currentRotation = this.carBody.quaternion.clone();
-        this.carBody.quaternion = currentRotation.mult(tiltQuaternion);
-      } else if (this.bridge.isOnBridge) {
-        if (this.bridge.lastVertexPosition && carPosition.z > this.bridge.lastVertexPosition.z) {
-          console.log("Машина проехала весь мост!");
-          this.bridge.hasCrossedBridge = true;
-        }
-        this.bridge.isOnBridge = false;
-      }
+      this.bridge.handleCarOnBridge(this.carBody.position, this.carBody);
     }
 
     this.car.position.copy(this.carBody.position);

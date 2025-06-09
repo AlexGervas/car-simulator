@@ -198,4 +198,37 @@ export class BridgeComponent {
     return position.y;
   }
 
+  public handleCarOnBridge(carPosition: CANNON.Vec3, carBody: CANNON.Body): void {
+    const currentlyOnBridge = this.checkIfOnBridge(carPosition);
+
+    if (currentlyOnBridge) {
+      this.isOnBridge = true;
+      const bridgeHeight = this.getBridgeHeightAtPosition(carPosition);
+
+      const offsetY = 0.5;
+      carBody.position.y = bridgeHeight + offsetY;
+
+      const forwardPosition = carPosition.clone();
+      forwardPosition.z += 1;
+      const forwardHeight = this.getBridgeHeightAtPosition(forwardPosition);
+
+      const backwardPosition = carPosition.clone();
+      backwardPosition.z -= 1;
+      const backwardHeight = this.getBridgeHeightAtPosition(backwardPosition);
+
+      const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
+      const tiltQuaternion = new CANNON.Quaternion();
+      tiltQuaternion.setFromEuler(tiltAngle, 0, 0);
+
+      const currentRotation = carBody.quaternion.clone();
+      carBody.quaternion = currentRotation.mult(tiltQuaternion);
+    } else if (this.isOnBridge) {
+      if (this.lastVertexPosition && carPosition.z > this.lastVertexPosition.z) {
+        console.log("Машина проехала весь мост!");
+        this.hasCrossedBridge = true;
+      }
+      this.isOnBridge = false;
+    }
+  }
+
 }
