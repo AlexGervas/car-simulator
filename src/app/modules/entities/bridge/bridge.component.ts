@@ -15,6 +15,7 @@ import { GroundComponent } from '../../entities/ground/ground.component';
 export class BridgeComponent {
   @Input() scene!: THREE.Scene;
   @Input() world!: CANNON.World;
+  @Input() ground!: GroundComponent;
 
   public static GROUP_BRIDGE = 8;
 
@@ -223,12 +224,31 @@ export class BridgeComponent {
       const currentRotation = carBody.quaternion.clone();
       carBody.quaternion = currentRotation.mult(tiltQuaternion);
     } else if (this.isOnBridge) {
+      const roadHeight = 0;
+      const lastBridgeHeight = this.getBridgeHeightAtPosition(this.lastVertexPosition!);
+
+      const transitionHeight = this.interpolateHeight(
+        carPosition.z,
+        this.lastVertexPosition!.z,
+        roadHeight,
+        lastBridgeHeight
+      );
+
+      carBody.position.y = transitionHeight;
+      
       if (this.lastVertexPosition && carPosition.z > this.lastVertexPosition.z) {
         console.log("Машина проехала весь мост!");
         this.hasCrossedBridge = true;
       }
       this.isOnBridge = false;
     }
+  }
+
+  private interpolateHeight(currentZ: number, lastBridgeZ: number, roadHeight: number, bridgeHeight: number): number {
+    const distanceToRoad = Math.max(0, currentZ - lastBridgeZ);    
+    const transitionFactor = Math.min(distanceToRoad / 1000, 1);
+
+    return bridgeHeight * (1 - transitionFactor) + roadHeight * transitionFactor;
   }
 
 }
