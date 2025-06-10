@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { LevelService } from '../../../core/services/level.service';
 
 @Component({
   selector: 'app-start-page',
@@ -9,10 +10,14 @@ import { Router } from '@angular/router';
   styleUrl: './start-page.component.css'
 })
 export class StartPageComponent {
-  constructor(private router: Router) { }
+  constructor(private router: Router, private levelService: LevelService) { }
 
   public startGame(level: string) {
-    this.router.navigate(['/game/simulator'], { queryParams: { level } });
+    if(this.levelService.isLevelAvailable(level)) {
+      this.router.navigate(['/game/simulator'], { queryParams: { level } });
+    } else {
+      alert("Этот уровень недоступен!");
+    }
   }
 
 }

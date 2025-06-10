@@ -16,6 +16,7 @@ import CannonDebugger from 'cannon-es-debugger';
 import { BridgeComponent } from '../../entities/bridge/bridge.component';
 import { GroundComponent } from '../../entities/ground/ground.component';
 import { CarComponent } from "../../entities/car/car.component";
+import { LevelService } from '../../../core/services/level.service';
 
 @Component({
   selector: 'app-simulator',
@@ -59,7 +60,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public temporaryBlockDialog: boolean = false;
   public isResultDialogShown: boolean = false;
 
-  public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' | null = null;
+  public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' = 'snake';
   private clock!: THREE.Clock;
 
   private stopCheckTimeout: number | null = null;
@@ -70,6 +71,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private deviceService: DeviceService,
     private coneStateService: ConeStateService,
     private stopLineService: StopLineService,
+    private levelService: LevelService,
     private componentFactoryResolver: ComponentFactoryResolver,
     private modelsLoaderService: ModelsLoaderService,
     private dialog: MatDialog) { }
@@ -106,6 +108,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       const level = params['level'] || 'snake';
       this.currentLevel = level;
       console.log("Level: ", this.currentLevel);
+      this.levelService.completeLevel(this.currentLevel);
 
       const checkTrafficCones = setInterval(() => {
         if (this.trafficCones) {
