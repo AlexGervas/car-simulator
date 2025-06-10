@@ -51,13 +51,38 @@
 }
 
 .map-button img {
-    width: 200px;
+    /* width: 200px; */
     height: 200px;
     transition: transform 0.3s ease;
 }
 
 .map-button img:hover {
     transform: scale(1.6);
+}
+
+.map-button.locked img.level-image {
+    opacity: 0.5;
+    transition: none;
+}
+
+.map-button.locked img.level-image:hover {
+    transform: none;
+    cursor: not-allowed;
+}
+
+.map-button.locked img.lock-icon {
+    filter: none;
+    opacity: 1;
+}
+
+.lock-icon {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 50px;
+    height: 50px;
+    pointer-events: none;
 }
 
 @media (max-width: 1024px) {
