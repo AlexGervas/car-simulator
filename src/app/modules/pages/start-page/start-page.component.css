@@ -6,7 +6,7 @@
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
-    gap: 10px;
+    gap: 20px;
 }
 
 .paper-texture {
@@ -26,10 +26,13 @@
     background: none;
     border: none;
     cursor: pointer;
-    display: inline-flex;
+    display: flex;
+    justify-content: center;
     flex-direction: column;
     align-items: center;
-    flex: 0 1 calc(50% - 10px);
+    width: 200px;
+    height: 200px;
+    flex: 0 1 calc(50% - 10%);
     padding: 0;
     margin: 0;
 }
@@ -37,6 +40,7 @@
 .map-button::after {
     content: attr(data-tooltip);
     position: absolute;
+    top: 5%;
     left: 50%;
     transform: translateX(-50%);
     background: rgba(20, 4, 141, 0.851);
@@ -59,13 +63,14 @@
 }
 
 .map-button img {
-    /* width: auto; */
-    height: 200px;
+    /* width: 100%; */
+    height: 100%;
+    object-fit: contain;
     transition: transform 0.3s ease;
 }
 
 .map-button img:hover {
-    transform: scale(1.6);
+    transform: scale(1.2);
 }
 
 .map-button.locked img.level-image {
