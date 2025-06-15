@@ -89,7 +89,7 @@ export class CarComponent implements OnInit {
   }
 
   public createPhysicsCarBody(finalHeight: number): void {
-    const carShape = new CANNON.Box(new CANNON.Vec3(0.8, 0.3, 2.5));
+    const carShape = new CANNON.Box(new CANNON.Vec3(0.6, 0.2, 2));
     this.carBody = new CANNON.Body({
       mass: 150,
       position: new CANNON.Vec3(0, finalHeight / 2, 0),

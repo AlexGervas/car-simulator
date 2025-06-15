@@ -93,7 +93,7 @@ export class TrafficConesComponent {
 
           this.initialConePositions.push(cone.position.clone());      
 
-          this.createPhysicsConeModel(conePosition);
+          this.createPhysicsConeModel(cone);
 
           const coneBox = new THREE.Box3().setFromObject(cone);
           this.coneBoxes.push(coneBox);
@@ -118,11 +118,11 @@ export class TrafficConesComponent {
     });
   }
 
-  private createPhysicsConeModel(position: THREE.Vector3): void {
-    const coneShape = new CANNON.Cylinder(0.1, 0.2, 0.5, 8);
+  private createPhysicsConeModel(cone: THREE.Object3D): void {
+    const coneShape = new CANNON.Cylinder(0.01, 0.1, 0.5, 8);
     const coneBody = new CANNON.Body({
       mass: 15,
-      position: new CANNON.Vec3(position.x, position.y, position.z),
+      position: new CANNON.Vec3(cone.position.x, cone.position.y, cone.position.z),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
       collisionFilterMask: CarComponent.GROUP_CAR | GroundComponent.GROUP_GROUND,
       material: new CANNON.Material({ restitution: 0.2 })
@@ -211,11 +211,11 @@ export class TrafficConesComponent {
   }
 
   public createParallelParking(): Promise<void> {
-    return this.createParkingScene(3, 3, 4, 8);
+    return this.createParkingScene(3, 4, 5, 8);
   }
 
   public createGarage(): Promise<void> {
-    return this.createParkingScene(4, 6, 4, 4);
+    return this.createParkingScene(5, 8, 4, 5);
   }
 
   public createSnake(): Promise<void> {

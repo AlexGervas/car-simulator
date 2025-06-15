@@ -108,7 +108,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       const level = params['level'] || 'snake';
       this.currentLevel = level;
       console.log("Level: ", this.currentLevel);
-      this.levelService.completeLevel(this.currentLevel);
 
       const checkTrafficCones = setInterval(() => {
         if (this.trafficCones) {
@@ -467,6 +466,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         });
         this.isGameOver = true;
         this.controlsEnabled = true;
+        this.hitConeCount === 0 && this.levelService.completeLevel(this.currentLevel);
       }
     }
   }
@@ -598,6 +598,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
             showButtons: false
           }
         })
+        this.levelService.completeLevel(this.currentLevel);
       }
       this.isCheckingConditions = false;
     }, 2000);
