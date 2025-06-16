@@ -85,7 +85,7 @@ export class TrafficConesComponent {
           } else {
             const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
             const xPosition = this.car.position.x;
-            conePosition = new THREE.Vector3(xPosition, 0.1, zPosition);
+            conePosition = new THREE.Vector3(xPosition, 0, zPosition);
           }
 
           cone.position.set(conePosition.x, conePosition.y, conePosition.z);
@@ -93,9 +93,11 @@ export class TrafficConesComponent {
 
           this.initialConePositions.push(cone.position.clone());      
 
-          this.createPhysicsConeModel(cone);
-
           const coneBox = new THREE.Box3().setFromObject(cone);
+          const radius = (coneBox.max.x - coneBox.min.x) / 2;
+          const height = coneBox.max.y - coneBox.min.y;
+          this.createPhysicsConeModel(cone, radius, height);
+
           this.coneBoxes.push(coneBox);
           resolve();
         }, undefined, (error) => {
@@ -118,11 +120,11 @@ export class TrafficConesComponent {
     });
   }
 
-  private createPhysicsConeModel(cone: THREE.Object3D): void {
-    const coneShape = new CANNON.Cylinder(0.01, 0.1, 0.5, 8);
+  private createPhysicsConeModel(cone: THREE.Object3D, radius: number, height: number): void {
+    const coneShape = new CANNON.Cylinder(0.01, radius, height, 8);
     const coneBody = new CANNON.Body({
       mass: 15,
-      position: new CANNON.Vec3(cone.position.x, cone.position.y, cone.position.z),
+      position: new CANNON.Vec3(cone.position.x, cone.position.y + height / 2, cone.position.z),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
       collisionFilterMask: CarComponent.GROUP_CAR | GroundComponent.GROUP_GROUND,
       material: new CANNON.Material({ restitution: 0.2 })

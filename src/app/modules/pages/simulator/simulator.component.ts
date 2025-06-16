@@ -357,7 +357,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
     this.trafficCones.coneBodies.forEach((body, index) => {
       const cone = this.trafficCones.getCones()[index];
-      cone.position.set(body.position.x, body.position.y, body.position.z);
+      cone.position.set(body.position.x, 0, body.position.z);
       cone.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
     });
   }
