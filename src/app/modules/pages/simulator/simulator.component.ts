@@ -17,11 +17,13 @@ import { BridgeComponent } from '../../entities/bridge/bridge.component';
 import { GroundComponent } from '../../entities/ground/ground.component';
 import { CarComponent } from "../../entities/car/car.component";
 import { LevelService } from '../../../core/services/level.service';
+import { MatCardModule } from '@angular/material/card';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent, GroundComponent, CarComponent],
+  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent, GroundComponent, CarComponent, MatCardModule, MatButtonModule],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
@@ -321,6 +323,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.isResultDialogShown = false;
     this.temporaryBlockDialog = false;
     this.dialog.closeAll();
+  }
+
+  public goToNextLevel(): void {
+    console.log(111, this.currentLevel);
   }
 
   private initSceneAndWorld() {

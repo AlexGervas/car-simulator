@@ -37,61 +37,68 @@
 
 .turn-controls {
   position: absolute;
-  left: 20px;
+  left: 60px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   width: 100px;
   bottom: 60px;
 }
 
-.empty-space {
-  width: 50px;
-  height: 50px;
-}
-
 button {
-  padding: 0;
-  font-size: 24px;
   cursor: pointer;
   border: none;
+  border-radius: 5px;
+  margin: 0 15px;
+}
+
+.controls button {
+  font-size: 24px;
   background-color: #007bff;
   color: white;
-  border-radius: 5px;
   width: 50px;
   height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-button:hover {
-  background-color: #0056b3;
-}
-
-
-.restart-button {
-  position: absolute;
-  top: 20px;
+.game-controls {
+  position: fixed;
+  top: 30%;
   left: 50%;
-  transform: translateX(-50%);
-  padding: 15px 30px;
-  font-size: 18px;
-  background-color: #4CAF50;
-  color: white;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+  padding: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  background-color: white;
+}
+
+mat-card-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.restart-button, .next-level-button {
+  width: 100%;
+  padding: 10px 0;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  z-index: 10;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
   transition: background-color 0.3s, transform 0.2s;
 }
 
-.restart-button:hover {
-  background-color: #45a049;
+.restart-button:hover, .next-level-button:hover {
+  transform: translateY(-2px);
 }
 
-.restart-button:active {
+.restart-button:active, .next-level-button {
   transform: translateY(0);
 }
 

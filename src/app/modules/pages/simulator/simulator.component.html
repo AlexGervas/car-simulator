@@ -12,32 +12,35 @@
 
     <div class="controls" *ngIf="isMobileDevice">
         <div class="turn-controls">
-            <button (touchstart)="turnLeft(); preventDefault($event)"
+            <button mat-raised-button (touchstart)="turnLeft(); preventDefault($event)"
                 (touchend)="stopTurningLeft(); preventDefault($event)">
                 <i class="fas fa-arrow-left"></i>
             </button>
-            <div class="empty-space"></div>
-            <button (touchstart)="turnRight(); preventDefault($event)"
+            <button mat-raised-button (touchstart)="turnRight(); preventDefault($event)"
                 (touchend)="stopTurningRight(); preventDefault($event)">
                 <i class="fas fa-arrow-right"></i>
             </button>
         </div>
         <div class="up-control">
-            <button (touchstart)="isMovingForward = true; preventDefault($event)"
+            <button mat-raised-button (touchstart)="isMovingForward = true; preventDefault($event)"
                 (touchend)="isMovingForward = false; preventDefault($event)">
                 <i class="fas fa-arrow-up"></i>
             </button>
         </div>
 
         <div class="down-control">
-            <button (touchstart)="isMovingBackward = true; preventDefault($event)"
+            <button mat-raised-button (touchstart)="isMovingBackward = true; preventDefault($event)"
                 (touchend)="isMovingBackward = false; preventDefault($event)">
                 <i class="fas fa-arrow-down"></i>
             </button>
         </div>
     </div>
 
-    <div class="game-controls" *ngIf="isGameOver">
-        <button (click)="restartGame()" class="restart-button">Начать заново</button>
-    </div>
+    <mat-card class="game-controls" *ngIf="isGameOver">
+        <mat-card-header>Choosing an action</mat-card-header>
+        <mat-card-actions class="button-container">
+            <button mat-raised-button color="primary" (click)="restartGame()" class="restart-button">Try again</button>
+            <button mat-raised-button color="accent" (click)="goToNextLevel()" class="next-level-button">Next level</button>
+        </mat-card-actions>
+    </mat-card>
 </div>
