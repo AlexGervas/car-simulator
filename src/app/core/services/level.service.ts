@@ -15,6 +15,15 @@ export class LevelService {
     this.loadLevels();
   }
 
+  public getNextLevel(level: string): string | null {
+    const levelKeys = Object.keys(this.levels);
+    const currentIndex = levelKeys.indexOf(level);
+    if (currentIndex >= 0 && currentIndex < levelKeys.length - 1) {
+      return levelKeys[currentIndex + 1];
+    }
+    return null;
+  }
+
   private loadLevels(): void {
     const savedLevels = localStorage.getItem("levels");
     if (savedLevels) {
@@ -33,6 +42,18 @@ export class LevelService {
       this.levels[levelKeys[currentIndex + 1]] = true;
       localStorage.setItem('levels', JSON.stringify(this.levels));
     }
+  }
+
+  public isNextLevelAvailable(level: string): boolean {
+    const levelKeys = Object.keys(this.levels);
+    const currentIndex = levelKeys.indexOf(level);
+    if (currentIndex >= 0 && currentIndex < levelKeys.length - 1) {
+      const nextLevel = levelKeys[currentIndex + 1];
+      console.log(555, this.isLevelAvailable(nextLevel));
+      
+      return this.isLevelAvailable(nextLevel);
+    }
+    return false;
   }
 
 }

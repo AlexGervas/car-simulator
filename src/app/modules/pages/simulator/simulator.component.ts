@@ -8,7 +8,7 @@ import { ConeStateService } from '../../../core/services/cone-state.service';
 import { StopLineService } from '../../../core/services/stop-line.service';
 import { ModelsLoaderService } from '../../../core/services/models-loader.service';
 import { LoaderComponent } from '../../../shared/loader/loader.component';
-import { ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { DialogComponent } from '../../../shared/dialog/dialog.component';
 import * as CANNON from 'cannon-es';
@@ -61,6 +61,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public stoppedOnce: boolean = false;
   public temporaryBlockDialog: boolean = false;
   public isResultDialogShown: boolean = false;
+  public isNextLevel: boolean = false;
 
   public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' = 'snake';
   private clock!: THREE.Clock;
@@ -69,6 +70,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private isCheckingConditions: boolean = false;
 
   constructor(private el: ElementRef,
+    private router: Router,
     private route: ActivatedRoute,
     private deviceService: DeviceService,
     private coneStateService: ConeStateService,
@@ -284,7 +286,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.controlsEnabled = false;
   }
 
-  public restartGame() {
+  public resetGameState() {
     this.isGameOver = false;
     this.isMovingForward = false;
     this.isMovingBackward = false;
@@ -292,7 +294,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
 
-    // Сброс состояния моста
     if (this.bridgeComponentInstance) {
       this.bridgeComponentInstance.hasCrossedBridge = false;
       this.bridgeComponentInstance.isOnBridge = false;
@@ -325,8 +326,17 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.dialog.closeAll();
   }
 
-  public goToNextLevel(): void {
-    console.log(111, this.currentLevel);
+  public async goToNextLevel(): Promise<void> {
+    const nextLevel = this.levelService.getNextLevel(this.currentLevel);
+    if (nextLevel && this.levelService.isNextLevelAvailable(this.currentLevel)) {
+      await this.resetGameState();
+      this.router.navigate([], {
+        relativeTo: this.route,
+        queryParams: { level: nextLevel },
+        queryParamsHandling: 'merge'
+      });
+    }
+
   }
 
   private initSceneAndWorld() {
@@ -472,7 +482,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         });
         this.isGameOver = true;
         this.controlsEnabled = true;
-        this.hitConeCount === 0 && this.levelService.completeLevel(this.currentLevel);
+        if (this.hitConeCount === 0) {
+          this.levelService.completeLevel(this.currentLevel);
+          this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+        }
       }
     }
   }
@@ -581,6 +594,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       }
 
       if (errorMessage) {
+        this.isNextLevel = false;
         this.isResultDialogShown = true;
         this.isGameOver = true;
         this.controlsEnabled = true;
@@ -595,6 +609,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         });
       } else {
         this.isResultDialogShown = true;
+        this.isGameOver = true;
         this.dialog.open(DialogComponent, {
           width: '300px',
           position: { top: '10%' },
@@ -605,6 +620,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           }
         })
         this.levelService.completeLevel(this.currentLevel);
+        this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
       }
       this.isCheckingConditions = false;
     }, 2000);

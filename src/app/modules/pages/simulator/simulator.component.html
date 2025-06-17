@@ -10,7 +10,8 @@
     <app-bridge #dynamicComponents [scene]="scene" [world]="world"></app-bridge>
     <app-ground #GroundComponent [car]="car" [scene]="scene" [world]="world"></app-ground>
 
-    <div class="controls" *ngIf="isMobileDevice">
+    @if (isMobileDevice) {
+    <div class="controls">
         <div class="turn-controls">
             <button mat-raised-button (touchstart)="turnLeft(); preventDefault($event)"
                 (touchend)="stopTurningLeft(); preventDefault($event)">
@@ -35,12 +36,18 @@
             </button>
         </div>
     </div>
+    }
 
-    <mat-card class="game-controls" *ngIf="isGameOver">
+    @if (isGameOver) {
+    <mat-card class="game-controls">
         <mat-card-header>Choosing an action</mat-card-header>
         <mat-card-actions class="button-container">
-            <button mat-raised-button color="primary" (click)="restartGame()" class="restart-button">Try again</button>
-            <button mat-raised-button color="accent" (click)="goToNextLevel()" class="next-level-button">Next level</button>
+            <button mat-raised-button color="primary" (click)="resetGameState()" class="restart-button">Try again</button>
+            @if(isNextLevel) {
+            <button mat-raised-button color="accent" (click)="goToNextLevel()" class="next-level-button">Next
+                level</button>
+            }
         </mat-card-actions>
     </mat-card>
+    }
 </div>
