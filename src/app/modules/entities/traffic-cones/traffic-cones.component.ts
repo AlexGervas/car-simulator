@@ -261,20 +261,21 @@ export class TrafficConesComponent {
   }
 
   public resetCones() {
+    this.coneBodies.forEach(coneBody => {
+      this.world.removeBody(coneBody);
+    });
+    this.coneBodies = [];
+
     this.cones.forEach((cone, index) => {
       if (this.initialConePositions[index]) {
         cone.position.copy(this.initialConePositions[index]);
         cone.rotation.set(0, Math.PI, 0);
 
-        const coneBody = this.coneBodies[index];
-        coneBody.position.set(
-          this.initialConePositions[index].x,
-          this.initialConePositions[index].y,
-          this.initialConePositions[index].z
-        );
-        coneBody.velocity.set(0, 0, 0);
-        coneBody.angularVelocity.set(0, 0, 0);
-        coneBody.quaternion.setFromEuler(0, Math.PI, 0);
+        const coneBox = new THREE.Box3().setFromObject(cone);
+        const radius = (coneBox.max.x - coneBox.min.x) / 2;
+        const height = coneBox.max.y - coneBox.min.y;
+
+        this.createPhysicsConeModel(cone, radius, height);
       }
     });
     this.coneStateService.resetConeState();
