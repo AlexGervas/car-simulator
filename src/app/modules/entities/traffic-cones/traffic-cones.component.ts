@@ -278,7 +278,20 @@ export class TrafficConesComponent {
         this.createPhysicsConeModel(cone, radius, height);
       }
     });
-    this.coneStateService.resetConeState();
+  }
+
+  public removeCones() {
+    this.coneBodies.forEach(coneBody => {
+      this.world.removeBody(coneBody);
+    });
+    this.coneBodies = [];
+
+    this.cones.forEach(cone => {
+      cone.parent?.remove(cone);
+    });
+    this.cones = [];
+    this.initialConePositions = [];
+    this.coneBoxes = [];
   }
 
 }

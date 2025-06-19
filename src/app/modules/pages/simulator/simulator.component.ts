@@ -1,4 +1,4 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked, ViewContainerRef, ComponentFactoryResolver } from '@angular/core';
+import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked, ViewContainerRef, ComponentFactoryResolver, OnDestroy } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TrafficConesComponent } from '../../entities/traffic-cones/traffic-cones.component';
@@ -19,6 +19,7 @@ import { CarComponent } from "../../entities/car/car.component";
 import { LevelService } from '../../../core/services/level.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-simulator',
@@ -27,7 +28,7 @@ import { MatButtonModule } from '@angular/material/button';
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
-export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewChecked {
+export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild(CarComponent, { static: false }) carComponent!: CarComponent;
@@ -36,6 +37,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   @ViewChild('dynamicComponents', { read: ViewContainerRef, static: true }) dynamicComponents!: ViewContainerRef;
   private bridgeComponentInstance?: BridgeComponent;
+
+  private carCollisionSubscription: Subscription | undefined;
+  private gameOverSubscription: Subscription | undefined;
 
   public world!: CANNON.World;
   public camera!: THREE.PerspectiveCamera;
@@ -96,10 +100,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
 
     if (this.carComponent) {
-      this.carComponent.carCheckCollisionWithCones.subscribe((position: CANNON.Vec3) => {
+      this.carCollisionSubscription = this.carComponent.carCheckCollisionWithCones.subscribe((position: CANNON.Vec3) => {
         this.checkCollisionWithCones(position);
       });
-      this.carComponent.gameOverCheck.subscribe(() => this.checkGameOverConditions());
+      this.gameOverSubscription = this.carComponent.gameOverCheck.subscribe(() => this.checkGameOverConditions());
     }
 
     if (this.ground) {
@@ -154,6 +158,15 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
+  ngOnDestroy() {
+    if (this.carCollisionSubscription) {
+      this.carCollisionSubscription.unsubscribe();
+    }
+    if (this.gameOverSubscription) {
+      this.gameOverSubscription.unsubscribe();
+    }
+  }
+
   onCarLoaded(car: THREE.Object3D): void {
     this.car = car;
     console.log('Car successfully loaded in SimulatorComponent:', this.car);
@@ -203,20 +216,20 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private clearLevelScene(): Promise<void> {
     return new Promise((resolve) => {
-      if (!this.trafficCones) {
-        console.warn("TrafficConesComponent is not yet available in clearLevelScene");
-        return resolve();
+      if (this.trafficCones) {
+        this.trafficCones.removeCones();
       }
-      this.trafficCones.resetCones();
+      this.coneStateService.clearConeStates();
       this.stopLineService.removeStopLine();
       resolve();
-    })
+    });
   }
 
   private async initSnakeScene(): Promise<void> {
     console.log('Initializing the Snake scene');
     try {
       await this.trafficCones.createSnake();
+      this.coneStateService.initializeConeStates(this.trafficCones.cones.length);
       console.log('The snake scene is ready');
     } catch (error) {
       console.error('Error when initializing Snake scene:', error);
@@ -235,6 +248,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
     try {
       this.trafficCones.createParallelParking();
+      this.coneStateService.initializeConeStates(this.trafficCones.cones.length);
       console.log('ParallelParking scene is ready.');
     } catch {
       console.error('Error initialization of the ParallelParking scene:');
@@ -248,6 +262,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.isCheckingConditions = false;
     try {
       this.trafficCones.createGarage();
+      this.coneStateService.initializeConeStates(this.trafficCones.cones.length);
       console.log('Garage scene is ready.');
     } catch {
       console.error('Error initialization of the Garage scene');
@@ -329,7 +344,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public async goToNextLevel(): Promise<void> {
     const nextLevel = this.levelService.getNextLevel(this.currentLevel);
     if (nextLevel && this.levelService.isNextLevelAvailable(this.currentLevel)) {
-      await this.resetGameState();
+      this.resetGameState();
+      this.coneStateService.resetConeState();
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { level: nextLevel },
