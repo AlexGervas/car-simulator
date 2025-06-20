@@ -7,6 +7,7 @@
     <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
     <app-car [scene]="scene" [world]="world" [currentLevel]="currentLevel" (carLoaded)="onCarLoaded($event)"></app-car>
     <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera" [world]="world"></app-traffic-cones>
+    <app-stop-line #StopLineComponent [scene]="scene"></app-stop-line>
     <app-bridge #dynamicComponents [scene]="scene" [world]="world"></app-bridge>
     <app-ground #GroundComponent [car]="car" [scene]="scene" [world]="world"></app-ground>
 

@@ -20,17 +20,19 @@ import { LevelService } from '../../../core/services/level.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { Subscription } from 'rxjs';
+import { StopLineComponent } from "../../entities/stop-line/stop-line.component";
 
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent, GroundComponent, CarComponent, MatCardModule, MatButtonModule],
+  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent, GroundComponent, CarComponent, MatCardModule, MatButtonModule, StopLineComponent],
   templateUrl: './simulator.component.html',
   styleUrl: './simulator.component.css'
 })
 export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
+  @ViewChild('StopLineComponent') stopLineComponent!: StopLineComponent;
   @ViewChild(CarComponent, { static: false }) carComponent!: CarComponent;
   @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
   @ViewChild(GroundComponent) ground!: GroundComponent;
@@ -147,7 +149,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.carComponent.ground = this.ground;
     }
 
-    this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
+    if (this.stopLineComponent) {
+      this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
+    }
   }
 
   ngAfterViewChecked() {
@@ -652,34 +656,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         return;
       }
 
-      console.log('Creating stop line behind the last cone at z:', lastConeBox.max.z);
-
-      const loader = new GLTFLoader();
-      const finishLinePath = 'models/road-elements/finish_line.glb';
-
-      loader.load(finishLinePath, (gltf) => {
-        const model = gltf.scene;
-        model.position.set(0, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5);
-        this.scene.add(model);
-        resolve();
-      }, undefined, (error) => {
-        console.error('The finish line model is not loaded:', error);
-        reject(error);
-      })
-
-      if (lastConeBox) {
-        const geometry = new THREE.BufferGeometry();
-        const vertices = new Float32Array([
-          -7, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5,
-          7, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5
-        ]);
-
-        geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
-
-        const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
-        const line = new THREE.Line(geometry, material);
-        this.scene.add(line);
-      }
+      this.stopLineComponent.createStopLine(lastConeBox)
+        .then(() => resolve())
+        .catch((error) => reject(error));
     });
 
   }
