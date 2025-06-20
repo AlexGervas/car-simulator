@@ -30,10 +30,13 @@ export class StopLineService {
             return;
         }
 
-        this.scene.children.forEach(obj => {
-            if ((obj).name === 'StopLine') {
-                this.scene.remove(obj);
-            }
+        const objectsToRemove = this.scene.children.filter(obj =>
+            (obj.name === 'StopLine' && obj.type === 'Line') ||
+            (obj.name === 'FinishLine' && obj.type === 'Group')
+        );
+
+        objectsToRemove.forEach(obj => {
+            this.scene.remove(obj);
         });
     }
 }

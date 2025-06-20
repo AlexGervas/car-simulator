@@ -13,14 +13,13 @@ export class StopLineComponent {
   @Input() scene!: THREE.Scene;
 
   public createStopLine(lastConeBox: any): Promise<void> {
-    console.log(77, lastConeBox);
-    
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       const finishLinePath = 'models/road-elements/finish_line.glb';
 
       loader.load(finishLinePath, (gltf) => {
         const model = gltf.scene;
+        model.name = "FinishLine";
         model.position.set(0, lastConeBox.max.y - 0.2, lastConeBox.max.z - 5);
         this.scene.add(model);
         resolve();
@@ -40,7 +39,8 @@ export class StopLineComponent {
 
         const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
         const line = new THREE.Line(geometry, material);
-        this.scene.add(line);
+        line.name = "StopLine";
+        this.scene.add(line);        
       }
     });
 
