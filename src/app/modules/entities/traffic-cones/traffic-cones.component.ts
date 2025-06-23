@@ -225,7 +225,7 @@ export class TrafficConesComponent {
   }
 
   public createParallelParking(): Promise<void> {
-    return this.createParkingScene(3, 4, 5, 8);
+    return this.createParkingScene(3, 4, 10, 8);
   }
 
   public createGarage(): Promise<void> {

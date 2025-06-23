@@ -192,7 +192,7 @@ export class CarComponent implements OnInit {
     direction.y = 0;
     direction.normalize();
 
-    const maxReverseSpeed = this.maxSpeed / 4;
+    const maxReverseSpeed = this.maxSpeed / 2;
 
     if (isMovingForward) {
       this.currentSpeed += this.accelerationRate * deltaTime;

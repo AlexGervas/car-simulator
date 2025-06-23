@@ -312,7 +312,6 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.hitConeCount = 0;
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
-    this.trafficCones.clearParkingLines();
 
     if (this.bridgeComponentInstance) {
       this.bridgeComponentInstance.hasCrossedBridge = false;
@@ -320,22 +319,18 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
 
     if (this.carComponent) {
-      this.carComponent.resetCarPosition();      
-    }
-
-    if (this.carBody) {
-      this.world.removeBody(this.carBody);
-    }
-    if (this.carComponent) {
+      this.carComponent.currentSpeed = 0;
+      this.carComponent.resetCarPosition();
       this.carComponent.createPhysicsCarBody(this.carComponent.finalHeight);
-    }
-    this.carComponent.currentSpeed = 0;
 
-    if (this.carComponent) {
       this.carComponent.vehicle.wheelInfos.forEach(wheel => {
         wheel.deltaRotation = 0;
       });
       this.carComponent.createPhysicsWheels(this.carComponent.scaleFactor);
+    }
+
+    if (this.carBody) {
+      this.world.removeBody(this.carBody);
     }
 
     this.checkDialogShown = false;
@@ -351,6 +346,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (nextLevel && this.levelService.isNextLevelAvailable(this.currentLevel)) {
       this.resetGameState();
       this.coneStateService.resetConeState();
+      this.trafficCones.clearParkingLines();
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { level: nextLevel },
