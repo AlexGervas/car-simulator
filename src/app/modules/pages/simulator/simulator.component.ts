@@ -300,18 +300,19 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
-  public startGame() {
+  public startGame(): void {
     this.isGameOver = false;
     this.controlsEnabled = false;
   }
 
-  public resetGameState() {
+  public resetGameState(): void {
     this.isGameOver = false;
     this.isMovingForward = false;
     this.isMovingBackward = false;
     this.hitConeCount = 0;
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
+    this.trafficCones.clearParkingLines();
 
     if (this.bridgeComponentInstance) {
       this.bridgeComponentInstance.hasCrossedBridge = false;
@@ -359,7 +360,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   }
 
-  private initSceneAndWorld() {
+  private initSceneAndWorld(): void {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xc0c0c0);
 

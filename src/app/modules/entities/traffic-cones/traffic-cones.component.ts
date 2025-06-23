@@ -28,6 +28,7 @@ export class TrafficConesComponent {
   private loader: GLTFLoader;
   private conePositions: THREE.Vector3[] = [];
   private parkingPocket: THREE.Box3 | null = null;
+  private parkingLines: THREE.Mesh[] = [];
 
   private coneBoxes: THREE.Box3[] = [];
 
@@ -180,6 +181,7 @@ export class TrafficConesComponent {
     topLine.rotation.x = -Math.PI / 2;
     topLine.position.set((positions[0].x + positions[1].x) / 2, 0.01, positions[0].z);
     this.scene.add(topLine);
+    this.parkingLines.push(topLine);
 
     const bottomLineLength = positions[3].x - positions[2].x;
     const bottomLineGeometry = new THREE.PlaneGeometry(bottomLineLength, lineWidth);
@@ -187,6 +189,7 @@ export class TrafficConesComponent {
     bottomLine.rotation.x = -Math.PI / 2;
     bottomLine.position.set((positions[2].x + positions[3].x) / 2, 0.01, positions[2].z);
     this.scene.add(bottomLine);
+    this.parkingLines.push(bottomLine);
 
     const rightLineLength = Math.abs(positions[1].z - positions[3].z);
     const rightLineGeometry = new THREE.PlaneGeometry(lineWidth, rightLineLength);
@@ -194,6 +197,7 @@ export class TrafficConesComponent {
     rightLine.rotation.x = -Math.PI / 2;
     rightLine.position.set(positions[1].x, 0.01, (positions[1].z + positions[3].z) / 2);
     this.scene.add(rightLine);
+    this.parkingLines.push(rightLine);
 
     const dashSize = 0.5;
     const gapSize = 0.5;
@@ -207,9 +211,17 @@ export class TrafficConesComponent {
       dash.rotation.x = -Math.PI / 2;
       dash.position.set(positions[0].x, 0.01, startZ - i * (dashSize + gapSize) - dashSize / 2);
       this.scene.add(dash);
+      this.parkingLines.push(dash);
     }
 
     return this.loadConeModel(positions.length, 0, 0, positions, false);
+  }
+
+  public clearParkingLines(): void {
+    if (this.parkingPocket) {
+      this.parkingLines.forEach(line => this.scene.remove(line));
+      this.parkingLines = [];
+    }
   }
 
   public createParallelParking(): Promise<void> {
