@@ -295,9 +295,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
 
     this.bridgeComponentInstance.hasCrossedBridge = false;
-    if (this.carComponent) {
-      this.bridgeComponentInstance.isOnBridge = false;
-    }
+    this.bridgeComponentInstance.isOnBridge = false;
+    this.bridgeComponentInstance.outOfBounds = false;
+    this.bridgeComponentInstance.hasPassedByBridge = false;
   }
 
   public startGame(): void {
@@ -316,6 +316,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (this.bridgeComponentInstance) {
       this.bridgeComponentInstance.hasCrossedBridge = false;
       this.bridgeComponentInstance.isOnBridge = false;
+      this.bridgeComponentInstance.outOfBounds = false;
+      this.bridgeComponentInstance.hasPassedByBridge = false;
     }
 
     if (this.carComponent) {
@@ -527,6 +529,30 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         data: {
           title: 'Поздравляем!',
           message: 'Вы успешно проехали мост!',
+          showButtons: false
+        }
+      });
+      this.isGameOver = true;
+      this.controlsEnabled = true;
+    } else if (this.bridgeComponentInstance?.outOfBounds) {
+      this.dialog.open(DialogComponent, {
+        width: '300px',
+        position: { top: '10%' },
+        data: {
+          title: 'Задание не выполнено',
+          message: 'Вы вышли за пределы моста. Начните заново.',
+          showButtons: false
+        }
+      });
+      this.isGameOver = true;
+      this.controlsEnabled = true;
+    } else if (this.bridgeComponentInstance?.hasPassedByBridge) {
+      this.dialog.open(DialogComponent, {
+        width: '300px',
+        position: { top: '10%' },
+        data: {
+          title: 'Задание не выполнено',
+          message: 'Машина проехала мимо моста.',
           showButtons: false
         }
       });

@@ -24,6 +24,9 @@ export class BridgeComponent {
 
   public hasCrossedBridge: boolean = false;
   public isOnBridge: boolean = false; 
+  public outOfBounds: boolean = false;
+  public hasEnteredBridge: boolean = false;
+  public hasPassedByBridge: boolean = false;
   public lastVertexPosition: CANNON.Vec3 | null = null;
 
   constructor() { }
@@ -59,10 +62,12 @@ export class BridgeComponent {
     let lastVertex: CANNON.Vec3 | null = null;
     let minZ = Infinity;
 
+    const scale = new THREE.Vector3(0.01, 0.01, 0.01);
+
     for (let i = 0; i < positionAttribute.count; i++) {
-      const x = positionAttribute.getX(i);
-      const y = positionAttribute.getY(i);
-      const z = positionAttribute.getZ(i);
+      const x = positionAttribute.getX(i) * scale.x;
+      const y = positionAttribute.getY(i) * scale.y;
+      const z = positionAttribute.getZ(i) * scale.z;
 
       if (z < minZ) {
         minZ = z;
@@ -73,24 +78,22 @@ export class BridgeComponent {
     return lastVertex;
   }
 
+  private findObjectByName(object: THREE.Object3D, name: string): THREE.Mesh | null {
+    if ((object as THREE.Mesh).isMesh && object.name === name) {
+      return object as THREE.Mesh;
+    }
+    for (const child of object.children) {
+      const found = this.findObjectByName(child, name);
+      if (found) return found;
+    }
+    return null;
+  }
+
   private createPhysicsSteepGrade(model: THREE.Object3D): void {
     const roadVertices: number[] = [];
     const roadIndices: number[] = [];
 
-    const findObjectByName = (object: THREE.Object3D, name: string): THREE.Mesh | null => {
-      if ((object as THREE.Mesh).isMesh && object.name === name) {
-        return object as THREE.Mesh;
-      }
-
-      for (const child of object.children) {
-        const found = findObjectByName(child, name);
-        if (found) return found;
-      }
-
-      return null;
-    };
-
-    const roadMesh = findObjectByName(model, "Plane003");
+    const roadMesh = this.findObjectByName(model, "Plane003");
 
     const geometry = roadMesh!.geometry as THREE.BufferGeometry;
     this.lastVertexPosition = this.getLastVertexPosition(geometry);
@@ -200,48 +203,50 @@ export class BridgeComponent {
   }
 
   public handleCarOnBridge(carPosition: CANNON.Vec3, carBody: CANNON.Body): void {
-    const currentlyOnBridge = this.checkIfOnBridge(carPosition);
+    const retreat = 20;
+    const isCurrentlyOnBridge = this.checkIfOnBridge(carPosition);
+    const hasReachedEndOfBridge = this.lastVertexPosition && carPosition.z <= this.lastVertexPosition.z - retreat;
 
-    if (currentlyOnBridge) {
+    if (isCurrentlyOnBridge) {
       this.isOnBridge = true;
-      const bridgeHeight = this.getBridgeHeightAtPosition(carPosition);
+      this.movingAcrossTheBridge(carPosition, carBody);
+    }
 
-      const offsetY = 0.5;
-      carBody.position.y = bridgeHeight + offsetY;
-
-      const forwardPosition = carPosition.clone();
-      forwardPosition.z += 1;
-      const forwardHeight = this.getBridgeHeightAtPosition(forwardPosition);
-
-      const backwardPosition = carPosition.clone();
-      backwardPosition.z -= 1;
-      const backwardHeight = this.getBridgeHeightAtPosition(backwardPosition);
-
-      const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
-      const tiltQuaternion = new CANNON.Quaternion();
-      tiltQuaternion.setFromEuler(tiltAngle, 0, 0);
-
-      const currentRotation = carBody.quaternion.clone();
-      carBody.quaternion = currentRotation.mult(tiltQuaternion);
-    } else if (this.isOnBridge) {
-      const roadHeight = 0;
-      const lastBridgeHeight = this.getBridgeHeightAtPosition(this.lastVertexPosition!);
-
-      const transitionHeight = this.interpolateHeight(
-        carPosition.z,
-        this.lastVertexPosition!.z,
-        roadHeight,
-        lastBridgeHeight
-      );
-
-      carBody.position.y = transitionHeight;
-      
-      if (this.lastVertexPosition && carPosition.z > this.lastVertexPosition.z) {
-        console.log("Машина проехала весь мост!");
+    if (!isCurrentlyOnBridge && this.isOnBridge) {
+      if (this.lastVertexPosition && carPosition.z <= this.lastVertexPosition.z - retreat) {
         this.hasCrossedBridge = true;
+        console.log("Вы успешно проехали мост.");
+      } else if (this.lastVertexPosition && carPosition.z > this.lastVertexPosition.z - retreat) {
+        this.outOfBounds = true;
+        console.log("Покинули мост досрочно");
       }
       this.isOnBridge = false;
     }
+    else if (!isCurrentlyOnBridge && !this.isOnBridge && hasReachedEndOfBridge) {
+      this.hasPassedByBridge = true;
+      console.log("Машина проехала мимо моста.");
+    }
+  }
+
+  private movingAcrossTheBridge(carPosition: CANNON.Vec3, carBody: CANNON.Body): void {
+    const bridgeHeight = this.getBridgeHeightAtPosition(carPosition);
+    const offsetY = 0.5;
+    carBody.position.y = bridgeHeight + offsetY;
+
+    const forwardPosition = carPosition.clone();
+    forwardPosition.z += 1;
+    const forwardHeight = this.getBridgeHeightAtPosition(forwardPosition);
+
+    const backwardPosition = carPosition.clone();
+    backwardPosition.z -= 1;
+    const backwardHeight = this.getBridgeHeightAtPosition(backwardPosition);
+
+    const tiltAngle = Math.atan2(forwardHeight - backwardHeight, 2);
+    const tiltQuaternion = new CANNON.Quaternion();
+    tiltQuaternion.setFromEuler(tiltAngle, 0, 0);
+
+    const currentRotation = carBody.quaternion.clone();
+    carBody.quaternion = currentRotation.mult(tiltQuaternion);
   }
 
   private interpolateHeight(currentZ: number, lastBridgeZ: number, roadHeight: number, bridgeHeight: number): number {

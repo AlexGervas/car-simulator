@@ -54,6 +54,10 @@ export class CarComponent implements OnInit {
     }
   }
 
+  get position(): CANNON.Vec3 {
+    return this.carBody.position;
+  }
+
   private async loadCarModel(): Promise<void> {
     const loader = new GLTFLoader();
     const gltf = await loader.loadAsync('models/cars/vw_polo_final.glb');
