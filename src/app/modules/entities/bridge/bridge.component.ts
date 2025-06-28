@@ -28,6 +28,7 @@ export class BridgeComponent {
   public hasEnteredBridge: boolean = false;
   public hasPassedByBridge: boolean = false;
   public lastVertexPosition: CANNON.Vec3 | null = null;
+  private bridgeStartPositionZ: number | undefined;
 
   constructor() { }
 
@@ -40,6 +41,7 @@ export class BridgeComponent {
         const model = gltf.scene;
         model.scale.set(0.001, 0.001, 0.001);
         model.position.set(-4, 0, -70);
+        this.bridgeStartPositionZ = model.position.z;
         model.rotateY(Math.PI / 2);
         this.scene.add(model);
 
@@ -205,7 +207,7 @@ export class BridgeComponent {
   public handleCarOnBridge(carPosition: CANNON.Vec3, carBody: CANNON.Body): void {
     const retreat = 20;
     const isCurrentlyOnBridge = this.checkIfOnBridge(carPosition);
-    const hasReachedEndOfBridge = this.lastVertexPosition && carPosition.z <= this.lastVertexPosition.z - retreat;
+    const hasReachedEndOfBridge = this.bridgeStartPositionZ && carPosition.z <= (this.bridgeStartPositionZ + retreat) / 2;
 
     if (isCurrentlyOnBridge) {
       this.isOnBridge = true;
