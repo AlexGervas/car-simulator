@@ -42,6 +42,14 @@ export class LevelService {
       this.levels[levelKeys[currentIndex + 1]] = true;
       localStorage.setItem('levels', JSON.stringify(this.levels));
     }
+
+    if (currentIndex === levelKeys.length - 1 && this.allLevelsCompleted()) {
+      alert("Вы прошли обучение и выполнили все задания!");
+    }
+  }
+
+  private allLevelsCompleted(): boolean {
+    return Object.values(this.levels).every(completed => completed);
   }
 
   public isNextLevelAvailable(level: string): boolean {
@@ -49,8 +57,6 @@ export class LevelService {
     const currentIndex = levelKeys.indexOf(level);
     if (currentIndex >= 0 && currentIndex < levelKeys.length - 1) {
       const nextLevel = levelKeys[currentIndex + 1];
-      console.log(555, this.isLevelAvailable(nextLevel));
-      
       return this.isLevelAvailable(nextLevel);
     }
     return false;

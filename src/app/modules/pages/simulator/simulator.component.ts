@@ -534,6 +534,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       });
       this.isGameOver = true;
       this.controlsEnabled = true;
+      this.levelService.completeLevel(this.currentLevel);
+      this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
     } else if (this.bridgeComponentInstance?.outOfBounds) {
       this.dialog.open(DialogComponent, {
         width: '300px',
