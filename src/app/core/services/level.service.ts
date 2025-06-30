@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { DialogService } from './dialog.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class LevelService {
     'steep-grade': false
   }
 
-  constructor() {
+  constructor(private dialogService: DialogService) {
     this.loadLevels();
   }
 
@@ -44,7 +45,7 @@ export class LevelService {
     }
 
     if (currentIndex === levelKeys.length - 1 && this.allLevelsCompleted()) {
-      alert("Вы прошли обучение и выполнили все задания!");
+      this.dialogService.openDialog('Поздравляем', 'Вы прошли обучение и выполнили все задания!', false);
     }
   }
 

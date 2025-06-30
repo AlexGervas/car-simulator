@@ -21,6 +21,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { Subscription } from 'rxjs';
 import { StopLineComponent } from "../../entities/stop-line/stop-line.component";
+import { DialogService } from '../../../core/services/dialog.service';
 
 @Component({
   selector: 'app-simulator',
@@ -84,6 +85,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private levelService: LevelService,
     private componentFactoryResolver: ComponentFactoryResolver,
     private modelsLoaderService: ModelsLoaderService,
+    private dialogService: DialogService,
     private dialog: MatDialog) { }
 
   async ngOnInit() {
@@ -490,15 +492,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       const stopLineZ = Math.floor(lastConeBox.max.z - 8);
 
       if (this.carComponent.car.position.z < stopLineZ) {
-        this.dialog.open(DialogComponent, {
-          width: '300px',
-          position: { top: '10%' },
-          data: {
-            title: 'Игра окончена',
-            message: 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.',
-            showButtons: false
-          }
-        });
+        this.dialogService.openDialog('Игра окончена', 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.', false);
         this.isGameOver = true;
         this.controlsEnabled = true;
         if (this.hitConeCount === 0) {
@@ -523,41 +517,17 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private handleSteepGradeLevelGameOver(): void {
     if (this.bridgeComponentInstance?.hasCrossedBridge) {
-      this.dialog.open(DialogComponent, {
-        width: '300px',
-        position: { top: '10%' },
-        data: {
-          title: 'Поздравляем!',
-          message: 'Вы успешно проехали мост!',
-          showButtons: false
-        }
-      });
+      this.dialogService.openDialog('Поздравляем!', 'Вы успешно проехали мост!', false);
       this.isGameOver = true;
       this.controlsEnabled = true;
       this.levelService.completeLevel(this.currentLevel);
       this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
     } else if (this.bridgeComponentInstance?.outOfBounds) {
-      this.dialog.open(DialogComponent, {
-        width: '300px',
-        position: { top: '10%' },
-        data: {
-          title: 'Задание не выполнено',
-          message: 'Вы вышли за пределы моста. Начните заново.',
-          showButtons: false
-        }
-      });
+      this.dialogService.openDialog('Задание не выполнено', 'Вы вышли за пределы моста. Начните заново.', false);
       this.isGameOver = true;
       this.controlsEnabled = true;
     } else if (this.bridgeComponentInstance?.hasPassedByBridge) {
-      this.dialog.open(DialogComponent, {
-        width: '300px',
-        position: { top: '10%' },
-        data: {
-          title: 'Задание не выполнено',
-          message: 'Машина проехала мимо моста.',
-          showButtons: false
-        }
-      });
+      this.dialogService.openDialog('Задание не выполнено', 'Машина проехала мимо моста.', false);
       this.isGameOver = true;
       this.controlsEnabled = true;
     }
@@ -580,15 +550,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private showCheckDialog(): void {
     this.checkDialogShown = true;
 
-    const dialogRef = this.dialog.open(DialogComponent, {
-      width: '300px',
-      position: { top: '10%' },
-      data: {
-        title: 'Остановились',
-        message: 'Можно проверять задание?',
-        showButtons: true
-      }
-    });
+    const dialogRef = this.dialogService.openDialogWithRef('Остановились', 'Можно проверять задание?', true);
 
     dialogRef.afterClosed().subscribe((result: boolean) => {
       this.checkDialogShown = false;
@@ -643,27 +605,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.isResultDialogShown = true;
         this.isGameOver = true;
         this.controlsEnabled = true;
-        this.dialog.open(DialogComponent, {
-          width: '300px',
-          position: { top: '10%' },
-          data: {
-            title: 'Задание не выполнено',
-            message: `${errorMessage} Попробуйте снова.`,
-            showButtons: false
-          }
-        });
+        this.dialogService.openDialog('Задание не выполнено', `${errorMessage} Попробуйте снова.`, false);
       } else {
         this.isResultDialogShown = true;
         this.isGameOver = true;
-        this.dialog.open(DialogComponent, {
-          width: '300px',
-          position: { top: '10%' },
-          data: {
-            title: 'Поздравляем!',
-            message: 'Задание выполнено',
-            showButtons: false
-          }
-        })
+        this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
         this.levelService.completeLevel(this.currentLevel);
         this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
       }
