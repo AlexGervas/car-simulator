@@ -25,19 +25,21 @@ bot.command('start', async (ctx) => {
     ]).resize());
 });
 
-bot.launch()
-    .then(() => {
-        console.log('Bot started!');
-    })
-    .catch((err) => {
-        console.error('Error when starting bot:', err);
-    });
+app.use(express.json());
 
-// Настраиваем простой веб-сервер
+app.post('/webhook', (req, res) => {
+    bot.handleUpdate(req.body, res)
+        .catch(err => {
+            console.error('Error handling update:', err);
+            res.status(500).send('Error');
+        });
+});
+
 app.get('/', (req, res) => {
     res.send('Hello from your web server!');
 });
 
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
+    console.log(`Set your webhook URL: https://car-simulator.onrender.com/webhook`);
 });
