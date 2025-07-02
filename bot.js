@@ -3,15 +3,20 @@ require('dotenv').config();
 const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const { Pool } = require('pg');
+const cors = require('cors');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'PROD';
 
 const webAppUrl = 'https://alexgervas.github.io/car-simulator/';
 const carImg = "https://i.pinimg.com/736x/6e/3a/67/6e3a6798353975790e656eb7ecafb7d3.jpg";
+
+app.use(cors());
+app.use(express.json());
 
 const pool = new Pool({
     user: process.env.DB_USER,
@@ -19,9 +24,7 @@ const pool = new Pool({
     database: process.env.DB_NAME,
     password: process.env.DB_PASSWORD,
     port: process.env.DB_PORT,
-    ssl: {
-        rejectUnauthorized: false
-    }
+    ssl: isProduction ? { rejectUnauthorized: false } : false
 });
 
 bot.command('start', async (ctx) => {
@@ -51,28 +54,24 @@ bot.command('start', async (ctx) => {
     }
 });
 
-const cors = require('cors');
-app.use(cors());  
-app.use(express.json());
-
-app.post('/webhook', (req, res) => {
-    bot.handleUpdate(req.body, res)
-        .catch(err => {
-            console.error('Error handling update:', err);
-            res.status(500).send('Error');
+if (isProduction) {
+    app.post('/webhook', (req, res) => {
+        bot.handleUpdate(req.body, res)
+            .catch(err => {
+                console.error('Error handling update:', err);
+                res.status(500).send('Error');
+            });
+    });
+} else {
+    // Test bot for local (Polling):
+    bot.launch()
+        .then(() => {
+            console.log('Bot started!');
+        })
+        .catch((err) => {
+            console.error('Error when starting bot:', err);
         });
-});
-
-// Test bot for local:
-/*const cors = require('cors');
-app.use(cors());
-bot.launch()
-    .then(() => {
-        console.log('Bot started!');
-    })
-    .catch((err) => {
-        console.error('Error when starting bot:', err);
-    });*/
+}
 
 app.get('/', (req, res) => {
     res.send('Hello from your web server!');
