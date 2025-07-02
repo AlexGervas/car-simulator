@@ -22,6 +22,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { Subscription } from 'rxjs';
 import { StopLineComponent } from "../../entities/stop-line/stop-line.component";
 import { DialogService } from '../../../core/services/dialog.service';
+import { User } from '../../../core/models/user';
+import { ApiService } from '../../../core/services/api.service';
+import { TelegramService } from '../../../core/services/telegram.service';
 
 @Component({
   selector: 'app-simulator',
@@ -76,6 +79,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private stopCheckTimeout: number | null = null;
   private isCheckingConditions: boolean = false;
 
+  public user: User | null = null;
+
   constructor(private el: ElementRef,
     private router: Router,
     private route: ActivatedRoute,
@@ -86,12 +91,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private componentFactoryResolver: ComponentFactoryResolver,
     private modelsLoaderService: ModelsLoaderService,
     private dialogService: DialogService,
-    private dialog: MatDialog) { }
+    private dialog: MatDialog,
+    private api: ApiService,
+    private telegramService: TelegramService) { }
 
   async ngOnInit() {
     this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
     this.clock = new THREE.Clock();
+
+    this.user = this.telegramService.getTelegramUser();
+
+    if (!this.user) {
+      console.error('Telegram User not found!');
+    }
+
     this.initSceneAndWorld();
 
     try {
@@ -496,8 +510,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.isGameOver = true;
         this.controlsEnabled = true;
         if (this.hitConeCount === 0) {
+          if (!this.user) return;
+          this.api.reportLevelCompletion(this.user, this.currentLevel, true);
+
           this.levelService.completeLevel(this.currentLevel);
           this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+          
         }
       }
     }
@@ -520,6 +538,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.dialogService.openDialog('Поздравляем!', 'Вы успешно проехали мост!', false);
       this.isGameOver = true;
       this.controlsEnabled = true;
+      if (!this.user) return;
+      this.api.reportLevelCompletion(this.user, this.currentLevel, true);
+
       this.levelService.completeLevel(this.currentLevel);
       this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
     } else if (this.bridgeComponentInstance?.outOfBounds) {
@@ -609,6 +630,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       } else {
         this.isResultDialogShown = true;
         this.isGameOver = true;
+        if (!this.user) return;
+        this.api.reportLevelCompletion(this.user, this.currentLevel, true);
+
         this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
         this.levelService.completeLevel(this.currentLevel);
         this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
