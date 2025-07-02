@@ -62,7 +62,9 @@ app.post('/webhook', (req, res) => {
 });
 
 // Test bot for local:
-/*bot.launch()
+/*const cors = require('cors');
+app.use(cors());
+bot.launch()
     .then(() => {
         console.log('Bot started!');
     })
@@ -116,7 +118,7 @@ app.get('/levels/:id', async (req, res) => {
         if (result.rows.length === 0) {
             res.status(404).send('User not found');
         } else {
-            res.status(200).json(result.rows[0]);
+            res.status(200).json(result.rows);
         }
     } catch (err) {
         console.error('Error fetching user:', err);
@@ -134,7 +136,7 @@ app.post('/progress', express.json(), async (req, res) => {
         );
 
         await bot.telegram.sendMessage(userId, `Поздравляем! Вы прошли уровень "${level}"! 🎉`);
-        res.sendStatus(200);
+        res.status(200).json({ success: true });
     } catch (e) {
         console.error(e);
         res.status(500).send('Error when sending a message');
