@@ -64,7 +64,9 @@ app.post('/webhook', (req, res) => {
 });
 
 // Test bot for local:
-/*bot.launch()
+/*const cors = require('cors');
+app.use(cors());
+bot.launch()
     .then(() => {
         console.log('Bot started!');
     })
