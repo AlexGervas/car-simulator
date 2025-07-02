@@ -511,11 +511,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.controlsEnabled = true;
         if (this.hitConeCount === 0) {
           if (!this.user) return;
-          this.api.reportLevelCompletion(this.user, this.currentLevel, true);
+          this.api.reportLevelCompletion(this.user, this.currentLevel, true).subscribe({
+            next: () => {
+              this.levelService.completeLevel(this.currentLevel);
+              this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+            }
+          });
 
-          this.levelService.completeLevel(this.currentLevel);
-          this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-          
         }
       }
     }
@@ -539,10 +541,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.isGameOver = true;
       this.controlsEnabled = true;
       if (!this.user) return;
-      this.api.reportLevelCompletion(this.user, this.currentLevel, true);
-
-      this.levelService.completeLevel(this.currentLevel);
-      this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+      this.api.reportLevelCompletion(this.user, this.currentLevel, true).subscribe({
+        next: () => {
+          this.levelService.completeLevel(this.currentLevel);
+          this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+        }
+      });
     } else if (this.bridgeComponentInstance?.outOfBounds) {
       this.dialogService.openDialog('Задание не выполнено', 'Вы вышли за пределы моста. Начните заново.', false);
       this.isGameOver = true;
@@ -631,11 +635,13 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.isResultDialogShown = true;
         this.isGameOver = true;
         if (!this.user) return;
-        this.api.reportLevelCompletion(this.user, this.currentLevel, true);
-
-        this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
-        this.levelService.completeLevel(this.currentLevel);
-        this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+        this.api.reportLevelCompletion(this.user, this.currentLevel, true).subscribe({
+          next: () => {
+            this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
+            this.levelService.completeLevel(this.currentLevel);
+            this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+          }
+        });
       }
       this.isCheckingConditions = false;
     }, 2000);
