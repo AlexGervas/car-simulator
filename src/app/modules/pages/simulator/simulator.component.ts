@@ -690,7 +690,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   @HostListener('window:keydown', ['$event'])
   handleKeyboardEvent(event: KeyboardEvent) {
-    if (this.isMobileDevice) return;
+    // if (this.isMobileDevice) return;
 
     if (this.car && !this.isGameOver) {
       if (event.key === 'ArrowUp') {
@@ -711,7 +711,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   @HostListener('window:keyup', ['$event'])
   handleKeyUpEvent(event: KeyboardEvent) {
-    if (this.isMobileDevice) return;
+    // if (this.isMobileDevice) return;
 
     if (event.key === 'ArrowUp') {
       this.isMovingForward = false;

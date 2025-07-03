@@ -19,7 +19,7 @@ export class TelegramService {
     const isLocal = window.location.hostname === 'localhost';
     const isGHPage = window.location.hostname.includes('github.io');
     const isNotTelegram = !this.tg?.initDataUnsafe?.user;
-debugger
+
     if ((isLocal || isGHPage) && isNotTelegram) {
       return this.getTestUser();
     }
