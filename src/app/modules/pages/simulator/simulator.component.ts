@@ -101,6 +101,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.clock = new THREE.Clock();
 
     this.user = this.telegramService.getTelegramUser();
+    console.log("User:", this.user);
+    
 
     if (!this.user) {
       console.error('Telegram User not found!');

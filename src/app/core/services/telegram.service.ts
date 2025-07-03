@@ -16,6 +16,14 @@ export class TelegramService {
   }
 
   public getTelegramUser(): User | null {
+    const isLocal = window.location.hostname === 'localhost';
+    const isGHPage = window.location.hostname.includes('github.io');
+    const isNotTelegram = !this.tg?.initDataUnsafe?.user;
+debugger
+    if ((isLocal || isGHPage) && isNotTelegram) {
+      return this.getTestUser();
+    }
+
     const tgUser = this.tg?.initDataUnsafe?.user;
 
     if (!tgUser) return null;
@@ -26,5 +34,15 @@ export class TelegramService {
       userfirstname: tgUser.first_name,
       userlastname: tgUser.last_name
     };
+  }
+
+  public getTestUser(): User | null {
+    const me = {
+      userId: 784002330,
+      username: "alex_gervas",
+      userfirstname: "Alexandra",
+      userlastname: "Gervas 🎸"
+    }; 
+    return me;
   }
 }

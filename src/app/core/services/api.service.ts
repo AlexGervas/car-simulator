@@ -8,9 +8,11 @@ import { User } from '../models/user';
 })
 export class ApiService {
 
-  private apiUrl = 'https://car-simulator.onrender.com';
+  private apiUrl: string;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {
+    this.apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://car-simulator.onrender.com';
+  }
 
   /**
    * Прогресс выполнения уровня
