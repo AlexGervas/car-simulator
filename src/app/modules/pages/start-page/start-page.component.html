@@ -1,31 +1,10 @@
 <div class="map-container">
     <div class="paper-texture"></div>
 
-    <button class="map-button" name="snake" data-tooltip="Play Snake Level"
-        (click)="startGame('snake')">
-        <img src="svg/snake.svg" alt="Snake Level" class="level-image" />
-        @if (!this.levelService.isLevelAvailable('snake')) {
-        <img src="svg/lock.svg" alt="Locked" class="lock-icon" />
-        }
-    </button>
-    <button class="map-button" name="parallel-parking"
-        data-tooltip="Practice Parallel Parking" (click)="startGame('parallel-parking')">
-        <img src="svg/parallel_parking.svg" alt="Parallel Parking Level" class="level-image" />
-        @if (!this.levelService.isLevelAvailable('parallel-parking')) {
-        <img src="svg/lock.svg" alt="Locked" class="lock-icon" />
-        }
-    </button>
-    <button class="map-button" name="garage" data-tooltip="Practice Garage Parking"
-        (click)="startGame('garage')">
-        <img src="svg/garage_with_red_car.svg" alt="Garage Level" class="level-image" />
-        @if (!this.levelService.isLevelAvailable('garage')) {
-        <img src="svg/lock.svg" alt="Locked" class="lock-icon" />
-        }
-    </button>
-    <button class="map-button" name="steep-grade" data-tooltip="Steep Grade Level"
-        (click)="startGame('steep-grade')">
-        <img src="svg/steep_grade.svg" alt="Steep Grade Level" class="level-image" />
-        @if (!this.levelService.isLevelAvailable('steep-grade')) {
+    <button class="map-button" *ngFor="let level of levelBtns" [attr.name]="level.name"
+        [ngClass]="{ 'locked': !level.available }" [attr.data-tooltip]="level.tooltip" (click)="startGame(level.name)">
+        <img [src]=level.icon [alt]=level.tooltip class="level-image" />
+        @if (!level.available) {
         <img src="svg/lock.svg" alt="Locked" class="lock-icon" />
         }
     </button>

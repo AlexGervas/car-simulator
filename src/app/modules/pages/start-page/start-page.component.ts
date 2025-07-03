@@ -11,18 +11,38 @@ import { CommonModule } from '@angular/common';
   styleUrl: './start-page.component.css'
 })
 export class StartPageComponent implements OnInit {
+  public levelBtns: { name: string; available: boolean; icon: string; tooltip: string }[] = [];
+
   constructor(private router: Router, public levelService: LevelService) { }
 
   ngOnInit() {
-    const buttons = document.querySelectorAll('.map-button');
-    buttons.forEach((button: Element) => {
-      const level = button.getAttribute('name');
-      if (level && !this.levelService.isLevelAvailable(level)) {
-        button.classList.add('locked');
-      } else {
-        button.classList.remove('locked');
-      }
-    })
+    const levelKeys = Object.keys(this.levelService['levels']);
+    this.levelBtns = levelKeys.map((levelName) => ({
+      name: levelName,
+      available: this.levelService.isLevelAvailable(levelName),
+      icon: this.getIconForLevel(levelName),
+      tooltip: this.getTooltipForLevel(levelName)
+    }));
+  }
+
+  private getIconForLevel(level: string): string {
+    switch (level) {
+      case 'snake': return 'svg/snake.svg';
+      case 'parallel-parking': return 'svg/parallel_parking.svg';
+      case 'garage': return 'svg/garage_with_red_car.svg';
+      case 'steep-grade': return 'svg/steep_grade.svg';
+      default: return '';
+    }
+  }
+
+  private getTooltipForLevel(level: string): string {
+    switch (level) {
+      case 'snake': return 'Play Snake Level';
+      case 'parallel-parking': return 'Practice Parallel Parking';
+      case 'garage': return 'Practice Garage Parking';
+      case 'steep-grade': return 'Steep Grade Level';
+      default: return '';
+    }
   }
 
   public startGame(level: string) {
