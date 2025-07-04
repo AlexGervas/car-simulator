@@ -34,10 +34,18 @@ bot.command('start', async (ctx) => {
     const username = ctx.from.username || ctx.from.first_name;
 
     try {
-        await pool.query(
-            `INSERT INTO users (id, username, userFirstName, userLastName) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
-            [userId, username, userFirstName, userLastName]
-        );
+        await fetch(`${process.env.BASE_URL}/create-user`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                userId,
+                username,
+                userFirstName,
+                userLastName,
+            }),
+        });
 
         await ctx.replyWithPhoto({ url: carImg }, {
             caption: `Добро пожаловать, @${username}! 🌟\n\n` +
@@ -77,6 +85,43 @@ app.get('/', (req, res) => {
     res.send('Hello from your web server!');
 });
 
+/**
+ * Добавление нового пользовалея
+ */
+app.post('/create-user', async (req, res) => {
+    const { userId, username, userFirstName, userLastName } = req.body;
+
+    try {
+        await pool.query(
+            `INSERT INTO users (id, username, userFirstName, userLastName) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
+            [userId, username, userFirstName, userLastName]
+        );
+
+        const levels = [
+            { level: 'snake', status: true },
+            { level: 'parallel-parking', status: false },
+            { level: 'garage', status: false },
+            { level: 'steep-grade', status: false }
+        ];
+
+        const levelQueries = levels.map(({ level, status }) => {
+            return pool.query(
+                `INSERT INTO levels (user_id, level, status) VALUES ($1, $2, $3)`,
+                [userId, level, status]
+            );
+        });
+
+        await Promise.all(levelQueries);
+        res.status(201).send('User created with initial levels');
+    } catch (err) {
+        console.error('Error saving user:', err);
+        res.status(500).send('Error saving user');
+    }
+});
+
+/**
+ * Список всех пользователей
+ */
 app.get('/users', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM users');
@@ -87,6 +132,9 @@ app.get('/users', async (req, res) => {
     }
 });
 
+/**
+ * Получение информации пользователя по id
+ */
 app.get('/users/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -102,6 +150,31 @@ app.get('/users/:id', async (req, res) => {
     }
 });
 
+/**
+ * Удаление пользователя и его выполненных уровней
+ */
+app.delete('/users/:id', async (req, res) => {
+    const { id } = req.params;
+
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        await client.query('DELETE FROM levels WHERE user_id = $1', [id]);
+        await client.query('DELETE FROM users WHERE id = $1', [id]);
+        await client.query('COMMIT');
+        res.status(200).send('User deleted successfully');
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error deleting user:', err);
+        res.status(500).send('Error deleting user');
+    } finally {
+        client.release();
+    }
+});
+
+/**
+ * Вывод уровней 
+ */
 app.get('/levels', async (req, res) => {
     try {
         const result = await pool.query('SELECT * FROM levels');
@@ -112,21 +185,32 @@ app.get('/levels', async (req, res) => {
     }
 });
 
+/**
+ * Вывод всех уровней по id пользователя
+ */
 app.get('/levels/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const result = await pool.query('SELECT * FROM levels WHERE user_id = $1', [id]);
+        const result = await pool.query('SELECT level, status FROM levels WHERE user_id = $1', [id]);
         if (result.rows.length === 0) {
             res.status(404).send('User not found');
         } else {
-            res.status(200).json(result.rows);
+            const levels = result.rows.map(row => ({
+                level: row.level,
+                status: row.status
+            }));
+
+            res.status(200).json({ user_id: id, levels });
         }
     } catch (err) {
         console.error('Error fetching user:', err);
-        res.status(500).send('Ошибка при получении пользователя');
+        res.status(500).send('Error fetching user levels');
     }
 });
 
+/**
+ * Сохранение выполненного уровня в прогресс
+ */
 app.post('/progress', express.json(), async (req, res) => {
     const { userId, level, status } = req.body;
 
@@ -144,6 +228,9 @@ app.post('/progress', express.json(), async (req, res) => {
     }
 });
 
+/**
+ * Проверка выполнения всех упражнений
+ */
 app.post('/check-completion', express.json(), async (req, res) => {
     const { userId, totalLevels } = req.body;
 
