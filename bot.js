@@ -229,6 +229,39 @@ app.post('/progress', express.json(), async (req, res) => {
 });
 
 /**
+ * Переход на следующий уровень
+ */
+app.post('/next-level', express.json(), async (req, res) => {
+    const { userId, currentLevel } = req.body;
+    const levelsOrder = ['snake', 'parallel-parking', 'garage', 'steep-grade'];
+
+    try {
+        const currentIndex = levelsOrder.indexOf(currentLevel);
+        console.log("current level: ", currentLevel, currentIndex);
+
+        if (currentIndex === -1) {
+            return res.status(400).send('Incorrect current level');
+        }
+
+        const nextLevel = levelsOrder[currentIndex + 1];
+        console.log("nextLevel: ", nextLevel);
+        if (nextLevel) {
+            await pool.query(
+                `INSERT INTO levels (user_id, level, status) VALUES ($1, $2, $3) ON CONFLICT (user_id, level) DO UPDATE SET status = TRUE`,
+                [userId, nextLevel, true]
+            );
+            await bot.telegram.sendMessage(userId, `Отлично! Вам открыт следующий уровень "${nextLevel}"! ✅`);
+            res.status(200).send(`Level "${nextLevel}" status has been updated to true`);
+        } else {
+            res.status(400).send('There are no upgrade levels available');
+        }
+    } catch (err) {
+        console.error('Error updating level status:', err);
+        res.status(500).send('Error updating level status');
+    }
+});
+
+/**
  * Проверка выполнения всех упражнений
  */
 app.post('/check-completion', express.json(), async (req, res) => {
