@@ -209,55 +209,39 @@ app.get('/levels/:id', async (req, res) => {
 });
 
 /**
- * Сохранение выполненного уровня в прогресс
+ * Сохранение выполненного уровня и разблокировка следующего
  */
-app.post('/progress', express.json(), async (req, res) => {
-    const { userId, level, status } = req.body;
-
-    try {
-        await pool.query(
-            `INSERT INTO levels (user_id, level, status) VALUES ($1, $2, $3) ON CONFLICT (user_id, level) DO UPDATE SET status = $3`,
-            [userId, level, true]
-        );
-
-        await bot.telegram.sendMessage(userId, `Поздравляем! Вы прошли уровень "${level}"! 🎉`);
-        res.status(200).json({ success: true });
-    } catch (e) {
-        console.error(e);
-        res.status(500).send('Error when sending a message');
-    }
-});
-
-/**
- * Переход на следующий уровень
- */
-app.post('/next-level', express.json(), async (req, res) => {
+app.post('/complete-level', async (req, res) => {
     const { userId, currentLevel } = req.body;
     const levelsOrder = ['snake', 'parallel-parking', 'garage', 'steep-grade'];
 
     try {
         const currentIndex = levelsOrder.indexOf(currentLevel);
-        console.log("current level: ", currentLevel, currentIndex);
+        if (currentIndex === -1) return res.status(400).send('Incorrect current level');
 
-        if (currentIndex === -1) {
-            return res.status(400).send('Incorrect current level');
-        }
+        await pool.query(
+            `INSERT INTO levels (user_id, level, status) VALUES ($1, $2, true)
+         ON CONFLICT (user_id, level) DO UPDATE SET status = true`,
+            [userId, currentLevel]
+        );
 
         const nextLevel = levelsOrder[currentIndex + 1];
-        console.log("nextLevel: ", nextLevel);
         if (nextLevel) {
             await pool.query(
-                `INSERT INTO levels (user_id, level, status) VALUES ($1, $2, $3) ON CONFLICT (user_id, level) DO UPDATE SET status = TRUE`,
-                [userId, nextLevel, true]
+                `INSERT INTO levels (user_id, level, status) VALUES ($1, $2, true)
+           ON CONFLICT (user_id, level) DO UPDATE SET status = true`,
+                [userId, nextLevel]
             );
-            await bot.telegram.sendMessage(userId, `Отлично! Вам открыт следующий уровень "${nextLevel}"! ✅`);
-            res.status(200).send(`Level "${nextLevel}" status has been updated to true`);
+
+            await bot.telegram.sendMessage(userId, `Поздравляем! Вы прошли упражнение "${currentLevel}"! 🎉 \nСледующее задание"${nextLevel}" разблокировано! ✅`);
         } else {
-            res.status(400).send('There are no upgrade levels available');
+            await bot.telegram.sendMessage(userId, `Вы завершили последнее упражнение "${currentLevel}" 🎉`);
         }
+
+        res.status(200).send({ success: true });
     } catch (err) {
-        console.error('Error updating level status:', err);
-        res.status(500).send('Error updating level status');
+        console.error(err);
+        res.status(500).send('Server error');
     }
 });
 
