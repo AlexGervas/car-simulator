@@ -363,6 +363,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public async goToNextLevel(): Promise<void> {
     const nextLevel = this.levelService.getNextLevel(this.currentLevel);
+    console.log(44, "nextLevel", nextLevel);
+    
     if (nextLevel && this.levelService.isNextLevelAvailable(this.currentLevel)) {
       this.resetGameState();
       this.coneStateService.resetConeState();
@@ -511,10 +513,14 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.dialogService.openDialog('Игра окончена', 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.', false);
         this.isGameOver = true;
         this.controlsEnabled = true;
+        this.isNextLevel = false;
         if (this.hitConeCount === 0) {
           if (!this.user) return;
           this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
-            next: () => this.levelService.loadLevels(),
+            next: () => {
+              this.levelService.loadLevels();
+              this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+            },
             error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
           });
 
@@ -540,6 +546,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.dialogService.openDialog('Поздравляем!', 'Вы успешно проехали мост!', false);
       this.isGameOver = true;
       this.controlsEnabled = true;
+      this.isNextLevel = false;
       if (!this.user) return;
       this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
         next: () => this.levelService.loadLevels(),
@@ -637,6 +644,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           next: () => {
             this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
             this.levelService.loadLevels();
+            this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
           }, 
           error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
         });

@@ -30,10 +30,9 @@ export class LevelService {
   }
 
   public getNextLevel(level: string): string | null {
-    const levelKeys = Object.keys(this.levels);
-    const currentIndex = levelKeys.indexOf(level);
-    if (currentIndex >= 0 && currentIndex < levelKeys.length - 1) {
-      return levelKeys[currentIndex + 1];
+    const currentIndex = this.levelOrder.indexOf(level);
+    if (currentIndex >= 0 && currentIndex < this.levelOrder.length - 1) {
+      return this.levelOrder[currentIndex + 1];
     }
     return null;
   }
@@ -62,11 +61,10 @@ export class LevelService {
   }
 
   public isNextLevelAvailable(level: string): boolean {
-    const levelKeys = Object.keys(this.levels);
-    const currentIndex = levelKeys.indexOf(level);
-    if (currentIndex >= 0 && currentIndex < levelKeys.length - 1) {
-      const nextLevel = levelKeys[currentIndex + 1];
-      return this.isLevelAvailable(nextLevel);
+    const currentIndex = this.levelOrder.indexOf(level);
+    if (currentIndex >= 0 && currentIndex < this.levelOrder.length - 1) {
+      const nextLevel = this.levelOrder[currentIndex + 1];
+      return this.levels[nextLevel] || false;
     }
     return false;
   }
