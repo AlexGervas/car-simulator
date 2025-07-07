@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { LevelService } from '../../../core/services/level.service';
 import { CommonModule } from '@angular/common';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-start-page',
@@ -10,19 +11,25 @@ import { CommonModule } from '@angular/common';
   templateUrl: './start-page.component.html',
   styleUrl: './start-page.component.css'
 })
-export class StartPageComponent implements OnInit {
+export class StartPageComponent implements OnInit, OnDestroy {
   public levelBtns: { name: string; available: boolean; icon: string; tooltip: string }[] = [];
+  private sub: Subscription = new Subscription();
 
   constructor(private router: Router, public levelService: LevelService) { }
 
   ngOnInit() {
-    const levelKeys = Object.keys(this.levelService['levels']);
-    this.levelBtns = levelKeys.map((levelName) => ({
-      name: levelName,
-      available: this.levelService.isLevelAvailable(levelName),
-      icon: this.getIconForLevel(levelName),
-      tooltip: this.getTooltipForLevel(levelName)
-    }));
+    this.sub = this.levelService.levels$.subscribe((levels) => {
+      this.levelBtns = this.levelService.levelOrder.map((levelName) => ({
+        name: levelName,
+        available: levels[levelName] || false,
+        icon: this.getIconForLevel(levelName),
+        tooltip: this.getTooltipForLevel(levelName)
+      }));
+    });
+  }
+
+  ngOnDestroy() {
+    this.sub.unsubscribe();
   }
 
   private getIconForLevel(level: string): string {

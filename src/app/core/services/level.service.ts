@@ -1,10 +1,17 @@
 import { Injectable } from '@angular/core';
 import { DialogService } from './dialog.service';
+import { ApiService } from './api.service';
+import { TelegramService } from './telegram.service';
+import { User } from '../models/user';
+import { BehaviorSubject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class LevelService {
+  private user: User | any;
+  public readonly levelOrder: string[] = ['snake', 'parallel-parking', 'garage', 'steep-grade'];
+
   private levels: { [key: string]: boolean } = {
     'snake': true,
     'parallel-parking': false,
@@ -12,7 +19,13 @@ export class LevelService {
     'steep-grade': false
   }
 
-  constructor(private dialogService: DialogService) {
+  private levelsSubject = new BehaviorSubject<{ [key: string]: boolean }>(this.levels);
+  public levels$ = this.levelsSubject.asObservable();
+  public levelsLoaded = false;
+
+
+  constructor(private dialogService: DialogService, private api: ApiService, private telegramService: TelegramService) {
+    this.user = this.telegramService.getTelegramUser();
     this.loadLevels();
   }
 
@@ -25,32 +38,27 @@ export class LevelService {
     return null;
   }
 
-  private loadLevels(): void {
-    const savedLevels = localStorage.getItem("levels");
-    if (savedLevels) {
-      this.levels = JSON.parse(savedLevels);
+  public loadLevels(): void {
+    if (this.user) {
+      const userId = this.user.userId;
+      this.api.getLevelsFromServer(userId).subscribe({
+        next: (levels) => {
+          this.levelOrder.forEach((level) => {
+            this.levels[level] = !!levels[level];
+          });
+          this.levelsSubject.next({ ...this.levels });
+          this.levelsLoaded = true;
+        },
+        error: (err) => {
+          console.error('Error loading levels:', err);
+          this.levelsLoaded = true;
+        }
+      });
     }
   }
 
   public isLevelAvailable(level: string): boolean {
     return this.levels[level] || false;
-  }
-
-  public completeLevel(level: string): void {
-    const levelKeys = Object.keys(this.levels);
-    const currentIndex = levelKeys.indexOf(level);
-    if (currentIndex >= 0 && currentIndex < levelKeys.length - 1) {
-      this.levels[levelKeys[currentIndex + 1]] = true;
-      localStorage.setItem('levels', JSON.stringify(this.levels));
-    }
-
-    if (currentIndex === levelKeys.length - 1 && this.allLevelsCompleted()) {
-      this.dialogService.openDialog('Поздравляем', 'Вы прошли обучение и выполнили все задания!', false);
-    }
-  }
-
-  private allLevelsCompleted(): boolean {
-    return Object.values(this.levels).every(completed => completed);
   }
 
   public isNextLevelAvailable(level: string): boolean {

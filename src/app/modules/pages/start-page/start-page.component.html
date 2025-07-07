@@ -1,11 +1,13 @@
 <div class="map-container">
     <div class="paper-texture"></div>
 
-    <button class="map-button" *ngFor="let level of levelBtns" [attr.name]="level.name"
-        [ngClass]="{ 'locked': !level.available }" [attr.data-tooltip]="level.tooltip" (click)="startGame(level.name)">
-        <img [src]=level.icon [alt]=level.tooltip class="level-image" />
+    @for (level of levelBtns; track level.name) {
+    <button class="map-button" [attr.name]="level.name" [ngClass]="{ 'locked': !level.available }"
+        [attr.data-tooltip]="level.tooltip" (click)="startGame(level.name)">
+        <img [src]="level.icon" [alt]=level.tooltip class="level-image" />
         @if (!level.available) {
         <img src="svg/lock.svg" alt="Locked" class="lock-icon" />
         }
     </button>
+    }
 </div>

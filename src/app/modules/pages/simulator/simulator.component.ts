@@ -513,11 +513,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.controlsEnabled = true;
         if (this.hitConeCount === 0) {
           if (!this.user) return;
-          this.api.reportLevelCompletion(this.user, this.currentLevel, true).subscribe({
-            next: () => {
-              this.levelService.completeLevel(this.currentLevel);
-              this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-            }
+          this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
+            next: () => this.levelService.loadLevels(),
+            error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
           });
 
         }
@@ -543,11 +541,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.isGameOver = true;
       this.controlsEnabled = true;
       if (!this.user) return;
-      this.api.reportLevelCompletion(this.user, this.currentLevel, true).subscribe({
-        next: () => {
-          this.levelService.completeLevel(this.currentLevel);
-          this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-        }
+      this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
+        next: () => this.levelService.loadLevels(),
+        error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
       });
     } else if (this.bridgeComponentInstance?.outOfBounds) {
       this.dialogService.openDialog('Задание не выполнено', 'Вы вышли за пределы моста. Начните заново.', false);
@@ -637,12 +633,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.isResultDialogShown = true;
         this.isGameOver = true;
         if (!this.user) return;
-        this.api.reportLevelCompletion(this.user, this.currentLevel, true).subscribe({
+        this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
           next: () => {
             this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
-            this.levelService.completeLevel(this.currentLevel);
-            this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-          }
+            this.levelService.loadLevels();
+          }, 
+          error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
         });
       }
       this.isCheckingConditions = false;

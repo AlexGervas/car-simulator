@@ -1,6 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { User } from '../models/user';
 
 @Injectable({
@@ -15,19 +15,34 @@ export class ApiService {
   }
 
   /**
-   * Прогресс выполнения уровня
-   * @param user 
-   * @param level 
-   * @param status 
+   * Получение текущего прогресса уровней пользователя
+   * @param userId
+   * @returns
+   */
+  public getLevelsFromServer(userId: number): Observable<{ [key: string]: boolean }> {
+    return this.http.get<{ user_id: string; levels: { level: string; status: boolean }[] }>(`${this.apiUrl}/levels/${userId}`).pipe(
+      map((response: { levels: { level: string | number; status: boolean; }[]; }) => {
+        const levelMap: { [key: string]: boolean } = {};
+        response.levels.forEach((lvl: { level: string | number; status: boolean; }) => {
+          levelMap[lvl.level] = lvl.status;
+        });
+        return levelMap;
+      })
+    );
+  }
+
+  /**
+   * Изменение прогресса при выполнении уровня
+   * @param userId 
+   * @param currentLevel 
    * @returns 
    */
-  public reportLevelCompletion(user: User, level: string, status: boolean): Observable<User> {
+  public completeLevel(userId: number, currentLevel: string): Observable<any> {
     const body = {
-      userId: user.userId,
-      level: level,
-      status: status
+      userId: userId,
+      currentLevel: currentLevel
     };
-    return this.http.post<User>(`${this.apiUrl}/progress`, body);
+    return this.http.post<any>(`${this.apiUrl}/complete-level`, body);
   }
 
 }
