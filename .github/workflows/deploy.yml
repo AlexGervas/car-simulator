@@ -24,6 +24,10 @@ jobs:
       - name: Install Angular CLI
         run: npm install -g @angular/cli
 
+      - name: Run unit tests
+        run: |
+          npm run test-headless
+
       - name: Build the project
         run: npm run build
 
