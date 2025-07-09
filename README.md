@@ -1,6 +1,7 @@
 # CarSimulator
 
 ![Build Status](https://github.com/AlexGervas/car-simulator/actions/workflows/deploy.yml/badge.svg)
+![Deploy](https://img.shields.io/github/deployments/AlexGervas/car-simulator/github-pages)
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 18.2.12.
 
