@@ -30,8 +30,8 @@ export class CarComponent implements OnInit {
   public car!: THREE.Object3D;
   public carBody!: CANNON.Body;
   public vehicle!: CANNON.RaycastVehicle;
-  private wheels: Record<string, THREE.Object3D> = {};
-  private wheelData: Record<string, { radius: number; position: THREE.Vector3 }> = {};
+  public wheels: Record<string, THREE.Object3D> = {};
+  public wheelData: Record<string, { radius: number; position: THREE.Vector3 }> = {};
 
   public currentSpeed: number = 0;
   private accelerationRate: number = 1;
@@ -190,7 +190,7 @@ export class CarComponent implements OnInit {
     this.gameOverCheck.emit();
   }
 
-  private updateCarSpeed(deltaTime: number, isMovingForward: boolean, isMovingBackward: boolean): void {
+  public updateCarSpeed(deltaTime: number, isMovingForward: boolean, isMovingBackward: boolean): void {
     const direction = new THREE.Vector3();
     this.car.getWorldDirection(direction);
     direction.y = 0;
@@ -217,7 +217,7 @@ export class CarComponent implements OnInit {
 
   }
 
-  private updateCarRotation(isMovingForward: boolean, isMovingBackward: boolean, isTurningLeft: boolean, isTurningRight: boolean): void {
+  public updateCarRotation(isMovingForward: boolean, isMovingBackward: boolean, isTurningLeft: boolean, isTurningRight: boolean): void {
     if (isMovingForward || isMovingBackward) {
       const turnDirection = isMovingForward ? 1 : -1;
       if (isTurningLeft) {
