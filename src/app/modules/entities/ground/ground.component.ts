@@ -19,7 +19,7 @@ export class GroundComponent {
 
   public static GROUP_GROUND = 4;
 
-  private asphaltTexture!: THREE.Texture;
+  public asphaltTexture!: THREE.Texture;
 
   constructor() { }
 
