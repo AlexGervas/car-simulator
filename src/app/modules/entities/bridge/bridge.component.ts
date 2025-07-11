@@ -28,7 +28,7 @@ export class BridgeComponent {
   public hasEnteredBridge: boolean = false;
   public hasPassedByBridge: boolean = false;
   public lastVertexPosition: CANNON.Vec3 | null = null;
-  private bridgeStartPositionZ: number | undefined;
+  public bridgeStartPositionZ: number | undefined;
 
   constructor() { }
 
