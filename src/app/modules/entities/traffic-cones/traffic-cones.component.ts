@@ -27,12 +27,12 @@ export class TrafficConesComponent {
   private scene!: THREE.Scene;
   private loader: GLTFLoader;
   private conePositions: THREE.Vector3[] = [];
-  private parkingPocket: THREE.Box3 | null = null;
-  private parkingLines: THREE.Mesh[] = [];
+  public parkingPocket: THREE.Box3 | null = null;
+  public parkingLines: THREE.Mesh[] = [];
 
   private coneBoxes: THREE.Box3[] = [];
 
-  constructor(private coneStateService: ConeStateService, private stopLineService: StopLineService) {
+  constructor(private coneStateService: ConeStateService, public stopLineService: StopLineService) {
     this.loader = new GLTFLoader();
   }
 
