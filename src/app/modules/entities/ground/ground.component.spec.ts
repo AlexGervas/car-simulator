@@ -36,68 +36,76 @@ describe('GroundComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should load ground model and set asphalt texture', (done) => {
-        spyOn(THREE.TextureLoader.prototype, 'load').and.callFake((url, onLoad) => {
-            const texture = new THREE.Texture();
-            if (onLoad) {
-                onLoad(texture);
-            }
-            return texture;
+    describe('loadGroundModel()', () => {
+        it('should load ground model and set asphalt texture', (done) => {
+            spyOn(THREE.TextureLoader.prototype, 'load').and.callFake((url, onLoad) => {
+                const texture = new THREE.Texture();
+                if (onLoad) {
+                    onLoad(texture);
+                }
+                return texture;
+            });
+
+            component.loadGroundModel();
+
+            expect(component.asphaltTexture).toBeDefined();
+            expect(component.asphaltTexture.wrapS).toBe(THREE.RepeatWrapping);
+            expect(component.asphaltTexture.wrapT).toBe(THREE.RepeatWrapping);
+            expect(component.asphaltTexture.repeat.x).toBe(3);
+            expect(component.asphaltTexture.repeat.y).toBe(3);
+            done();
         });
-
-        component.loadGroundModel();
-
-        expect(component.asphaltTexture).toBeDefined();
-        expect(component.asphaltTexture.wrapS).toBe(THREE.RepeatWrapping);
-        expect(component.asphaltTexture.wrapT).toBe(THREE.RepeatWrapping);
-        expect(component.asphaltTexture.repeat.x).toBe(3);
-        expect(component.asphaltTexture.repeat.y).toBe(3);
-        done();
     });
 
-    it('should create physics ground body', () => {
-        component.createPhysicsGroundBody();
+    describe('createPhysicsGroundBody()', () => {
+        it('should create physics ground body', () => {
+            component.createPhysicsGroundBody();
 
-        expect(mockWorld.bodies.length).toBe(1);
-        const groundBody = mockWorld.bodies[0];
-        expect(groundBody.mass).toBe(0);
-        expect(groundBody.collisionFilterGroup).toBe(GroundComponent.GROUP_GROUND);
+            expect(mockWorld.bodies.length).toBe(1);
+            const groundBody = mockWorld.bodies[0];
+            expect(groundBody.mass).toBe(0);
+            expect(groundBody.collisionFilterGroup).toBe(GroundComponent.GROUP_GROUND);
+        });
     });
 
-    it('should update tiles based on car position', () => {
-        mockCar.position.z = 0;
-        component.loadGroundModel();
-        component.updateTiles();
+    describe('updateTiles()', () => {
+        it('should update tiles based on car position', () => {
+            mockCar.position.z = 0;
+            component.loadGroundModel();
+            component.updateTiles();
 
-        expect(mockScene.children.length).toBeGreaterThan(0);
-        const tile = mockScene.children[0];
-        expect(tile.position.z).toBeLessThan(200);
+            expect(mockScene.children.length).toBeGreaterThan(0);
+            const tile = mockScene.children[0];
+            expect(tile.position.z).toBeLessThan(200);
+        });
     });
 
-    it('should create a tile and add it to the scene', () => {
-        const x = 10;
-        const z = 20;
+    describe('createTile()', () => {
+        it('should create a tile and add it to the scene', () => {
+            const x = 10;
+            const z = 20;
 
-        component.loadGroundModel();
+            component.loadGroundModel();
 
-        (component as any).createTile(x, z);
+            (component as any).createTile(x, z);
 
-        expect(mockScene.children.length).toBe(1);
+            expect(mockScene.children.length).toBe(1);
 
-        const tile = mockScene.children[0] as THREE.Mesh;
-        expect(tile).toBeInstanceOf(THREE.Mesh);
+            const tile = mockScene.children[0] as THREE.Mesh;
+            expect(tile).toBeInstanceOf(THREE.Mesh);
 
-        expect(tile.geometry).toBeInstanceOf(THREE.PlaneGeometry);
-        expect(tile.material).toBeInstanceOf(THREE.MeshBasicMaterial);
+            expect(tile.geometry).toBeInstanceOf(THREE.PlaneGeometry);
+            expect(tile.material).toBeInstanceOf(THREE.MeshBasicMaterial);
 
-        const material = Array.isArray(tile.material) ? tile.material[0] : tile.material;
-        const basicMaterial = material as THREE.MeshBasicMaterial;
-        expect(basicMaterial.map).toBeDefined();
-        expect(basicMaterial.map).toBe(component.asphaltTexture);
+            const material = Array.isArray(tile.material) ? tile.material[0] : tile.material;
+            const basicMaterial = material as THREE.MeshBasicMaterial;
+            expect(basicMaterial.map).toBeDefined();
+            expect(basicMaterial.map).toBe(component.asphaltTexture);
 
-        expect(tile.position.x).toBe(x);
-        expect(tile.position.z).toBe(z);
-        expect(tile.rotation.x).toBe(-Math.PI / 2);
+            expect(tile.position.x).toBe(x);
+            expect(tile.position.z).toBe(z);
+            expect(tile.rotation.x).toBe(-Math.PI / 2);
+        });
     });
 
 });

@@ -51,105 +51,117 @@ describe('TrafficConesComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should return cone positions', () => {
-        const positions = component.getConePositions();
-        expect(positions).toEqual([]);
-    });
-
-    it('should return cone by position when close enough', () => {
-        const cone = new THREE.Object3D();
-        cone.position.set(1, 0, 1);
-        component['cones'].push(cone);
-
-        const result = component.getConeByPosition(new THREE.Vector3(1.05, 0, 1.02));
-        expect(result).toBe(cone);
-    });
-
-    it('should return null if no cone is close enough', () => {
-        const cone = new THREE.Object3D();
-        cone.position.set(5, 0, 5);
-        component['cones'].push(cone);
-
-        const result = component.getConeByPosition(new THREE.Vector3(0, 0, 0));
-        expect(result).toBeNull();
-    });
-
-    it('should return initial cone positions as CANNON.Vec3', () => {
-        const position = new THREE.Vector3(1, 2, 3);
-        component['initialConePositions'].push(position);
-
-        const result = component.getInitialConePositions();
-        expect(result.length).toBe(1);
-        expect(result[0]).toEqual(jasmine.objectContaining({ x: 1, y: 2, z: 3 }));
-    });
-
-    it('should load cone models and add them to the scene', async () => {
-        const count = 1;
-
-        const dummyGLTF: GLTF = {
-            scene: new THREE.Object3D(),
-            animations: [],
-            asset: { version: '2.0', generator: 'mock' }
-        };
-
-        spyOn(GLTFLoader.prototype, 'load').and.callFake((url: string, onLoad: (gltf: GLTF) => void) => {
-            onLoad(dummyGLTF);
-        });
-
-        await component.loadConeModel(count, 5, 5, undefined, false);
-
-        expect(component.getCones().length).toBe(count, 'Expected number of cones to be correct');
-        expect(scene.children.length).toBe(count, 'Expected number of scene children to be correct');
-
-        expect(mockStopLineService.callCreateStopLine).not.toHaveBeenCalled();
-    });
-
-    it('should reject loading if car is not defined', async () => {
-        component.car = undefined!;
-
-        await expectAsync(component.loadConeModel(1, 5, 5)).toBeRejectedWithError("Car is not defined");
-    });
-
-    it('should create parking scene when createParallelParking is called', (done) => {
-        component.car.position.set(0, 0, 20);
-
-        component.createParallelParking().then(() => {
-            expect(component.parkingPocket).toBeDefined();
-            expect(component.parkingLines.length).toBeGreaterThan(0);
-            done();
-        }).catch(err => {
-            fail('Expected promise to resolve, but it rejected with: ' + err);
-            done();
+    describe('getConePositions()', () => {
+        it('should return cone positions', () => {
+            const positions = component.getConePositions();
+            expect(positions).toEqual([]);
         });
     });
 
-    it('should create garage scene when createParallelParking is called', (done) => {
-        component.car.position.set(0, 0, 10);
+    describe('getConeByPosition()', () => {
+        it('should return cone by position when close enough', () => {
+            const cone = new THREE.Object3D();
+            cone.position.set(1, 0, 1);
+            component['cones'].push(cone);
 
-        component.createParallelParking().then(() => {
-            expect(component.parkingPocket).toBeDefined();
-            expect(component.parkingLines.length).toBeGreaterThan(0);
-            done();
-        }).catch(err => {
-            fail('Expected promise to resolve, but it rejected with: ' + err);
-            done();
+            const result = component.getConeByPosition(new THREE.Vector3(1.05, 0, 1.02));
+            expect(result).toBe(cone);
+        });
+
+        it('should return null if no cone is close enough', () => {
+            const cone = new THREE.Object3D();
+            cone.position.set(5, 0, 5);
+            component['cones'].push(cone);
+
+            const result = component.getConeByPosition(new THREE.Vector3(0, 0, 0));
+            expect(result).toBeNull();
         });
     });
 
-    it('should return preciseMatch true when car is inside parking pocket', () => {
-        component.car.position.set(2.5, 1, 2);
+    describe('getInitialConePositions()', () => {
+        it('should return initial cone positions as CANNON.Vec3', () => {
+            const position = new THREE.Vector3(1, 2, 3);
+            component['initialConePositions'].push(position);
 
-        const result = component.checkCarInsideParkingPocket();
-        
-        expect(result.preciseMatch).toBeTrue();
-        expect(result.nearMatch).toBeFalse();
+            const result = component.getInitialConePositions();
+            expect(result.length).toBe(1);
+            expect(result[0]).toEqual(jasmine.objectContaining({ x: 1, y: 2, z: 3 }));
+        });
     });
 
-    it('should return nearMatch true when car is near parking pocket', () => {
-        component.car.position.set(6, 0, 5);
+    describe('loadConeModel()', () => {
+        it('should load cone models and add them to the scene', async () => {
+            const count = 1;
 
-        const result = component.checkCarInsideParkingPocket();
-        expect(result.preciseMatch).toBeTrue();
-        expect(result.nearMatch).toBeFalse();
+            const dummyGLTF: GLTF = {
+                scene: new THREE.Object3D(),
+                animations: [],
+                asset: { version: '2.0', generator: 'mock' }
+            };
+
+            spyOn(GLTFLoader.prototype, 'load').and.callFake((url: string, onLoad: (gltf: GLTF) => void) => {
+                onLoad(dummyGLTF);
+            });
+
+            await component.loadConeModel(count, 5, 5, undefined, false);
+
+            expect(component.getCones().length).toBe(count, 'Expected number of cones to be correct');
+            expect(scene.children.length).toBe(count, 'Expected number of scene children to be correct');
+
+            expect(mockStopLineService.callCreateStopLine).not.toHaveBeenCalled();
+        });
+
+        it('should reject loading if car is not defined', async () => {
+            component.car = undefined!;
+
+            await expectAsync(component.loadConeModel(1, 5, 5)).toBeRejectedWithError("Car is not defined");
+        });
+    });
+
+    describe('createParallelParking()', () => {
+        it('should create parking scene when createParallelParking is called', (done) => {
+            component.car.position.set(0, 0, 20);
+
+            component.createParallelParking().then(() => {
+                expect(component.parkingPocket).toBeDefined();
+                expect(component.parkingLines.length).toBeGreaterThan(0);
+                done();
+            }).catch(err => {
+                fail('Expected promise to resolve, but it rejected with: ' + err);
+                done();
+            });
+        });
+
+        it('should create garage scene when createParallelParking is called', (done) => {
+            component.car.position.set(0, 0, 10);
+
+            component.createParallelParking().then(() => {
+                expect(component.parkingPocket).toBeDefined();
+                expect(component.parkingLines.length).toBeGreaterThan(0);
+                done();
+            }).catch(err => {
+                fail('Expected promise to resolve, but it rejected with: ' + err);
+                done();
+            });
+        });
+    });
+
+    describe('checkCarInsideParkingPocket()', () => {
+        it('should return preciseMatch true when car is inside parking pocket', () => {
+            component.car.position.set(2.5, 1, 2);
+
+            const result = component.checkCarInsideParkingPocket();
+
+            expect(result.preciseMatch).toBeTrue();
+            expect(result.nearMatch).toBeFalse();
+        });
+
+        it('should return nearMatch true when car is near parking pocket', () => {
+            component.car.position.set(6, 0, 5);
+
+            const result = component.checkCarInsideParkingPocket();
+            expect(result.preciseMatch).toBeTrue();
+            expect(result.nearMatch).toBeFalse();
+        });
     });
 });

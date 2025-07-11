@@ -28,38 +28,38 @@ describe('StopLineComponent', () => {
         expect(component).toBeTruthy();
     });
 
-    it('should create a stop line with a model', async () => {
+    describe('createStopLine()', () => {
         const lastConeBox = { max: { y: 1, z: 5 } };
 
-        const loadSpy = spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad) => {
-            const gltf: any = {
-                scene: new THREE.Group(),
-                animations: [],
-                scenes: [],
-                cameras: [],
-                asset: {}
-            };
-            onLoad(gltf);
+        it('should create a stop line with a model', async () => {
+            const loadSpy = spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad) => {
+                const gltf: any = {
+                    scene: new THREE.Group(),
+                    animations: [],
+                    scenes: [],
+                    cameras: [],
+                    asset: {}
+                };
+                onLoad(gltf);
+            });
+
+            await component.createStopLine(lastConeBox);
+
+            expect(mockScene.children[0].name).toBe("FinishLine");
+            expect(mockScene.children[0].position.y).toBeCloseTo(0.8);
+            expect(mockScene.children[0].position.z).toBeCloseTo(0);
         });
 
-        await component.createStopLine(lastConeBox);
+        it('should handle errors when loading the model', async () => {
+            const loadSpy = spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad, onProgress, onError) => {
+                if (onError) {
+                    onError(new Error('Load error'));
+                }
+            });
 
-        expect(mockScene.children[0].name).toBe("FinishLine");
-        expect(mockScene.children[0].position.y).toBeCloseTo(0.8);
-        expect(mockScene.children[0].position.z).toBeCloseTo(0);
-    });
-
-    it('should handle errors when loading the model', async () => {
-        const lastConeBox = { max: { y: 1, z: 5 } };
-
-        const loadSpy = spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad, onProgress, onError) => {
-            if (onError) {
-                onError(new Error('Load error'));
-            }
-        });
-
-        await component.createStopLine(lastConeBox).catch((error) => {
-            expect(error.message).toBe('Load error');
+            await component.createStopLine(lastConeBox).catch((error) => {
+                expect(error.message).toBe('Load error');
+            });
         });
     });
 
