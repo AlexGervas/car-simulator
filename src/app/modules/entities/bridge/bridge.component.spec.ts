@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { BridgeComponent } from './bridge.component';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import * as THREE from 'three';
@@ -8,8 +8,8 @@ describe('BridgeComponent', () => {
     let component: BridgeComponent;
     let fixture: ComponentFixture<BridgeComponent>;
 
-    beforeEach(async () => {
-        await TestBed.configureTestingModule({
+    beforeEach(waitForAsync( () => {
+        TestBed.configureTestingModule({
             imports: [BridgeComponent],
             providers: [
                 provideNoopAnimations()
@@ -21,7 +21,7 @@ describe('BridgeComponent', () => {
         component.scene = new THREE.Scene();
         component.world = new CANNON.World();
         fixture.detectChanges();
-    });
+    }));
 
     it('should create the component', () => {
         expect(component).toBeTruthy();
