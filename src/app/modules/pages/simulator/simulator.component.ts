@@ -89,7 +89,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private stopLineService: StopLineService,
     private levelService: LevelService,
     private componentFactoryResolver: ComponentFactoryResolver,
-    private modelsLoaderService: ModelsLoaderService,
+    public modelsLoaderService: ModelsLoaderService,
     private dialogService: DialogService,
     private dialog: MatDialog,
     private api: ApiService,
@@ -194,7 +194,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     console.log('Car successfully loaded in SimulatorComponent:', this.car);
   }
 
-  private async loadCarFromCarComponent(): Promise<THREE.Object3D> {
+  public async loadCarFromCarComponent(): Promise<THREE.Object3D> {
     while (!this.carComponent) {
       await new Promise(resolve => setTimeout(resolve, 5));
     }
@@ -215,7 +215,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.animate();
   }
 
-  private async initLevel(level: string): Promise<void> {
+  public async initLevel(level: string): Promise<void> {
     this.hitConeCount = 0;
     this.modelsLoaderService.show();
     this.stopLineService.setScene(this.scene);
@@ -247,7 +247,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     });
   }
 
-  private async initSnakeScene(): Promise<void> {
+  public async initSnakeScene(): Promise<void> {
     console.log('Initializing the Snake scene');
     try {
       await this.trafficCones.createSnake();
@@ -258,7 +258,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
-  private async initParallelParkingScene(): Promise<void> {
+  public async initParallelParkingScene(): Promise<void> {
     this.exerciseStarted = false;
     this.checkDialogShown = false;
     this.stoppedOnce = false;
@@ -277,7 +277,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
-  private async initGarageScene(): Promise<void> {
+  public async initGarageScene(): Promise<void> {
     this.exerciseStarted = false;
     this.checkDialogShown = false;
     this.stoppedOnce = false;
@@ -291,7 +291,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
-  private async initSteepGradeScene(): Promise<void> {
+  public async initSteepGradeScene(): Promise<void> {
     if (!this.bridgeComponentInstance) {
       const factory = this.componentFactoryResolver.resolveComponentFactory(BridgeComponent);
       const bridgeComponentRef = this.dynamicComponents?.createComponent(factory);
@@ -378,7 +378,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   }
 
-  private initSceneAndWorld(): void {
+  public initSceneAndWorld(): void {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0xc0c0c0);
 
