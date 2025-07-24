@@ -15,6 +15,7 @@ import { DialogService } from '../../../core/services/dialog.service';
 import { MatDialog } from '@angular/material/dialog';
 import { TelegramService } from '../../../core/services/telegram.service';
 import * as THREE from 'three';
+import * as CANNON from 'cannon-es';
 
 describe('SimulatorComponent', () => {
     let component: SimulatorComponent;
@@ -181,6 +182,222 @@ describe('SimulatorComponent', () => {
 
             expect(console.error).toHaveBeenCalledWith('Error initialization of the ParallelParking scene:');
         });
+    });
+
+    describe('initGarageScene', () => {
+        beforeEach(() => {
+            component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['createGarage'], {
+                cones: [1, 2, 3]
+            });
+            spyOn(component['coneStateService'], 'initializeConeStates');
+        });
+
+        it('should reset flags and initialize garage scene', async () => {
+            await component.initGarageScene();
+
+            expect(component.exerciseStarted).toBeFalse();
+            expect(component.checkDialogShown).toBeFalse();
+            expect(component.stoppedOnce).toBeFalse();
+            expect(component['isCheckingConditions']).toBeFalse();
+            expect(component.trafficCones.createGarage).toHaveBeenCalled();
+            expect(component['coneStateService'].initializeConeStates).toHaveBeenCalledWith(3);
+        });
+
+        it('should catch and log errors during garage scene initialization', async () => {
+            (component.trafficCones.createGarage as jasmine.Spy).and.throwError('Garage error');
+            spyOn(console, 'error');
+
+            await component.initGarageScene();
+
+            expect(console.error).toHaveBeenCalledWith('Error initialization of the Garage scene');
+        });
+
+    });
+
+    describe('initSteepGradeScene', () => {
+        let bridgeComponentRefMock: any;
+
+        beforeEach(() => {
+            component.scene = {} as THREE.Scene;
+            component.world = {} as CANNON.World;
+
+            bridgeComponentRefMock = {
+                instance: {
+                    createBridge: jasmine.createSpy('createBridge').and.returnValue(Promise.resolve()),
+                    hasCrossedBridge: true,
+                    isOnBridge: true,
+                    outOfBounds: true,
+                    hasPassedByBridge: true
+                }
+            };
+
+            component.dynamicComponents = jasmine.createSpyObj('ViewContainerRef', ['createComponent']);
+            (component.dynamicComponents.createComponent as jasmine.Spy).and.returnValue(bridgeComponentRefMock);
+
+            spyOn(component['componentFactoryResolver'], 'resolveComponentFactory').and.returnValue({} as any);
+        });
+
+        it('should create bridge component and initialize bridge scene', async () => {
+            component.bridgeComponentInstance = undefined;
+
+            await component.initSteepGradeScene();
+
+            expect(component.dynamicComponents.createComponent).toHaveBeenCalled();
+            expect(bridgeComponentRefMock.instance.createBridge).toHaveBeenCalled();
+
+            expect(bridgeComponentRefMock.instance.scene).toBe(component.scene);
+            expect(bridgeComponentRefMock.instance.world).toBe(component.world);
+
+            expect(bridgeComponentRefMock.instance.hasCrossedBridge).toBeFalse();
+            expect(bridgeComponentRefMock.instance.isOnBridge).toBeFalse();
+            expect(bridgeComponentRefMock.instance.outOfBounds).toBeFalse();
+            expect(bridgeComponentRefMock.instance.hasPassedByBridge).toBeFalse();
+        });
+
+        it('should assign bridge instance to carComponent if present', async () => {
+            component.bridgeComponentInstance = {
+                createBridge: jasmine.createSpy().and.returnValue(Promise.resolve()),
+                hasCrossedBridge: true,
+                isOnBridge: true,
+                outOfBounds: true,
+                hasPassedByBridge: true
+            } as any;
+            component.carComponent = { bridge: null } as any;
+
+            await component.initSteepGradeScene();
+
+            expect(component.bridgeComponentInstance).toBeDefined();
+            expect(component.carComponent.bridge).toBe(component.bridgeComponentInstance!);
+        });
+
+        it('should log an error if bridge instance creation failed', async () => {
+            (component.dynamicComponents.createComponent as jasmine.Spy).and.returnValue({ instance: null });
+            spyOn(console, 'error');
+
+            component.bridgeComponentInstance = undefined;
+            await component.initSteepGradeScene();
+
+            expect(console.error).toHaveBeenCalledWith('BridgeComponent instance not created.');
+        });
+
+    });
+
+    describe('Game control methods', () => {
+        describe('startGame', () => {
+            it('should reset isGameOver and disable controls', () => {
+                component.isGameOver = true;
+                component.controlsEnabled = true;
+
+                component.startGame();
+
+                expect(component.isGameOver).toBeFalse();
+                expect(component.controlsEnabled).toBeFalse();
+            });
+        });
+
+        describe('resetGameState', () => {
+            beforeEach(() => {
+                component.carBody = {} as any;
+                component.world = jasmine.createSpyObj('World', ['removeBody']);
+                component.dialog = jasmine.createSpyObj('MatDialog', ['closeAll']);
+
+                component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['resetCones', 'clearParkingLines']);
+                component.coneStateService = jasmine.createSpyObj('ConeStateService', ['resetConeState']);
+
+                component.bridgeComponentInstance = {
+                    hasCrossedBridge: true,
+                    isOnBridge: true,
+                    outOfBounds: true,
+                    hasPassedByBridge: true
+                } as any;
+
+                component.carComponent = {
+                    currentSpeed: 5,
+                    finalHeight: 1.5,
+                    resetCarPosition: jasmine.createSpy(),
+                    createPhysicsCarBody: jasmine.createSpy(),
+                    createPhysicsWheels: jasmine.createSpy(),
+                    scaleFactor: 1,
+                    vehicle: {
+                        wheelInfos: [{ deltaRotation: 3 }, { deltaRotation: 4 }]
+                    }
+                } as any;
+            });
+
+            it('should reset game flags, car state, cone and bridge state', () => {
+                component.resetGameState();
+
+                expect(component.isGameOver).toBeFalse();
+                expect(component.isMovingForward).toBeFalse();
+                expect(component.isMovingBackward).toBeFalse();
+                expect(component.hitConeCount).toBe(0);
+                expect(component.checkDialogShown).toBeFalse();
+                expect(component.stoppedOnce).toBeFalse();
+                expect(component.isCheckingConditions).toBeFalse();
+                expect(component.isResultDialogShown).toBeFalse();
+                expect(component.temporaryBlockDialog).toBeFalse();
+
+                expect(component.coneStateService.resetConeState).toHaveBeenCalled();
+                expect(component.trafficCones.resetCones).toHaveBeenCalled();
+                expect(component.world.removeBody).toHaveBeenCalledWith(component.carBody);
+                expect(component.dialog.closeAll).toHaveBeenCalled();
+
+                expect(component.carComponent.currentSpeed).toBe(0);
+                expect(component.carComponent.resetCarPosition).toHaveBeenCalled();
+                expect(component.carComponent.createPhysicsCarBody).toHaveBeenCalledWith(component.carComponent.finalHeight);
+                expect(component.carComponent.createPhysicsWheels).toHaveBeenCalledWith(component.carComponent.scaleFactor);
+                expect(component.carComponent.vehicle.wheelInfos[0].deltaRotation).toBe(0);
+                expect(component.carComponent.vehicle.wheelInfos[1].deltaRotation).toBe(0);
+
+                expect(component.bridgeComponentInstance!.hasCrossedBridge).toBeFalse();
+                expect(component.bridgeComponentInstance!.isOnBridge).toBeFalse();
+                expect(component.bridgeComponentInstance!.outOfBounds).toBeFalse();
+                expect(component.bridgeComponentInstance!.hasPassedByBridge).toBeFalse();
+            });
+        });
+
+        describe('goToNextLevel', () => {
+            beforeEach(() => {
+                component.resetGameState = jasmine.createSpy();
+                component.coneStateService = jasmine.createSpyObj('ConeStateService', ['resetConeState']);
+                component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['clearParkingLines']);
+                component.router = jasmine.createSpyObj('Router', ['navigate']);
+                component.route = {} as ActivatedRoute;
+            });
+
+            it('should go to the next level if available', async () => {
+                component.currentLevel = 'snake';
+                const nextLevel = 'garage';
+
+                component.levelService = jasmine.createSpyObj('LevelService', ['getNextLevel', 'isNextLevelAvailable']);
+                (component.levelService.getNextLevel as jasmine.Spy).and.returnValue(nextLevel);
+                (component.levelService.isNextLevelAvailable as jasmine.Spy).and.returnValue(true);
+
+                await component.goToNextLevel();
+
+                expect(component.resetGameState).toHaveBeenCalled();
+                expect(component.coneStateService.resetConeState).toHaveBeenCalled();
+                expect(component.trafficCones.clearParkingLines).toHaveBeenCalled();
+                expect(component.router.navigate).toHaveBeenCalledWith([], {
+                    relativeTo: component.route,
+                    queryParams: { level: nextLevel },
+                    queryParamsHandling: 'merge'
+                });
+            });
+
+            it('should not go to the next level if unavailable', async () => {
+                component.levelService = jasmine.createSpyObj('LevelService', ['getNextLevel', 'isNextLevelAvailable']);
+                (component.levelService.getNextLevel as jasmine.Spy).and.returnValue(null);
+                (component.levelService.isNextLevelAvailable as jasmine.Spy).and.returnValue(false);
+
+                await component.goToNextLevel();
+
+                expect(component.resetGameState).not.toHaveBeenCalled();
+                expect(component.router.navigate).not.toHaveBeenCalled();
+            });
+
+        });
+
     });
 
 });

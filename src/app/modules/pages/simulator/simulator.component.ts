@@ -42,7 +42,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   @ViewChild(GroundComponent) ground!: GroundComponent;
 
   @ViewChild('dynamicComponents', { read: ViewContainerRef, static: true }) dynamicComponents!: ViewContainerRef;
-  private bridgeComponentInstance?: BridgeComponent;
+  public bridgeComponentInstance?: BridgeComponent;
 
   private carCollisionSubscription: Subscription | undefined;
   private gameOverSubscription: Subscription | undefined;
@@ -77,21 +77,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private clock!: THREE.Clock;
 
   private stopCheckTimeout: number | null = null;
-  private isCheckingConditions: boolean = false;
+  public isCheckingConditions: boolean = false;
 
   public user: User | null = null;
 
   constructor(private el: ElementRef,
-    private router: Router,
-    private route: ActivatedRoute,
+    public router: Router,
+    public route: ActivatedRoute,
     private deviceService: DeviceService,
-    private coneStateService: ConeStateService,
+    public coneStateService: ConeStateService,
     private stopLineService: StopLineService,
-    private levelService: LevelService,
+    public levelService: LevelService,
     private componentFactoryResolver: ComponentFactoryResolver,
     public modelsLoaderService: ModelsLoaderService,
     private dialogService: DialogService,
-    private dialog: MatDialog,
+    public dialog: MatDialog,
     private api: ApiService,
     private telegramService: TelegramService) { }
 
