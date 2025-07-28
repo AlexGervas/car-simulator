@@ -52,7 +52,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public car!: THREE.Object3D;
   public carBody!: CANNON.Body;
   public scene!: THREE.Scene;
-  private renderer!: THREE.WebGLRenderer;
+  public renderer!: THREE.WebGLRenderer;
 
   private turnSpeed: number = 1;
   public hitConeCount: number = 0;
@@ -74,7 +74,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public isNextLevel: boolean = false;
 
   public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' = 'snake';
-  private clock!: THREE.Clock;
+  public clock!: THREE.Clock;
 
   private stopCheckTimeout: number | null = null;
   public isCheckingConditions: boolean = false;
@@ -400,7 +400,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.scene.add(directionalLight);
   }
 
-  private animatePhysics(deltaTime: number): void {
+  public animatePhysics(deltaTime: number): void {
     const fixedTimeStep = 1 / 60;
     const maxSubSteps = 3;
     this.world.step(fixedTimeStep, deltaTime, maxSubSteps);
@@ -417,7 +417,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     });
   }
 
-  private animate() {
+  public animate() {
     requestAnimationFrame(() => this.animate());
     const deltaTime = this.clock.getDelta();
     this.animatePhysics(deltaTime);
@@ -440,7 +440,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.renderer.render(this.scene, this.camera);
   }
 
-  private updateCameraPosition() {
+  public updateCameraPosition() {
     if (this.car) {
       const offset = new THREE.Vector3(0, 2, 5);
       this.camera.position.copy(this.car.position).add(offset);

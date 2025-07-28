@@ -400,4 +400,150 @@ describe('SimulatorComponent', () => {
 
     });
 
+    describe('initSceneAndWorld', () => {
+        it('should initialize the scene and world correctly', () => {
+            component.initSceneAndWorld();
+            expect(component.scene).toBeDefined();
+            expect(component.world).toBeDefined();
+            expect(component.camera).toBeDefined();
+            expect(component.renderer).toBeDefined();
+            expect(component.scene.background).toEqual(new THREE.Color(0xc0c0c0));
+            expect(component.world.gravity).toEqual(new CANNON.Vec3(0, -9.82, 0));
+        });
+
+        it('should set up the camera position correctly', () => {
+            component.initSceneAndWorld();
+            expect(component.camera.position).toEqual(new THREE.Vector3(0, 2, 5));
+        });
+
+        it('should add lights to the scene', () => {
+            component.initSceneAndWorld();
+            const ambientLight = component.scene.children.find(child => child instanceof THREE.AmbientLight);
+            const directionalLight = component.scene.children.find(child => child instanceof THREE.DirectionalLight);
+            expect(ambientLight).toBeDefined();
+            expect(directionalLight).toBeDefined();
+        });
+    });
+
+    describe('animatePhysics', () => {
+        beforeEach(() => {
+            component.car = new THREE.Object3D();
+            component.carBody = new CANNON.Body({
+                mass: 1,
+                shape: new CANNON.Sphere(1)
+            });
+            component.carBody.position.set(1, 2, 3);
+            component.carBody.quaternion.set(0.1, 0.2, 0.3, 0.4);
+
+            const coneBody = new CANNON.Body({ mass: 1, shape: new CANNON.Sphere(1) });
+            coneBody.position.set(5, 0, 6);
+            coneBody.quaternion.set(0.5, 0.6, 0.7, 0.8);
+
+            const coneMesh = new THREE.Mesh();
+            component.trafficCones = {
+                coneBodies: [coneBody],
+                getCones: () => [coneMesh]
+            } as any;
+
+            component.world = new CANNON.World();
+        });
+
+        it('should step the physics world and update car and cone transforms', () => {
+            component.animatePhysics(1 / 60);
+
+            expect(component.car.position.x).toBeCloseTo(1);
+            expect(component.car.position.y).toBeCloseTo(2);
+            expect(component.car.position.z).toBeCloseTo(3);
+
+            expect(component.car.quaternion.x).toBeCloseTo(0.1);
+            expect(component.car.quaternion.y).toBeCloseTo(0.2);
+            expect(component.car.quaternion.z).toBeCloseTo(0.3);
+            expect(component.car.quaternion.w).toBeCloseTo(0.4);
+
+            const updatedCone = component.trafficCones.getCones()[0];
+            expect(updatedCone.position.x).toBeCloseTo(5);
+            expect(updatedCone.position.y).toBeCloseTo(0);
+            expect(updatedCone.position.z).toBeCloseTo(6);
+
+            expect(updatedCone.quaternion.x).toBeCloseTo(0.5);
+            expect(updatedCone.quaternion.y).toBeCloseTo(0.6);
+            expect(updatedCone.quaternion.z).toBeCloseTo(0.7);
+            expect(updatedCone.quaternion.w).toBeCloseTo(0.8);
+        });
+
+    });
+
+    describe('animate', () => {
+        it('should schedule the next animation frame and update the scene', () => {
+            const rafSpy = spyOn(window, 'requestAnimationFrame').and.callFake((cb: FrameRequestCallback): number => {
+                return 0;
+            });
+
+            component.clock = new THREE.Clock();
+            spyOn(component, 'animatePhysics');
+            spyOn(component.carComponent, 'updateCarPosition');
+            spyOn(component, 'updateCameraPosition');
+            component.scene = new THREE.Scene();
+            component.camera = new THREE.PerspectiveCamera();
+            component.renderer = jasmine.createSpyObj('WebGLRenderer', ['render']);
+
+            component.animate();
+
+            expect(rafSpy).toHaveBeenCalled();
+            expect(component.animatePhysics).toHaveBeenCalled();
+            expect(component.carComponent.updateCarPosition).toHaveBeenCalled();
+            expect(component.updateCameraPosition).toHaveBeenCalled();
+            expect(component.renderer.render).toHaveBeenCalledWith(component.scene, component.camera);
+        });
+    });
+
+    describe('updateCameraPosition', () => {
+        beforeEach(() => {
+            component.camera = new THREE.PerspectiveCamera();
+            component.car = new THREE.Object3D();
+        });
+
+        it('should update the camera position based on the car position and offset', () => {
+            component.car.position.set(1, 1, 1);
+
+            component.updateCameraPosition();
+
+            const expectedPosition = new THREE.Vector3(1, 1, 1).add(new THREE.Vector3(0, 2, 5));
+            expect(component.camera.position).toEqual(expectedPosition);
+        });
+
+        it('should do nothing if car is undefined', () => {
+            component.car = undefined!;
+            component.camera = jasmine.createSpyObj('camera', ['lookAt', 'position']);
+
+            expect(() => component.updateCameraPosition()).not.toThrow();
+        });
+
+        it('should update camera position relative to car and call lookAt', () => {
+            const mockCar = new THREE.Object3D();
+            mockCar.position.set(2, 0, 4);
+
+            spyOn(mockCar, 'getWorldDirection').and.callFake((target: THREE.Vector3) => {
+                target.set(0, 0, -1);
+                return target;
+            });
+
+            const mockCamera = new THREE.PerspectiveCamera();
+            const lookAtSpy = spyOn(mockCamera, 'lookAt');
+
+            component.car = mockCar;
+            component.camera = mockCamera;
+
+            component.updateCameraPosition();
+
+            expect(component.camera.position.x).toBeCloseTo(2);
+            expect(component.camera.position.y).toBeCloseTo(2);
+            expect(component.camera.position.z).toBeCloseTo(9);
+
+            expect(lookAtSpy).toHaveBeenCalled();
+        });
+
+    });
+
+
 });
