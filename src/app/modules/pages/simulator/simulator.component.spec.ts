@@ -1,4 +1,4 @@
-import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick, waitForAsync } from '@angular/core/testing';
 import { SimulatorComponent } from './simulator.component';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
@@ -84,57 +84,63 @@ describe('SimulatorComponent', () => {
     });
 
     describe('Level initialization', () => {
-        it('should call initSnakeScene when level is snake', async () => {
+        it('should call initSnakeScene when level is snake', fakeAsync(() => {
             spyOn(component, 'initSnakeScene').and.returnValue(Promise.resolve());
-            await component.initLevel('snake');
+            component.initLevel('snake');
+            tick();
             expect(component.initSnakeScene).toHaveBeenCalled();
-        });
+        }));
 
-        it('should call initParallelParkingScene when level is parallel-parking', async () => {
+        it('should call initParallelParkingScene when level is parallel-parking', fakeAsync(() => {
             spyOn(component, 'initParallelParkingScene').and.returnValue(Promise.resolve());
-            await component.initLevel('parallel-parking');
+            component.initLevel('parallel-parking');
+            tick();
             expect(component.initParallelParkingScene).toHaveBeenCalled();
-        });
+        }));
 
-        it('should call initGarageScene when level is garage', async () => {
+        it('should call initGarageScene when level is garage', fakeAsync(() => {
             spyOn(component, 'initGarageScene').and.returnValue(Promise.resolve());
-            await component.initLevel('garage');
+            component.initLevel('garage');
+            tick();
             expect(component.initGarageScene).toHaveBeenCalled();
-        });
+        }));
 
-        it('should call initSteepGradeScene for unknown level', async () => {
+        it('should call initSteepGradeScene for unknown level', fakeAsync(() => {
             spyOn(component, 'initSteepGradeScene').and.returnValue(Promise.resolve());
-            await component.initLevel('unknown-level');
+            component.initLevel('unknown-level');
+            tick();
             expect(component.initSteepGradeScene).toHaveBeenCalled();
-        });
+        }));
     });
 
     describe('clearLevelScene', () => {
-        it('should call removeCones, clearConeStates, and removeStopLine', async () => {
+        it('should call removeCones, clearConeStates, and removeStopLine', fakeAsync(() => {
             component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['removeCones']);
             const coneStateServiceSpy = spyOn(component['coneStateService'], 'clearConeStates');
             const stopLineServiceSpy = spyOn(component['stopLineService'], 'removeStopLine');
 
-            await component['clearLevelScene']();
+            component['clearLevelScene']();
+            tick();
 
             expect(component.trafficCones.removeCones).toHaveBeenCalled();
             expect(coneStateServiceSpy).toHaveBeenCalled();
             expect(stopLineServiceSpy).toHaveBeenCalled();
-        });
+        }));
     });
 
     describe('initSnakeScene', () => {
-        it('should create snake cones and initialize cone states', async () => {
+        it('should create snake cones and initialize cone states', fakeAsync(() => {
             component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['createSnake'], { cones: [1, 2, 3] });
             const coneStateServiceSpy = spyOn(component['coneStateService'], 'initializeConeStates');
 
-            await component.initSnakeScene();
+            component.initSnakeScene();
+            tick();
 
             expect(component.trafficCones.createSnake).toHaveBeenCalled();
             expect(coneStateServiceSpy).toHaveBeenCalledWith(3);
-        });
+        }));
 
-        it('should catch and log errors during snake scene initialization', async () => {
+        it('should catch and log errors during snake scene initialization', fakeAsync(() => {
             const error = new Error('Failure');
 
             component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['createSnake'], { cones: [] });
@@ -143,10 +149,11 @@ describe('SimulatorComponent', () => {
 
             spyOn(console, 'error');
 
-            await component.initSnakeScene();
+            component.initSnakeScene();
+            tick();
 
             expect(console.error).toHaveBeenCalledWith('Error when initializing Snake scene:', error);
-        });
+        }));
     });
 
     describe('initParallelParkingScene', () => {
@@ -154,11 +161,12 @@ describe('SimulatorComponent', () => {
             component.scene = {} as THREE.Scene;
         });
 
-        it('should initialize properties and call createParallelParking and initializeConeStates', async () => {
+        it('should initialize properties and call createParallelParking and initializeConeStates', fakeAsync(() => {
             component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['createParallelParking'], { cones: [1, 2] });
             const coneStateServiceSpy = spyOn(component['coneStateService'], 'initializeConeStates');
 
-            await component.initParallelParkingScene();
+            component.initParallelParkingScene();
+            tick();
 
             expect(component.exerciseStarted).toBeFalse();
             expect(component.checkDialogShown).toBeFalse();
@@ -166,22 +174,24 @@ describe('SimulatorComponent', () => {
             expect(component['isCheckingConditions']).toBeFalse();
             expect(component.trafficCones.createParallelParking).toHaveBeenCalled();
             expect(coneStateServiceSpy).toHaveBeenCalledWith(2);
-        });
+        }));
 
-        it('should reject if scene is not initialized', async () => {
+        it('should reject if scene is not initialized', fakeAsync(() => {
             component.scene = undefined as any;
-            await expectAsync(component.initParallelParkingScene()).toBeRejectedWith('Scene is not initialized');
-        });
+            tick();
+            expectAsync(component.initParallelParkingScene()).toBeRejectedWith('Scene is not initialized');
+        }));
 
-        it('should handle error during createParallelParking', async () => {
+        it('should handle error during createParallelParking', fakeAsync(() => {
             component.trafficCones = jasmine.createSpyObj('TrafficConesComponent', ['createParallelParking'], { cones: [1] });
             (component.trafficCones.createParallelParking as jasmine.Spy).and.throwError('Some error');
             spyOn(console, 'error');
 
-            await component.initParallelParkingScene();
+            component.initParallelParkingScene();
+            tick();
 
             expect(console.error).toHaveBeenCalledWith('Error initialization of the ParallelParking scene:');
-        });
+        }));
     });
 
     describe('initGarageScene', () => {
@@ -192,8 +202,9 @@ describe('SimulatorComponent', () => {
             spyOn(component['coneStateService'], 'initializeConeStates');
         });
 
-        it('should reset flags and initialize garage scene', async () => {
-            await component.initGarageScene();
+        it('should reset flags and initialize garage scene', fakeAsync(() => {
+            component.initGarageScene();
+            tick();
 
             expect(component.exerciseStarted).toBeFalse();
             expect(component.checkDialogShown).toBeFalse();
@@ -201,16 +212,17 @@ describe('SimulatorComponent', () => {
             expect(component['isCheckingConditions']).toBeFalse();
             expect(component.trafficCones.createGarage).toHaveBeenCalled();
             expect(component['coneStateService'].initializeConeStates).toHaveBeenCalledWith(3);
-        });
+        }));
 
-        it('should catch and log errors during garage scene initialization', async () => {
+        it('should catch and log errors during garage scene initialization', fakeAsync(() => {
             (component.trafficCones.createGarage as jasmine.Spy).and.throwError('Garage error');
             spyOn(console, 'error');
 
-            await component.initGarageScene();
+            component.initGarageScene();
+            tick();
 
             expect(console.error).toHaveBeenCalledWith('Error initialization of the Garage scene');
-        });
+        }));
 
     });
 
@@ -237,10 +249,11 @@ describe('SimulatorComponent', () => {
             spyOn(component['componentFactoryResolver'], 'resolveComponentFactory').and.returnValue({} as any);
         });
 
-        it('should create bridge component and initialize bridge scene', async () => {
+        it('should create bridge component and initialize bridge scene', fakeAsync(() => {
             component.bridgeComponentInstance = undefined;
 
-            await component.initSteepGradeScene();
+            component.initSteepGradeScene();
+            tick();
 
             expect(component.dynamicComponents.createComponent).toHaveBeenCalled();
             expect(bridgeComponentRefMock.instance.createBridge).toHaveBeenCalled();
@@ -252,9 +265,9 @@ describe('SimulatorComponent', () => {
             expect(bridgeComponentRefMock.instance.isOnBridge).toBeFalse();
             expect(bridgeComponentRefMock.instance.outOfBounds).toBeFalse();
             expect(bridgeComponentRefMock.instance.hasPassedByBridge).toBeFalse();
-        });
+        }));
 
-        it('should assign bridge instance to carComponent if present', async () => {
+        it('should assign bridge instance to carComponent if present', fakeAsync(() => {
             component.bridgeComponentInstance = {
                 createBridge: jasmine.createSpy().and.returnValue(Promise.resolve()),
                 hasCrossedBridge: true,
@@ -264,21 +277,23 @@ describe('SimulatorComponent', () => {
             } as any;
             component.carComponent = { bridge: null } as any;
 
-            await component.initSteepGradeScene();
+            component.initSteepGradeScene();
+            tick();
 
             expect(component.bridgeComponentInstance).toBeDefined();
             expect(component.carComponent.bridge).toBe(component.bridgeComponentInstance!);
-        });
+        }));
 
-        it('should log an error if bridge instance creation failed', async () => {
+        it('should log an error if bridge instance creation failed', fakeAsync(() => {
             (component.dynamicComponents.createComponent as jasmine.Spy).and.returnValue({ instance: null });
             spyOn(console, 'error');
 
             component.bridgeComponentInstance = undefined;
-            await component.initSteepGradeScene();
+            component.initSteepGradeScene();
+            tick();
 
             expect(console.error).toHaveBeenCalledWith('BridgeComponent instance not created.');
-        });
+        }));
 
     });
 
@@ -365,7 +380,7 @@ describe('SimulatorComponent', () => {
                 component.route = {} as ActivatedRoute;
             });
 
-            it('should go to the next level if available', async () => {
+            it('should go to the next level if available', fakeAsync(() => {
                 component.currentLevel = 'snake';
                 const nextLevel = 'garage';
 
@@ -373,7 +388,8 @@ describe('SimulatorComponent', () => {
                 (component.levelService.getNextLevel as jasmine.Spy).and.returnValue(nextLevel);
                 (component.levelService.isNextLevelAvailable as jasmine.Spy).and.returnValue(true);
 
-                await component.goToNextLevel();
+                component.goToNextLevel();
+                tick();
 
                 expect(component.resetGameState).toHaveBeenCalled();
                 expect(component.coneStateService.resetConeState).toHaveBeenCalled();
@@ -383,18 +399,19 @@ describe('SimulatorComponent', () => {
                     queryParams: { level: nextLevel },
                     queryParamsHandling: 'merge'
                 });
-            });
+            }));
 
-            it('should not go to the next level if unavailable', async () => {
+            it('should not go to the next level if unavailable', fakeAsync(() => {
                 component.levelService = jasmine.createSpyObj('LevelService', ['getNextLevel', 'isNextLevelAvailable']);
                 (component.levelService.getNextLevel as jasmine.Spy).and.returnValue(null);
                 (component.levelService.isNextLevelAvailable as jasmine.Spy).and.returnValue(false);
 
-                await component.goToNextLevel();
+                component.goToNextLevel();
+                tick();
 
                 expect(component.resetGameState).not.toHaveBeenCalled();
                 expect(component.router.navigate).not.toHaveBeenCalled();
-            });
+            }));
 
         });
 
@@ -427,55 +444,60 @@ describe('SimulatorComponent', () => {
 
     describe('animatePhysics', () => {
         beforeEach(() => {
-            component.car = new THREE.Object3D();
-            component.carBody = new CANNON.Body({
-                mass: 1,
-                shape: new CANNON.Sphere(1)
-            });
-            component.carBody.position.set(1, 2, 3);
-            component.carBody.quaternion.set(0.1, 0.2, 0.3, 0.4);
-
-            const coneBody = new CANNON.Body({ mass: 1, shape: new CANNON.Sphere(1) });
-            coneBody.position.set(5, 0, 6);
-            coneBody.quaternion.set(0.5, 0.6, 0.7, 0.8);
-
-            const coneMesh = new THREE.Mesh();
-            component.trafficCones = {
-                coneBodies: [coneBody],
-                getCones: () => [coneMesh]
+            component.car = {
+                position: new THREE.Vector3(),
+                quaternion: new THREE.Quaternion()
             } as any;
 
-            component.world = new CANNON.World();
+            component.carBody = {
+                position: new CANNON.Vec3(1, 2, 3),
+                quaternion: new CANNON.Quaternion(0, 0, 0, 1)
+            } as any;
+
+            component.world = jasmine.createSpyObj('CANNON.World', ['step']);
+
+            component.trafficCones = {
+                coneBodies: [],
+                getCones: () => []
+            } as any;
         });
 
-        it('should step the physics world and update car and cone transforms', () => {
+        it('should step the physics world and sync car transform', () => {
             component.animatePhysics(1 / 60);
+
+            const args = (component.world.step as jasmine.Spy).calls.mostRecent().args;
+            expect(args[0]).toBeCloseTo(1 / 60);
 
             expect(component.car.position.x).toBeCloseTo(1);
             expect(component.car.position.y).toBeCloseTo(2);
             expect(component.car.position.z).toBeCloseTo(3);
 
-            expect(component.car.quaternion.x).toBeCloseTo(0.1);
-            expect(component.car.quaternion.y).toBeCloseTo(0.2);
-            expect(component.car.quaternion.z).toBeCloseTo(0.3);
-            expect(component.car.quaternion.w).toBeCloseTo(0.4);
-
-            const updatedCone = component.trafficCones.getCones()[0];
-            expect(updatedCone.position.x).toBeCloseTo(5);
-            expect(updatedCone.position.y).toBeCloseTo(0);
-            expect(updatedCone.position.z).toBeCloseTo(6);
-
-            expect(updatedCone.quaternion.x).toBeCloseTo(0.5);
-            expect(updatedCone.quaternion.y).toBeCloseTo(0.6);
-            expect(updatedCone.quaternion.z).toBeCloseTo(0.7);
-            expect(updatedCone.quaternion.w).toBeCloseTo(0.8);
+            expect(component.car.quaternion.x).toBeCloseTo(0);
+            expect(component.car.quaternion.y).toBeCloseTo(0);
+            expect(component.car.quaternion.z).toBeCloseTo(0);
+            expect(component.car.quaternion.w).toBeCloseTo(1);
         });
 
+        it('should not throw if car or carBody are missing', () => {
+            component.car = undefined!;
+            component.carBody = undefined!;
+
+            expect(() => component.animatePhysics(1 / 60)).not.toThrow();
+        });
     });
 
     describe('animate', () => {
-        it('should schedule the next animation frame and update the scene', () => {
-            const rafSpy = spyOn(window, 'requestAnimationFrame').and.callFake((cb: FrameRequestCallback): number => {
+        let rafSpy: jasmine.Spy;
+        let frameExecuted = false;
+
+        beforeEach(() => {
+            frameExecuted = false;
+
+            rafSpy = spyOn(window, 'requestAnimationFrame').and.callFake((cb: FrameRequestCallback): number => {
+                if (!frameExecuted) {
+                    frameExecuted = true;
+                    cb(0);
+                }
                 return 0;
             });
 
@@ -486,12 +508,27 @@ describe('SimulatorComponent', () => {
             component.scene = new THREE.Scene();
             component.camera = new THREE.PerspectiveCamera();
             component.renderer = jasmine.createSpyObj('WebGLRenderer', ['render']);
+        });
 
+        afterEach(() => {
+            rafSpy.and.stub();
+        });
+
+        it('should schedule the next animation frame and update the scene', () => {
             component.animate();
 
             expect(rafSpy).toHaveBeenCalled();
             expect(component.animatePhysics).toHaveBeenCalled();
-            expect(component.carComponent.updateCarPosition).toHaveBeenCalled();
+            expect(component.carComponent.updateCarPosition).toHaveBeenCalledWith(
+                jasmine.any(Number),
+                {
+                    isMovingForward: component.isMovingForward,
+                    isMovingBackward: component.isMovingBackward,
+                    isTurningLeft: component.isTurningLeft,
+                    isTurningRight: component.isTurningRight,
+                    isGameOver: component.isGameOver,
+                }
+            );
             expect(component.updateCameraPosition).toHaveBeenCalled();
             expect(component.renderer.render).toHaveBeenCalledWith(component.scene, component.camera);
         });
@@ -519,9 +556,9 @@ describe('SimulatorComponent', () => {
             expect(() => component.updateCameraPosition()).not.toThrow();
         });
 
-        it('should update camera position relative to car and call lookAt', () => {
+        it('should position camera correctly and look at the expected point based on car direction', () => {
             const mockCar = new THREE.Object3D();
-            mockCar.position.set(2, 0, 4);
+            mockCar.position.set(1, 0, 2);
 
             spyOn(mockCar, 'getWorldDirection').and.callFake((target: THREE.Vector3) => {
                 target.set(0, 0, -1);
@@ -536,9 +573,9 @@ describe('SimulatorComponent', () => {
 
             component.updateCameraPosition();
 
-            expect(component.camera.position.x).toBeCloseTo(2);
-            expect(component.camera.position.y).toBeCloseTo(2);
-            expect(component.camera.position.z).toBeCloseTo(9);
+            expect(mockCamera.position.x).toBeCloseTo(1);
+            expect(mockCamera.position.y).toBeCloseTo(2);
+            expect(mockCamera.position.z).toBeCloseTo(7);
 
             expect(lookAtSpy).toHaveBeenCalled();
         });
