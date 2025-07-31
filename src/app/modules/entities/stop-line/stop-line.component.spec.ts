@@ -8,6 +8,7 @@ describe('StopLineComponent', () => {
     let component: StopLineComponent;
     let fixture: ComponentFixture<StopLineComponent>;
     let mockScene: THREE.Scene;
+    let throwLoadError = false;
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
@@ -17,22 +18,10 @@ describe('StopLineComponent', () => {
             ]
         }).compileComponents();
 
-        fixture = TestBed.createComponent(StopLineComponent);
-        component = fixture.componentInstance;
-        mockScene = new THREE.Scene();
-        component.scene = mockScene;
-        fixture.detectChanges();
-    });
-
-    it('should create the component', () => {
-        expect(component).toBeTruthy();
-    });
-
-    describe('createStopLine()', () => {
-        const lastConeBox = { max: { y: 1, z: 5 } };
-
-        it('should create a stop line with a model', async () => {
-            const loadSpy = spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad) => {
+        spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad, onProgress, onError) => {
+            if (throwLoadError) {
+                onError?.(new Error('Load error'));
+            } else {
                 const gltf: any = {
                     scene: new THREE.Group(),
                     animations: [],
@@ -41,25 +30,39 @@ describe('StopLineComponent', () => {
                     asset: {}
                 };
                 onLoad(gltf);
-            });
+            }
+        });
+
+        fixture = TestBed.createComponent(StopLineComponent);
+        component = fixture.componentInstance;
+        mockScene = new THREE.Scene();
+        component.scene = mockScene;
+    });
+
+    it('should create the component', () => {
+        fixture.detectChanges();
+        expect(component).toBeTruthy();
+    });
+
+    describe('createStopLine()', () => {
+        const lastConeBox = { max: { y: 1, z: 5 } };
+
+        it('should create a stop line with a model', async () => {
+            throwLoadError = false;
 
             await component.createStopLine(lastConeBox);
 
+            expect(mockScene.children.length).toBeGreaterThan(0);
             expect(mockScene.children[0].name).toBe("FinishLine");
             expect(mockScene.children[0].position.y).toBeCloseTo(0.8);
             expect(mockScene.children[0].position.z).toBeCloseTo(0);
         });
 
         it('should handle errors when loading the model', async () => {
-            const loadSpy = spyOn(GLTFLoader.prototype, 'load').and.callFake((path, onLoad, onProgress, onError) => {
-                if (onError) {
-                    onError(new Error('Load error'));
-                }
-            });
+            throwLoadError = true;
 
-            await component.createStopLine(lastConeBox).catch((error) => {
-                expect(error.message).toBe('Load error');
-            });
+            await expectAsync(component.createStopLine(lastConeBox))
+                .toBeRejectedWithError('Load error');
         });
     });
 
