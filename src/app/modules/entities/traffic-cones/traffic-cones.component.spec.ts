@@ -14,7 +14,7 @@ describe('TrafficConesComponent', () => {
     let mockStopLineService: jasmine.SpyObj<StopLineService>;
 
     let scene: THREE.Scene;
-    let car: THREE.Object3D;
+    // let car: THREE.Object3D;
     let world: CANNON.World;
 
     beforeEach(async () => {
@@ -22,7 +22,7 @@ describe('TrafficConesComponent', () => {
         mockStopLineService = jasmine.createSpyObj('StopLineService', ['callCreateStopLine']);
 
         scene = new THREE.Scene();
-        car = new THREE.Object3D();
+        // car = new THREE.Object3D();
         world = new CANNON.World();
 
         await TestBed.configureTestingModule({
@@ -37,7 +37,7 @@ describe('TrafficConesComponent', () => {
         fixture = TestBed.createComponent(TrafficConesComponent);
         component = fixture.componentInstance;
         component.setScene(scene);
-        component.car = car;
+        component.car = new THREE.Object3D();
         component.world = world;
         component.camera = new THREE.PerspectiveCamera();
         component.parkingPocket = new THREE.Box3(
@@ -92,6 +92,7 @@ describe('TrafficConesComponent', () => {
     describe('loadConeModel()', () => {
         it('should load cone models and add them to the scene', async () => {
             const count = 1;
+            component.car = new THREE.Object3D(); 
 
             const dummyGLTF: GLTF = {
                 scene: new THREE.Object3D(),
@@ -105,8 +106,8 @@ describe('TrafficConesComponent', () => {
 
             await component.loadConeModel(count, 5, 5, undefined, false);
 
-            expect(component.getCones().length).toBe(count, 'Expected number of cones to be correct');
-            expect(scene.children.length).toBe(count, 'Expected number of scene children to be correct');
+            expect(component.getCones().length).toBe(count);
+            expect(scene.children.length).toBe(count);
 
             expect(mockStopLineService.callCreateStopLine).not.toHaveBeenCalled();
         });
@@ -114,40 +115,34 @@ describe('TrafficConesComponent', () => {
         it('should reject loading if car is not defined', async () => {
             component.car = undefined!;
 
-            await expectAsync(component.loadConeModel(1, 5, 5)).toBeRejectedWithError("Car is not defined");
+            await expectAsync(component.loadConeModel(1, 5, 5)).toBeRejectedWithError('Car is not defined');
         });
     });
 
     describe('createParallelParking()', () => {
-        it('should create parking scene when createParallelParking is called', (done) => {
+        it('should create parking scene when createParallelParking is called', async () => {
             component.car.position.set(0, 0, 20);
 
-            component.createParallelParking().then(() => {
-                expect(component.parkingPocket).toBeDefined();
-                expect(component.parkingLines.length).toBeGreaterThan(0);
-                done();
-            }).catch(err => {
-                fail('Expected promise to resolve, but it rejected with: ' + err);
-                done();
-            });
+            component.createParallelParking();
+
+            expect(component.parkingPocket).toBeDefined();
+            expect(component.parkingLines.length).toBeGreaterThan(0);
         });
 
-        it('should create garage scene when createParallelParking is called', (done) => {
+        it('should create garage scene when createParallelParking is called', async () => {
+            component.car = new THREE.Object3D();
             component.car.position.set(0, 0, 10);
 
-            component.createParallelParking().then(() => {
-                expect(component.parkingPocket).toBeDefined();
-                expect(component.parkingLines.length).toBeGreaterThan(0);
-                done();
-            }).catch(err => {
-                fail('Expected promise to resolve, but it rejected with: ' + err);
-                done();
-            });
+            await component.createParallelParking();
+
+            expect(component.parkingPocket).toBeDefined();
+            expect(component.parkingLines.length).toBeGreaterThan(0);
         });
     });
 
     describe('checkCarInsideParkingPocket()', () => {
         it('should return preciseMatch true when car is inside parking pocket', () => {
+            component.car = new THREE.Object3D();
             component.car.position.set(2.5, 1, 2);
 
             const result = component.checkCarInsideParkingPocket();
@@ -157,6 +152,7 @@ describe('TrafficConesComponent', () => {
         });
 
         it('should return nearMatch true when car is near parking pocket', () => {
+            component.car = new THREE.Object3D();
             component.car.position.set(6, 0, 5);
 
             const result = component.checkCarInsideParkingPocket();
