@@ -7,7 +7,7 @@
     "build": "ng build --base-href 'https://alexgervas.github.io/car-simulator/' && node copy-404.js && node rename-browser-to-docs.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test-headless": "ng test --watch=false --code-coverage",
+    "test-headless": "ng test --karma-config=karma.conf.js --browsers=ChromeHeadlessCI --watch=false --code-coverage",
     "start-bot": "node bot.js"
   },
   "private": true,
@@ -34,7 +34,7 @@
     "zone.js": "~0.14.10"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^18.2.12",
+    "@angular-devkit/build-angular": "^18.2.20",
     "@angular/cli": "^18.2.12",
     "@angular/compiler-cli": "^18.2.0",
     "@types/jasmine": "~5.1.0",
@@ -48,6 +48,8 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "karma-spec-reporter": "^0.0.36",
+    "karma-webpack": "^5.0.1",
     "typescript": "~5.5.2"
   }
 }

@@ -24,8 +24,13 @@ jobs:
       - name: Install Angular CLI
         run: npm install -g @angular/cli
 
-      - name: Run unit tests
-        run: npm run test-headless -- --watch=false
+      - name: Install Xvfb
+        run: sudo apt-get install -y xvfb
+
+      - name: Run unit tests with Xvfb
+        run:  xvfb-run --auto-servernum --server-args='-screen 0 1920x1080x24' npm run test-headless
+        env:
+          CHROME_BIN: /usr/bin/chromium-browser
 
       - name: Build the project
         run: npm run build
