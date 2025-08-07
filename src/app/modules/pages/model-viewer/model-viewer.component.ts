@@ -73,7 +73,10 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
       this.camera.position.set(2, 3, 5);
       this.camera.lookAt(0, 0, 0);
 
-      this.renderer = this.rendererFactory.createRenderer(container);
+      const canvas = document.createElement('canvas');
+      this.renderer = this.rendererFactory.createRenderer(canvas);
+      container.appendChild(canvas);
+
       this.renderer.setSize(container.clientWidth, container.clientHeight);
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
