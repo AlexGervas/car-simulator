@@ -16,10 +16,23 @@ import { MatDialog } from '@angular/material/dialog';
 import { TelegramService } from '../../../core/services/telegram.service';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
+import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
 
 describe('SimulatorComponent', () => {
     let component: SimulatorComponent;
     let fixture: ComponentFixture<SimulatorComponent>;
+
+    class MockWebGLRenderer {
+        domElement = document.createElement('canvas');
+        setSize() { }
+        setPixelRatio() { }
+        render() { }
+        dispose() { }
+        setClearColor() { }
+        getContext() {
+            return {};
+        }
+    }
 
     const mockTelegramService = {
         tg: {
@@ -62,9 +75,18 @@ describe('SimulatorComponent', () => {
                     provide: TelegramService,
                     useValue: mockTelegramService
                 },
+                { 
+                    provide: DeviceService, 
+                    useValue: mockDeviceService 
+                },
+                {
+                    provide: RendererFactoryService,
+                    useValue: {
+                        createRenderer: () => new MockWebGLRenderer(),
+                    },
+                },
                 ApiService,
                 LevelService,
-                DeviceService,
                 ConeStateService,
                 StopLineService,
                 ComponentFactoryResolver,

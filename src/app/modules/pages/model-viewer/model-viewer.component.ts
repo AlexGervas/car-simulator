@@ -1,4 +1,4 @@
-import { Component, ElementRef, HostListener, OnInit, ViewChild } from '@angular/core';
+import { Component, ElementRef, HostListener, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
@@ -6,6 +6,7 @@ import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js';
 import { LoaderComponent } from '../../../shared/loader/loader.component';
 import { CommonModule } from '@angular/common';
 import { ModelsLoaderService } from '../../../core/services/models-loader.service';
+import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
 
 @Component({
   selector: 'app-model-viewer',
@@ -14,7 +15,7 @@ import { ModelsLoaderService } from '../../../core/services/models-loader.servic
   templateUrl: './model-viewer.component.html',
   styleUrl: './model-viewer.component.css'
 })
-export class ModelViewerComponent implements OnInit {
+export class ModelViewerComponent implements OnInit, OnDestroy {
   @ViewChild('viewerContainer', { static: true }) viewerContainer!: ElementRef;
 
   private scene!: THREE.Scene;
@@ -42,7 +43,7 @@ export class ModelViewerComponent implements OnInit {
 
   private doorGroups: { [key: string]: THREE.Object3D[] } = {};
 
-  constructor(private modelsLoaderService: ModelsLoaderService) { }
+  constructor(private modelsLoaderService: ModelsLoaderService, private rendererFactory: RendererFactoryService) { }
 
   ngOnInit(): void {
     this.modelsLoaderService.show();
@@ -50,10 +51,16 @@ export class ModelViewerComponent implements OnInit {
       return this.loadModel();
     }).then(() => {
       console.log('Model loaded successfully');
+      this.animate();
     }).catch((error) => {
       console.error('Failed to load resources:', error);
     });
-    this.animate();
+  }
+
+  ngOnDestroy(): void {
+    if (this.animationFrameId !== undefined) {
+      cancelAnimationFrame(this.animationFrameId);
+    }
   }
 
   private initScene(): Promise<void> {
@@ -66,7 +73,7 @@ export class ModelViewerComponent implements OnInit {
       this.camera.position.set(2, 3, 5);
       this.camera.lookAt(0, 0, 0);
 
-      this.renderer = new THREE.WebGLRenderer({ antialias: true });
+      this.renderer = this.rendererFactory.createRenderer(container);
       this.renderer.setSize(container.clientWidth, container.clientHeight);
       this.renderer.shadowMap.enabled = true;
       this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -167,8 +174,10 @@ export class ModelViewerComponent implements OnInit {
 
   private animate(): void {
     this.animationFrameId = requestAnimationFrame(() => this.animate());
-    this.controls.update();
-    this.renderer.render(this.scene, this.camera);
+    if (this.controls && this.renderer && this.scene && this.camera) {
+      this.controls.update();
+      this.renderer.render(this.scene, this.camera);
+    }
   }
 
   @HostListener('window:resize', [])

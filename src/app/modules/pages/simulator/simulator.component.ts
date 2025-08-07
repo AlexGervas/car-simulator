@@ -25,6 +25,7 @@ import { DialogService } from '../../../core/services/dialog.service';
 import { User } from '../../../core/models/user';
 import { ApiService } from '../../../core/services/api.service';
 import { TelegramService } from '../../../core/services/telegram.service';
+import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
 
 @Component({
   selector: 'app-simulator',
@@ -93,7 +94,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private dialogService: DialogService,
     public dialog: MatDialog,
     private api: ApiService,
-    private telegramService: TelegramService) { }
+    private telegramService: TelegramService,
+    private rendererFactory: RendererFactoryService) { }
 
   async ngOnInit() {
     this.modelsLoaderService.show();
@@ -389,7 +391,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.camera.position.set(0, 2, 5);
     this.camera.lookAt(0, 0, 0);
 
-    this.renderer = new THREE.WebGLRenderer({ canvas: this.el.nativeElement.querySelector('#webgl-canvas') });
+    const canvas = this.el.nativeElement.querySelector('#webgl-canvas');
+    this.renderer = this.rendererFactory.createRenderer(canvas);
     this.renderer.setSize(window.innerWidth, window.innerHeight);
 
     const light = new THREE.AmbientLight(0xffffff, 0.5);

@@ -35,6 +35,10 @@ describe('ModelViewerComponent', () => {
         fixture.detectChanges();
     });
 
+    afterEach(() => {
+        component.ngOnDestroy();
+    });
+
     describe('initialization', () => {
         it('should create the component', () => {
             expect(component).toBeTruthy();
@@ -48,6 +52,10 @@ describe('ModelViewerComponent', () => {
             component.ngOnInit();
 
             expect(modelsLoaderService.show).toHaveBeenCalled();
+        });
+
+        it('should not throw on ngOnDestroy even if animationFrameId is undefined', () => {
+            expect(() => component.ngOnDestroy()).not.toThrow();
         });
     });
 

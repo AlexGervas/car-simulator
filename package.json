@@ -7,7 +7,7 @@
     "build": "ng build --base-href 'https://alexgervas.github.io/car-simulator/' && node copy-404.js && node rename-browser-to-docs.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "test-headless": "ng test --karma-config=karma.conf.js --browsers=ChromeHeadlessCI --watch=false --code-coverage",
+    "test-headless": "ng test --karma-config karma.conf.ci.js --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage",
     "start-bot": "node bot.js"
   },
   "private": true,
