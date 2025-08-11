@@ -21,6 +21,9 @@ import { RendererFactoryService } from '../../../core/services/renderer-factory.
 describe('SimulatorComponent', () => {
     let component: SimulatorComponent;
     let fixture: ComponentFixture<SimulatorComponent>;
+    let mockTrafficCones: any;
+    let mockConeStateService: any;
+    let mockConeBody: any;
 
     class MockWebGLRenderer {
         domElement = document.createElement('canvas');
@@ -604,5 +607,104 @@ describe('SimulatorComponent', () => {
 
     });
 
+    describe('checkCollisionWithCones', () => {
+        let carPosition: CANNON.Vec3;
+
+        beforeEach(() => {
+            mockConeBody = {
+                position: new CANNON.Vec3(0, 0, 0),
+                applyImpulse: jasmine.createSpy('applyImpulse')
+            };
+
+            mockTrafficCones = {
+                coneBodies: [mockConeBody],
+                getCones: jasmine.createSpy('getCones').and.returnValue([{}]),
+                getInitialConePositions: jasmine.createSpy('getInitialConePositions').and.returnValue([new CANNON.Vec3(0, 0, 0)])
+            };
+
+            mockConeStateService = {
+                isConeFallen: jasmine.createSpy('isConeFallen').and.returnValue(false),
+                setConeFallen: jasmine.createSpy('setConeFallen')
+            };
+
+            (component as any).trafficCones = mockTrafficCones;
+            (component as any).coneStateService = mockConeStateService;
+            (component as any).hitConeCount = 0;
+
+            carPosition = new CANNON.Vec3(0, 0, 0);
+        });
+
+        it('should do nothing if the cone is too far away', () => {
+            mockConeBody.position = new CANNON.Vec3(3, 0, 0);
+
+            (component as any).checkCollisionWithCones(carPosition);
+
+            expect((component as any).hitConeCount).toBe(0);
+            expect(mockConeStateService.setConeFallen).not.toHaveBeenCalled();
+            expect(mockConeBody.applyImpulse).not.toHaveBeenCalled();
+        });
+
+        it('should to increase the counter, mark the cone as fallen and apply an impulse if the cone is close and has moved sufficiently', () => {
+            mockConeBody.position = new CANNON.Vec3(1, 0, 0);
+            mockTrafficCones.getInitialConePositions.and.returnValue([new CANNON.Vec3(0, 0, 0)]);
+
+            (component as any).checkCollisionWithCones(carPosition);
+
+            expect((component as any).hitConeCount).toBe(1);
+            expect(mockConeStateService.setConeFallen).toHaveBeenCalledWith(0);
+            expect(mockConeBody.applyImpulse).toHaveBeenCalled();
+        });
+
+        it('should not change the state if the cone is close, but the shift is too small', () => {
+            mockConeBody.position = new CANNON.Vec3(0.05, 0, 0);
+            mockTrafficCones.getInitialConePositions.and.returnValue([new CANNON.Vec3(0, 0, 0)]);
+
+            (component as any).checkCollisionWithCones(carPosition);
+
+            expect((component as any).hitConeCount).toBe(0);
+            expect(mockConeStateService.setConeFallen).not.toHaveBeenCalled();
+            expect(mockConeBody.applyImpulse).not.toHaveBeenCalled();
+        });
+
+        it('should not apply momentum if the cone has already fallen', () => {
+            mockConeStateService.isConeFallen.and.returnValue(true);
+            mockConeBody.position = new CANNON.Vec3(1, 0, 0);
+
+            (component as any).checkCollisionWithCones(carPosition);
+
+            expect((component as any).hitConeCount).toBe(0);
+            expect(mockConeStateService.setConeFallen).not.toHaveBeenCalled();
+            expect(mockConeBody.applyImpulse).not.toHaveBeenCalled();
+        });
+
+        it('should handle several cones correctly', () => {
+            const secondConeBody = {
+                position: new CANNON.Vec3(1, 0, 0),
+                applyImpulse: jasmine.createSpy('applyImpulse')
+            };
+            mockTrafficCones.coneBodies = [mockConeBody, secondConeBody];
+            mockTrafficCones.getCones.and.returnValue([{}, {}]);
+            mockTrafficCones.getInitialConePositions.and.returnValue([
+                new CANNON.Vec3(0, 0, 0),
+                new CANNON.Vec3(0, 0, 0)
+            ]);
+            mockConeStateService.isConeFallen.and.returnValues(false, false);
+            secondConeBody.position = new CANNON.Vec3(1, 0, 0);
+            mockConeBody.position = new CANNON.Vec3(3, 0, 0);
+            (component as any).checkCollisionWithCones(carPosition);
+            expect((component as any).hitConeCount).toBe(1);
+            expect(secondConeBody.applyImpulse).toHaveBeenCalled();
+        });
+
+        it('should calculate the direction of the impulse from the machine to the cone', () => {
+            mockConeBody.position = new CANNON.Vec3(1, 0, 0);
+            mockTrafficCones.getInitialConePositions.and.returnValue([new CANNON.Vec3(0, 0, 0)]);
+            (component as any).checkCollisionWithCones(new CANNON.Vec3(0, 0, 0));
+            const impulseArg = mockConeBody.applyImpulse.calls.mostRecent().args[0];
+            expect(impulseArg.x).toBeGreaterThan(0);
+            expect(impulseArg.y).toBeCloseTo(0.5, 5);
+        });
+
+    });
 
 });
