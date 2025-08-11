@@ -707,4 +707,138 @@ describe('SimulatorComponent', () => {
 
     });
 
+    describe('checkGameOverConditions', () => {
+        beforeEach(() => {
+            spyOn(component as any, 'handleSnakeLevelGameOver');
+            spyOn(component as any, 'handleParkingLevelGameOver');
+            spyOn(component as any, 'handleSteepGradeLevelGameOver');
+        });
+
+        it('should call handleSnakeLevelGameOver if level - snake', () => {
+            (component as any).currentLevel = 'snake';
+            (component as any).checkGameOverConditions();
+            expect((component as any).handleSnakeLevelGameOver).toHaveBeenCalled();
+        });
+
+        it('should call handleParkingLevelGameOver if level - parallel-parking', () => {
+            (component as any).currentLevel = 'parallel-parking';
+            (component as any).checkGameOverConditions();
+            expect((component as any).handleParkingLevelGameOver).toHaveBeenCalled();
+        });
+
+        it('should call handleParkingLevelGameOver if level - garage', () => {
+            (component as any).currentLevel = 'garage';
+            (component as any).checkGameOverConditions();
+            expect((component as any).handleParkingLevelGameOver).toHaveBeenCalled();
+        });
+
+        it('should call handleSteepGradeLevelGameOver if level - steep-grade', () => {
+            (component as any).currentLevel = 'steep-grade';
+            (component as any).checkGameOverConditions();
+            expect((component as any).handleSteepGradeLevelGameOver).toHaveBeenCalled();
+        });
+    });
+
+    describe('handleSnakeLevelGameOver', () => {
+        let mockDialog: jasmine.Spy;
+        let mockApi: any;
+
+        beforeEach(() => {
+            mockDialog = jasmine.createSpy('openDialog');
+            mockApi = { completeLevel: jasmine.createSpy('completeLevel').and.returnValue({ subscribe: jasmine.createSpy() }) };
+
+            (component as any).trafficCones = {
+                getConeBoxes: () => [{ max: { z: 20 } }]
+            };
+            (component as any).carComponent = { car: { position: { z: 5 } } };
+            (component as any).hitConeCount = 2;
+            (component as any).dialogService = { openDialog: mockDialog };
+            (component as any).api = mockApi;
+            (component as any).user = { userId: 123 };
+            (component as any).levelService = { loadLevels: jasmine.createSpy(), isNextLevelAvailable: () => false };
+        });
+
+        it('should end the game if the car has crossed the stop line', () => {
+            (component as any).handleSnakeLevelGameOver();
+            expect(mockDialog).toHaveBeenCalledWith('Игра окончена', jasmine.stringMatching(/сбили 2 конусов/), false);
+            expect((component as any).isGameOver).toBeTrue();
+        });
+
+        it('should not cause completeLevel if more than 0 cones are knocked down', () => {
+            (component as any).handleSnakeLevelGameOver();
+            expect(mockApi.completeLevel).not.toHaveBeenCalled();
+        });
+
+        it('should call completeLevel if 0 cones are knocked down', () => {
+            (component as any).hitConeCount = 0;
+            (component as any).handleSnakeLevelGameOver();
+            expect(mockApi.completeLevel).toHaveBeenCalledWith(123, 'snake');
+        });
+    });
+
+    describe('handleParkingLevelGameOver', () => {
+        beforeEach(() => {
+            (component as any).checkDialogShown = false;
+            (component as any).exerciseStarted = false;
+            (component as any).shouldShowCheckDialog = jasmine.createSpy('shouldShowCheckDialog').and.returnValue(true);
+            (component as any).showCheckDialog = jasmine.createSpy('showCheckDialog');
+        });
+
+        it('should start the exercise while moving forward', () => {
+            (component as any).isMovingForward = true;
+            (component as any).isMovingBackward = false;
+            (component as any).handleParkingLevelGameOver();
+            expect((component as any).exerciseStarted).toBeTrue();
+        });
+
+        it('should start the exercise while moving backwards', () => {
+            (component as any).isMovingForward = false;
+            (component as any).isMovingBackward = true;
+            (component as any).handleParkingLevelGameOver();
+            expect((component as any).exerciseStarted).toBeTrue();
+        });
+
+        it('should call showCheckDialog if the machine has stopped, the exercise has started and checkDialogShown = false', () => {
+            (component as any).isMovingForward = false;
+            (component as any).isMovingBackward = false;
+            (component as any).exerciseStarted = true;
+            (component as any).handleParkingLevelGameOver();
+            expect((component as any).showCheckDialog).toHaveBeenCalled();
+        });
+    });
+
+    describe('handleSteepGradeLevelGameOver', () => {
+        let mockDialog: jasmine.Spy;
+        let mockApi: any;
+
+        beforeEach(() => {
+            mockDialog = jasmine.createSpy('openDialog');
+            mockApi = { completeLevel: jasmine.createSpy('completeLevel').and.returnValue({ subscribe: jasmine.createSpy() }) };
+
+            (component as any).dialogService = { openDialog: mockDialog };
+            (component as any).api = mockApi;
+            (component as any).user = { userId: 123 };
+        });
+
+        it('should complete the game with success if the bridge is passed', () => {
+            (component as any).currentLevel = 'steep-grade';
+            (component as any).bridgeComponentInstance = { hasCrossedBridge: true };
+            (component as any).handleSteepGradeLevelGameOver();
+            expect(mockDialog).toHaveBeenCalledWith('Поздравляем!', jasmine.any(String), false);
+            expect(mockApi.completeLevel).toHaveBeenCalledWith(123, 'steep-grade');
+        });
+
+        it('should end the game with an error if you left the bridge', () => {
+            (component as any).bridgeComponentInstance = { outOfBounds: true };
+            (component as any).handleSteepGradeLevelGameOver();
+            expect(mockDialog).toHaveBeenCalledWith('Задание не выполнено', jasmine.stringMatching(/вышли за пределы/), false);
+        });
+
+        it('should end the game with an error if the car has passed the bridge', () => {
+            (component as any).bridgeComponentInstance = { hasPassedByBridge: true };
+            (component as any).handleSteepGradeLevelGameOver();
+            expect(mockDialog).toHaveBeenCalledWith('Задание не выполнено', jasmine.stringMatching(/проехала мимо/), false);
+        });
+    });
+
 });
