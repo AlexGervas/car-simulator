@@ -980,4 +980,125 @@ describe('SimulatorComponent', () => {
         });
     });
 
+    describe('Steering and Keyboard Controls', () => {
+        let component: SimulatorComponent;
+        let carComponentMock: any;
+
+        beforeEach(() => {
+            carComponentMock = {
+                updateFrontWheels: jasmine.createSpy('updateFrontWheels')
+            };
+
+            component = new SimulatorComponent(
+                {} as any, {} as any, {} as any, {} as any,
+                {} as any, {} as any, {} as any, {} as any,
+                {} as any, {} as any, {} as any, {} as any,
+                {} as any, {} as any
+            );
+            (component as any).carComponent = carComponentMock;
+            component.isGameOver = false;
+            component.car = {} as any;
+        });
+
+        it('should switch the flags correctly when pressing ArrowLeft and ArrowRight sequentially', () => {
+            component.handleKeyboardEvent({ key: 'ArrowLeft' } as KeyboardEvent);
+            expect(component.isTurningLeft).toBeTrue();
+            expect(component.isTurningRight).toBeFalse();
+            expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(true, false);
+
+            component.handleKeyboardEvent({ key: 'ArrowRight' } as KeyboardEvent);
+            expect(component.isTurningLeft).toBeFalse();
+            expect(component.isTurningRight).toBeTrue();
+            expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, true);
+        });
+
+        describe('turnLeft / stopTurningLeft', () => {
+            it('should enable left turn and call updateFrontWheels', () => {
+                component.turnLeft();
+                expect(component.isTurningLeft).toBeTrue();
+                expect(component.isTurningRight).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(true, false);
+            });
+
+            it('should stop turning left and call updateFrontWheels', () => {
+                component.isTurningLeft = true;
+                component.stopTurningLeft();
+                expect(component.isTurningLeft).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, false);
+            });
+        });
+
+        describe('turnRight / stopTurningRight', () => {
+            it('should enable right turn and call updateFrontWheels', () => {
+                component.turnRight();
+                expect(component.isTurningRight).toBeTrue();
+                expect(component.isTurningLeft).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, true);
+            });
+
+            it('should stop turning right and call updateFrontWheels', () => {
+                component.isTurningRight = true;
+                component.stopTurningRight();
+                expect(component.isTurningRight).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, false);
+            });
+        });
+
+        describe('handleKeyboardEvent', () => {
+            it('should start moving forward at ArrowUp', () => {
+                component.handleKeyboardEvent(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+                expect(component.isMovingForward).toBeTrue();
+            });
+
+            it('should start moving backwards at ArrowDown', () => {
+                component.handleKeyboardEvent(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+                expect(component.isMovingBackward).toBeTrue();
+            });
+
+            it('should turn left at ArrowLeft', () => {
+                component.handleKeyboardEvent(new KeyboardEvent('keydown', { key: 'ArrowLeft' }));
+                expect(component.isTurningLeft).toBeTrue();
+                expect(component.isTurningRight).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(true, false);
+            });
+
+            it('should turn right at ArrowRight', () => {
+                component.handleKeyboardEvent(new KeyboardEvent('keydown', { key: 'ArrowRight' }));
+                expect(component.isTurningRight).toBeTrue();
+                expect(component.isTurningLeft).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, true);
+            });
+        });
+
+        describe('handleKeyUpEvent', () => {
+            it('should stop moving forward when releasing the ArrowUp', () => {
+                component.isMovingForward = true;
+                component.handleKeyUpEvent(new KeyboardEvent('keyup', { key: 'ArrowUp' }));
+                expect(component.isMovingForward).toBeFalse();
+            });
+
+            it('should stop moving backwards when releasing ArrowDown', () => {
+                component.isMovingBackward = true;
+                component.handleKeyUpEvent(new KeyboardEvent('keyup', { key: 'ArrowDown' }));
+                expect(component.isMovingBackward).toBeFalse();
+            });
+
+            it('should reset both rotations when releasing ArrowLeft', () => {
+                component.isTurningLeft = true;
+                component.handleKeyUpEvent(new KeyboardEvent('keyup', { key: 'ArrowLeft' }));
+                expect(component.isTurningLeft).toBeFalse();
+                expect(component.isTurningRight).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, false);
+            });
+
+            it('should reset both rotations when releasing ArrowRight', () => {
+                component.isTurningRight = true;
+                component.handleKeyUpEvent(new KeyboardEvent('keyup', { key: 'ArrowRight' }));
+                expect(component.isTurningLeft).toBeFalse();
+                expect(component.isTurningRight).toBeFalse();
+                expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(false, false);
+            });
+        });
+    });
+
 });
