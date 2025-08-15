@@ -12,19 +12,23 @@ const pool = new Pool({
 const createTables = async () => {
     const createUsersTable = `
         CREATE TABLE IF NOT EXISTS users (
-            id BIGINT PRIMARY KEY,
+            id SERIAL PRIMARY KEY,
+            telegram_id BIGINT UNIQUE,
             username TEXT NOT NULL,
-            userFirstName TEXT, 
-            userLastName TEXT
+            userFirstName TEXT,
+            userLastName TEXT,
+            email TEXT UNIQUE,
+            password_hash TEXT
         );
     `;
 
     const createLevelsTable = `
         CREATE TABLE IF NOT EXISTS levels (
-            user_id BIGINT REFERENCES users(id),
+            id SERIAL PRIMARY KEY,
+            user_id INT REFERENCES users(id) ON DELETE CASCADE,
             level TEXT NOT NULL,
             status BOOLEAN DEFAULT FALSE,
-            PRIMARY KEY (user_id, level)
+            UNIQUE(user_id, level)
         );
     `;
 
