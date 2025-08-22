@@ -6,11 +6,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { AuthService } from '../../../../core/services/auth.service';
 import { Router } from '@angular/router';
 import { DialogService } from '../../../../core/services/dialog.service';
+import { MatIcon } from "@angular/material/icon";
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [ReactiveFormsModule, MatFormFieldModule, MatInputModule, MatButtonModule, MatIcon],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css'
 })
@@ -19,6 +20,7 @@ export class LoginComponent implements OnInit {
   public loginForm!: FormGroup;
   public minLengthPass: number = 8;
   public errorMsg = 'Поле обязательно для заполнения';
+  public hide: boolean = true;
 
   constructor(private formBuilder: FormBuilder,
     private authService: AuthService,

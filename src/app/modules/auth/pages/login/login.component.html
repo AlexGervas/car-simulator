@@ -10,7 +10,10 @@
                 </mat-form-field>
                 <mat-form-field appearance="fill">
                     <mat-label>Password</mat-label>
-                    <input matInput type="password" formControlName="password" autocomplete="off">
+                    <input matInput [type]="hide ? 'password' : 'text'" formControlName="password" autocomplete="off">
+                    <button mat-icon-button matSuffix type="button" (click)="hide = !hide">
+                        <mat-icon>{{hide ? 'visibility_off' : 'visibility'}}</mat-icon>
+                    </button>
                     <mat-error>{{errorMsg}}</mat-error>
                 </mat-form-field>
             </div>
