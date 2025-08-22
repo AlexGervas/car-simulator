@@ -4,6 +4,8 @@ const express = require('express');
 const { Telegraf, Markup } = require('telegraf');
 const { Pool } = require('pg');
 const cors = require('cors');
+const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
@@ -86,7 +88,56 @@ app.get('/', (req, res) => {
 });
 
 /**
- * Добавление нового пользовалея
+ * Логин пользователя (по email, password)
+ */
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required' });
+    }
+
+    try {
+        const userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        const user = userResult.rows[0];
+
+        const isPasswordValid = await bcrypt.compare(password, user.password_hash);
+
+        if (!isPasswordValid) {
+            return res.status(401).json({ message: 'Invalid email or password' });
+        }
+
+        const token = jwt.sign(
+            { id: user.id, email: user.email },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+        );
+
+        res.status(200).json({
+            message: 'Login successful',
+            token,
+            user: {
+                id: user.id,
+                email: user.email,
+                username: user.username,
+                userFirstName: user.userfirstname,
+                userLastName: user.userlastname,
+            }
+        });
+
+    } catch (err) {
+        console.error('Error logging in:', err);
+        res.status(500).send('Error logging in');
+    }
+});
+
+/**
+ * Добавление нового пользователя
  */
 app.post('/create-user', async (req, res) => {
     const { telegram_id, username, userFirstName, userLastName, email, password_hash } = req.body;
@@ -104,11 +155,13 @@ app.post('/create-user', async (req, res) => {
             return res.status(409).json({ message: 'User already exists' });
         }
 
+        const hashedPassword = password_hash ? await bcrypt.hash(password_hash, 10) : null;
+
         const insertUser = `INSERT INTO users (telegram_id, username, userFirstName, userLastName, email, password_hash) 
             VALUES ($1, $2, $3, $4, $5, $6) 
-            ON CONFLICT (telegram_id) DO NOTHING 
+            ON CONFLICT (telegram_id) DO NOTHING
             RETURNING id`;
-        const result = await pool.query(insertUser, [telegram_id || null, username, userFirstName, userLastName, email || null, password_hash || null]);
+        const result = await pool.query(insertUser, [telegram_id || null, username, userFirstName, userLastName, email || null, hashedPassword]);
         const userId = result.rows.length > 0 ? result.rows[0].id : null;
 
         if (userId) {

@@ -1,0 +1,23 @@
+<div class="auth">
+    <div class="auth__container">
+        <h2 class="auth__title">Авторизация</h2>
+        <form class="login-form" [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+            <div class="form-input">
+                <mat-form-field appearance="fill">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" required />
+                    <mat-error>{{errorMsg}}</mat-error>
+                </mat-form-field>
+                <mat-form-field appearance="fill">
+                    <mat-label>Password</mat-label>
+                    <input matInput type="password" formControlName="password" autocomplete="off">
+                    <mat-error>{{errorMsg}}</mat-error>
+                </mat-form-field>
+            </div>
+
+            <div class="button-container">
+                <button mat-raised-button color="primary" type="submit">Войти</button>
+            </div>
+        </form>
+    </div>
+</div>

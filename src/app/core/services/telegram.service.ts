@@ -12,37 +12,29 @@ export class TelegramService {
 
   constructor(@Inject(DOCUMENT) private _document: any) {
     this.window = this._document.defaultView;
-    this.tg = this.window.Telegram.WebApp;
+    this.tg = this.window?.Telegram?.WebApp;
   }
 
+  /** true, если приложение открыто внутри Telegram WebApp */
+  public isTelegramEnv(): boolean {
+    return !!this.tg?.initDataUnsafe?.user;
+  }
+
+  /** Возвращает юзера из Telegram-профиля (или null, если не Telegram) */
   public getTelegramUser(): User | null {
-    const isLocal = window.location.hostname === 'localhost';
-    const isGHPage = window.location.hostname.includes('github.io');
-    const isNotTelegram = !this.tg?.initDataUnsafe?.user;
-
-    if ((isLocal || isGHPage) && isNotTelegram) {
-      return this.getTestUser();
-    }
-
     const tgUser = this.tg?.initDataUnsafe?.user;
 
     if (!tgUser) return null;
 
     return {
       userId: tgUser.id,
-      username: tgUser.username,
-      userfirstname: tgUser.first_name,
-      userlastname: tgUser.last_name
+      isTelegram: true,
+      username: tgUser.username || '',
+      userfirstname: tgUser.first_name || '',
+      userlastname: tgUser.last_name || '',
+      email: '',
+      password_hash: ''
     };
   }
 
-  public getTestUser(): User | null {
-    const me = {
-      userId: 784002330,
-      username: "alex_gervas",
-      userfirstname: "Alexandra",
-      userlastname: "Gervas 🎸"
-    }; 
-    return me;
-  }
 }

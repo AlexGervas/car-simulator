@@ -4,11 +4,23 @@ import { SimulatorComponent } from './modules/pages/simulator/simulator.componen
 import { NotFoundComponent } from './modules/pages/not-found/not-found.component';
 import { ModelViewerComponent } from './modules/pages/model-viewer/model-viewer.component';
 import { HomePageComponent } from './modules/pages/home-page/home-page.component';
+import { LoginComponent } from './modules/auth/pages/login/login.component';
+import { authGuard } from './core/services/auth.guard';
+import { RegistrationComponent } from './modules/auth/pages/registration/registration.component';
 
 export const routes: Routes = [
-    { path: '', component: HomePageComponent },
-    { path: 'game', component: StartPageComponent },
-    { path: 'game/simulator', component: SimulatorComponent },
-    { path: 'model-viewer', component: ModelViewerComponent },
+    { path: '', redirectTo: 'login', pathMatch: 'full' },
+    { path: 'login', component: LoginComponent },
+    { path: 'registration', component: RegistrationComponent },
+    {
+        path: '',
+        canActivateChild: [authGuard],
+        children: [
+            { path: 'menu', component: HomePageComponent },
+            { path: 'game', component: StartPageComponent },
+            { path: 'game/simulator', component: SimulatorComponent },
+            { path: 'model-viewer', component: ModelViewerComponent },
+        ],
+    },
     { path: '**', component: NotFoundComponent }
 ];
