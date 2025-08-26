@@ -43,6 +43,24 @@ button {
     width: 100%;
 }
 
+.auth__footer {
+    margin-top: 16px;
+    font-size: 14px;
+    text-align: center;
+}
+
+.auth__footer a {
+    margin-left: 5px;
+    color: #1976d2;
+    text-decoration: none;
+    font-weight: 500;
+    cursor: pointer;
+}
+
+.auth__footer a:hover {
+    text-decoration: underline;
+}
+
 @media (max-width: 600px) {
     .auth {
         padding: 15px;
