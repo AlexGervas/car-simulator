@@ -1,1 +1,68 @@
-<p>registration works!</p>
+<div class="auth">
+    <div class="auth__container">
+        <h2 class="auth__title">Регистрация</h2>
+
+        <form class="registration-form" [formGroup]="registrationForm" (ngSubmit)="onSubmit()">
+            <div class="form-input">
+                <mat-form-field appearance="fill">
+                    <mat-label>Имя</mat-label>
+                    <input matInput type="text" formControlName="userFirstName" required />
+                    @if (getErrorMessage('userFirstName')) {
+                    <mat-error>{{ getErrorMessage('userFirstName') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                    <mat-label>Фамилия</mat-label>
+                    <input matInput type="text" formControlName="userLastName" required />
+                    @if (getErrorMessage('userLastName')) {
+                    <mat-error>{{ getErrorMessage('userLastName') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                    <mat-label>Электронная почта</mat-label>
+                    <input matInput type="email" formControlName="email" required />
+                    @if (getErrorMessage('email')) {
+                    <mat-error>{{ getErrorMessage('email') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                    <mat-label>Пароль</mat-label>
+                    <input matInput [type]="hide ? 'password' : 'text'" formControlName="password" required />
+                    <button mat-icon-button matSuffix type="button" (click)="hide = !hide">
+                        <mat-icon>{{ hide ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+
+                    @if (getErrorMessage('password')) {
+                    <mat-error>{{ getErrorMessage('password') }}</mat-error>
+                    }
+                </mat-form-field>
+
+                <mat-form-field appearance="fill">
+                    <mat-label>Подтверждение пароля</mat-label>
+                    <input matInput [type]="hideConfirm ? 'password' : 'text'" formControlName="confirmPassword"
+                        required />
+                    <button mat-icon-button matSuffix type="button" (click)="hideConfirm = !hideConfirm">
+                        <mat-icon>{{ hideConfirm ? 'visibility_off' : 'visibility' }}</mat-icon>
+                    </button>
+                    @if (getErrorMessage('confirmPassword')) {
+                    <mat-error>{{ getErrorMessage('confirmPassword') }}</mat-error>
+                    }
+                </mat-form-field>
+            </div>
+
+            <div class="button-container">
+                <button mat-raised-button color="primary" type="submit"
+                    [disabled]="registrationForm.invalid">Зарегистрироваться</button>
+            </div>
+        </form>
+
+        <div class="auth__footer">
+            <span>Уже есть аккаунт?</span>
+            <a routerLink="/login">Войти</a>
+        </div>
+
+    </div>
+</div>

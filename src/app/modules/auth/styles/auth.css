@@ -17,7 +17,6 @@
 }
 
 .auth__title {
-    margin-bottom: 20px;
     text-align: center;
     font-size: 24px;
     color: #333;
@@ -25,7 +24,6 @@
 
 .form-input {
     width: 100%;
-    margin-bottom: 20px;
 }
 
 .button-container {
@@ -54,6 +52,7 @@
 
 mat-form-field {
     width: 100%;
+    margin-bottom: 22px;
 }
 
 button {
