@@ -5,7 +5,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { RouterModule } from '@angular/router';
-import { ErrorMessages } from './error-messages';
+import { ErrorMessages } from '../../../../core/models/error-messages';
 
 @Component({
   selector: 'app-registration',
