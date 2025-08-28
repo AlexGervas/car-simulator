@@ -1,23 +1,41 @@
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { RegistrationComponent } from './registration.component';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
+import { LoginComponent } from '../login/login.component';
+import { ApiService } from '../../../../core/services/api.service';
+import { DialogService } from '../../../../core/services/dialog.service';
+import { of } from 'rxjs';
+import { Router } from '@angular/router';
 
 describe('RegistrationComponent', () => {
   let component: RegistrationComponent;
   let fixture: ComponentFixture<RegistrationComponent>;
+  let apiSpy: jasmine.SpyObj<ApiService>;
+  let dialogSpy: jasmine.SpyObj<DialogService>;
+  let router: Router;
 
   beforeEach(async () => {
+    apiSpy = jasmine.createSpyObj('ApiService', ['createUser']);
+    dialogSpy = jasmine.createSpyObj('DialogService', ['openDialogWithRef']);
+
     await TestBed.configureTestingModule({
       imports: [
         RegistrationComponent,
-        RouterTestingModule.withRoutes([]),
+        RouterTestingModule.withRoutes([
+          { path: 'login', component: LoginComponent }
+        ]),
         NoopAnimationsModule,
+      ],
+      providers: [
+        { provide: ApiService, useValue: apiSpy },
+        { provide: DialogService, useValue: dialogSpy }
       ]
     }).compileComponents();
 
     fixture = TestBed.createComponent(RegistrationComponent);
     component = fixture.componentInstance;
+    router = TestBed.inject(Router);
     fixture.detectChanges();
   });
 
@@ -125,11 +143,21 @@ describe('RegistrationComponent', () => {
   });
 
   describe('onSubmit', () => {
-    it('should call onSubmit only if form is valid', () => {
-      spyOn(console, 'log');
+    it('should call ApiService and navigate to /login on successful registration', fakeAsync(() => {
+      const mockUser = {
+        userId: 1,
+        userfirstname: 'Иван',
+        userlastname: 'Иванов',
+        email: 'ivan@test.com',
+        password_hash: '',
+        isTelegram: false,
+        username: ''
+      };
 
-      component.onSubmit();
-      expect(console.log).not.toHaveBeenCalled();
+      apiSpy.createUser.and.returnValue(of(mockUser));
+      const dialogRefSpy = { afterClosed: () => of(true) };
+      dialogSpy.openDialogWithRef.and.returnValue(dialogRefSpy as any);
+      spyOn(router, 'navigate');
 
       component.registrationForm.setValue({
         userFirstName: 'Иван',
@@ -140,8 +168,18 @@ describe('RegistrationComponent', () => {
       });
 
       component.onSubmit();
-      expect(console.log).toHaveBeenCalledWith('New web user', component.registrationForm.value);
-    });
+      tick();
+
+      expect(apiSpy.createUser).toHaveBeenCalledWith(jasmine.objectContaining({
+        userfirstname: 'Иван',
+        userlastname: 'Иванов',
+        email: 'ivan@test.com'
+      }));
+      expect(dialogSpy.openDialogWithRef).toHaveBeenCalled();
+      expect(router.navigate).toHaveBeenCalledWith(['/login']);
+    }));
+
+
   });
 
 });
