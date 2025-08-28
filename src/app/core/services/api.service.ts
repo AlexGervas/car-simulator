@@ -15,6 +15,35 @@ export class ApiService {
   }
 
   /**
+   *  Создание пользователя (Telegram или Web)
+   * @param user 
+   * @returns 
+   */
+  public createUser(user: User): Observable<User> {
+    const body: any = {
+      telegram_id: user.isTelegram ? user.userId : null,
+      username: user.username,
+      userFirstName: user.userfirstname,
+      userLastName: user.userlastname,
+      email: user.isTelegram ? null : user.email,
+      password_hash: user.isTelegram ? null : user.password_hash
+    };
+
+    return this.http.post<any>(`${this.apiUrl}/create-user`, body)
+      .pipe(
+        map((res: any) => ({
+          userId: res.id ?? user.userId,
+          isTelegram: user.isTelegram,
+          username: user.username,
+          userfirstname: user.userfirstname,
+          userlastname: user.userlastname,
+          email: user.email,
+          password_hash: ''
+        } satisfies User))
+      );
+  }
+
+  /**
    * Получение текущего прогресса уровней пользователя
    * @param userId
    * @returns

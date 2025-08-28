@@ -4,8 +4,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { ErrorMessages } from '../../../../core/models/error-messages';
+import { ApiService } from '../../../../core/services/api.service';
+import { User } from '../../../../core/models/user';
+import { DialogService } from '../../../../core/services/dialog.service';
 
 @Component({
   selector: 'app-registration',
@@ -22,7 +25,7 @@ export class RegistrationComponent implements OnInit {
   public hideConfirm: boolean = true;
   public errorMsg = ErrorMessages;
 
-  constructor(private formBuilder: FormBuilder) { }
+  constructor(private formBuilder: FormBuilder, private api: ApiService, private dialogService: DialogService, private router: Router) { }
 
   ngOnInit() {
     this.registrationForm = this.formBuilder.group({
@@ -42,7 +45,25 @@ export class RegistrationComponent implements OnInit {
 
   public onSubmit(): void {
     if (this.registrationForm.valid) {
-      console.log("New web user", this.registrationForm.value);
+      const user: User = {
+        userfirstname: this.registrationForm.value.userFirstName,
+        userlastname: this.registrationForm.value.userlastname,
+        email: this.registrationForm.value.email,
+        password_hash: this.registrationForm.value.password,
+        userId: 0,
+        isTelegram: false,
+        username: ''
+      };
+
+      this.api.createUser(user).subscribe({
+        next: () => {
+          const dialogRef = this.dialogService.openDialogWithRef('Вы успешно зарегистрировались!', 'Перейдите на страницу входа, чтобы авторизоваться.', false);
+          dialogRef.afterClosed().subscribe(() => {
+            this.router.navigate(['/login']);
+          });
+        },
+        error: (err) => console.error(`Error create user from web:`, err)
+      });
     }
   }
 
