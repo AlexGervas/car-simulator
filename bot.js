@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
@@ -29,6 +30,23 @@ const pool = new Pool({
     ssl: isProduction ? { rejectUnauthorized: false } : false
 });
 
+function isTelegramDataValid(data, botToken) {
+    const { hash, ...fields } = data || {};
+    if (!hash) return false;
+
+    const pairs = Object.keys(fields)
+        .sort()
+        .map(k => `${k}=${fields[k]}`)
+        .join('\n');
+
+    const secret = crypto.createHash('sha256').update(botToken).digest();
+    const hmac = crypto.createHmac('sha256', secret).update(pairs).digest('hex');
+
+    return hmac === hash;
+}
+
+module.exports = { isTelegramDataValid };
+
 bot.command('start', async (ctx) => {
     const userId = ctx.from.id;
     const userFirstName = ctx.from.first_name;
@@ -42,10 +60,10 @@ bot.command('start', async (ctx) => {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-                userId,
-                username,
-                userFirstName,
-                userLastName,
+                telegram_id: userId,
+                telegram_username: username,
+                userfirstname: userFirstName,
+                userlastname: userLastName
             }),
         });
 
@@ -54,8 +72,11 @@ bot.command('start', async (ctx) => {
                 'Какой нибудь текст для описания пам пам пам...'
         });
 
-        await ctx.reply('Нажмите на кнопку ниже, чтобы запустить приложение:', Markup.keyboard([
-            [Markup.button.webApp('Запустить приложение', webAppUrl)]
+        const redirectUrl = `${webAppUrl}/registration?first_name=${encodeURIComponent(userFirstName)}&last_name=${encodeURIComponent(userLastName)}&telegram_id=${encodeURIComponent(String(userId))}`;
+
+        await ctx.reply('Выберите действие:', Markup.keyboard([
+            Markup.button.webApp('Запустить приложение', webAppUrl),
+            // Markup.button.webApp('Зарегистрироваться в веб приложении', redirectUrl)
         ]).resize());
 
     } catch (err) {
@@ -140,47 +161,125 @@ app.post('/login', async (req, res) => {
  * Добавление нового пользователя
  */
 app.post('/create-user', async (req, res) => {
-    const { telegram_id, username, userFirstName, userLastName, email, password_hash } = req.body;
+    const { telegram_id, telegram_username, telegram_auth_date, telegram_hash, userfirstname, userlastname, email, password_plain } = req.body;
+
+    function generateUsername({ telegram_username, email, firstName, lastName }) {
+        if (telegram_username) return telegram_username;
+        if (email) return email.split('@')[0];
+        if (firstName && lastName) return (firstName + lastName).toLowerCase();
+        if (firstName) return firstName.toLowerCase();
+        return 'user' + Date.now();
+    }
+
+    if (telegram_hash) {
+        const ok = isTelegramDataValid(
+            {
+                id: telegram_id,
+                username: telegram_username,
+                first_name: userfirstname,
+                last_name: userlastname,
+                auth_date: telegram_auth_date,
+                hash: telegram_hash
+            },
+            BOT_TOKEN
+        );
+        if (!ok) {
+            return res.status(403).json({ message: 'Invalid Telegram signature' });
+        }
+    }
+
+    const tgId = telegram_id ? String(telegram_id) : null;
+    const firstName = userfirstname || null;
+    const lastName = userlastname || null;
+    const mail = email || null;
+    const passHash = password_plain ? await bcrypt.hash(password_plain, 10) : null;
+
+    const uname = generateUsername({ telegram_username, email: mail, firstName, lastName });
 
     try {
-        const checkQuery = `
-            SELECT id FROM users 
-            WHERE (telegram_id = $1 AND $1 IS NOT NULL)
-               OR (email = $2 AND $2 IS NOT NULL)
-            LIMIT 1
-        `;
-        const checkResult = await pool.query(checkQuery, [telegram_id || null, email || null]);
+        const byEmail = mail
+            ? await pool.query('SELECT * FROM users WHERE email = $1 LIMIT 1', [mail])
+            : { rows: [] };
+        const byTg = tgId
+            ? await pool.query('SELECT * FROM users WHERE telegram_id = $1 LIMIT 1', [tgId])
+            : { rows: [] };
 
-        if (checkResult.rows.length > 0) {
-            return res.status(409).json({ message: 'User already exists' });
+        if (byEmail.rows.length && byTg.rows.length && byEmail.rows[0].id !== byTg.rows[0].id) {
+            const keep = byEmail.rows[0];
+            const drop = byTg.rows[0];
+
+            await pool.query(
+                `UPDATE users
+         SET telegram_id   = COALESCE($1, telegram_id),
+             username      = COALESCE($2, username),
+             userfirstname = COALESCE($3, userfirstname),
+             userlastname  = COALESCE($4, userlastname)
+         WHERE id = $5`,
+                [tgId, uname, firstName, lastName, keep.id]
+            );
+            await pool.query('DELETE FROM users WHERE id = $1', [drop.id]);
+
+            return res.status(200).json({ message: 'User merged', id: keep.id });
         }
 
-        const hashedPassword = password_hash ? await bcrypt.hash(password_hash, 10) : null;
+        if (byEmail.rows.length) {
+            const u = byEmail.rows[0];
 
-        const insertUser = `INSERT INTO users (telegram_id, username, userFirstName, userLastName, email, password_hash) 
-            VALUES ($1, $2, $3, $4, $5, $6) 
-            ON CONFLICT (telegram_id) DO NOTHING
-            RETURNING id`;
-        const result = await pool.query(insertUser, [telegram_id || null, username, userFirstName, userLastName, email || null, hashedPassword]);
-        const userId = result.rows.length > 0 ? result.rows[0].id : null;
+            await pool.query(
+                `UPDATE users
+         SET telegram_id   = COALESCE($1, telegram_id),
+             username      = COALESCE($2, username),
+             userfirstname = COALESCE($3, userfirstname),
+             userlastname  = COALESCE($4, userlastname),
+             password_hash = COALESCE($5, password_hash)
+         WHERE id = $6`,
+                [tgId, uname, firstName, lastName, passHash, u.id]
+            );
 
-        if (userId) {
-            const levels = [
-                { level: 'snake', status: true },
-                { level: 'parallel-parking', status: false },
-                { level: 'garage', status: false },
-                { level: 'steep-grade', status: false }
-            ];
+            return res.status(200).json({ message: 'User updated (email path)', id: u.id });
+        }
 
-            await Promise.all(levels.map(({ level, status }) =>
+        if (byTg.rows.length) {
+            const u = byTg.rows[0];
+
+            await pool.query(
+                `UPDATE users
+         SET email         = COALESCE($1, email),
+             userfirstname = COALESCE($2, userfirstname),
+             userlastname  = COALESCE($3, userlastname),
+             username      = COALESCE($4, username),
+             password_hash = COALESCE($5, password_hash)
+         WHERE id = $6`,
+                [mail, firstName, lastName, uname, passHash, u.id]
+            );
+
+            return res.status(200).json({ message: 'User updated (telegram path)', id: u.id });
+        }
+
+        const result = await pool.query(
+            `INSERT INTO users (telegram_id, username, userfirstname, userlastname, email, password_hash)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING id`,
+            [tgId, uname, firstName, lastName, mail, passHash]
+        );
+        const userId = result.rows[0].id;
+
+        const levels = [
+            { level: 'snake', status: true },
+            { level: 'parallel-parking', status: false },
+            { level: 'garage', status: false },
+            { level: 'steep-grade', status: false }
+        ];
+        await Promise.all(
+            levels.map(({ level, status }) =>
                 pool.query(`INSERT INTO levels (user_id, level, status) VALUES ($1, $2, $3)`, [userId, level, status])
-            ));
-        }
+            )
+        );
 
-        res.status(201).json({ message: 'User created with initial levels', id: userId });
+        return res.status(201).json({ message: 'User created with initial levels', id: userId });
     } catch (err) {
         console.error('Error saving user:', err);
-        res.status(500).send('Error saving user');
+        return res.status(500).send('Error saving user');
     }
 });
 

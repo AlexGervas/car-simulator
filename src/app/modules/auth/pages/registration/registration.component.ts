@@ -4,7 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIcon } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ErrorMessages } from '../../../../core/models/error-messages';
 import { ApiService } from '../../../../core/services/api.service';
 import { User } from '../../../../core/models/user';
@@ -25,9 +25,20 @@ export class RegistrationComponent implements OnInit {
   public hideConfirm: boolean = true;
   public errorMsg = ErrorMessages;
 
-  constructor(private formBuilder: FormBuilder, private api: ApiService, private dialogService: DialogService, private router: Router) { }
+  private tgId?: string;
+  private tgHash?: string;
+  private tgAuthDate?: string;
+  private tgUsername?: string;
+
+  constructor(private formBuilder: FormBuilder, private api: ApiService, private dialogService: DialogService, private router: Router, private route: ActivatedRoute) { }
 
   ngOnInit() {
+    this.initRegistrationForm();
+    this.handleQueryParams();
+    this.initTelegramLoginWidget();
+  }
+
+  private initRegistrationForm(): void {
     this.registrationForm = this.formBuilder.group({
       userFirstName: ['', [Validators.required]],
       userLastName: ['', [Validators.required]],
@@ -43,16 +54,68 @@ export class RegistrationComponent implements OnInit {
     );
   }
 
+  private handleQueryParams(): void {
+    this.route.queryParams.subscribe(params => {
+      console.log("params", params);
+
+      if (params['first_name']) {
+        this.registrationForm.patchValue({ userFirstName: params['first_name'] });
+      }
+      if (params['last_name']) {
+        this.registrationForm.patchValue({ userLastName: params['last_name'] });
+      }
+      if (params['email']) {
+        this.registrationForm.patchValue({ email: params['email'] });
+      }
+      if (params['telegram_id']) {
+        this.tgId = String(params['telegram_id']);
+      }
+    });
+  }
+
+  private initTelegramLoginWidget(): void {
+    if (window.location.hostname === 'localhost') {
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", "CarDrivingSimulatorBot");
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-userpic", "false");
+    script.setAttribute("data-onauth", "onTelegramAuth(user)");
+    script.async = true;
+
+    document.getElementById("telegram-login-container")?.appendChild(script);
+
+    window.addEventListener('telegramAuth', (event: any) => {
+      const u = event.detail;
+      this.tgId = String(u.id);
+      this.tgUsername = u.username || '';
+      this.tgAuthDate = u.auth_date;
+      this.tgHash = u.hash;
+
+      this.registrationForm.patchValue({
+        userFirstName: u.first_name || this.registrationForm.value.userFirstName,
+        userLastName: u.last_name || this.registrationForm.value.userLastName
+      });
+    });
+  }
+
   public onSubmit(): void {
     if (this.registrationForm.valid) {
       const user: User = {
+        isTelegram: !!this.tgId,
         userfirstname: this.registrationForm.value.userFirstName,
         userlastname: this.registrationForm.value.userLastName,
         email: this.registrationForm.value.email,
-        password_hash: this.registrationForm.value.password,
-        userId: 0,
-        isTelegram: false,
-        username: ''
+        password_plain: this.registrationForm.value.password,
+        telegram_id: this.tgId || null,
+        telegram_username: this.tgUsername || null,
+        telegram_auth_date: this.tgAuthDate || null,
+        telegram_hash: this.tgHash || null,
+        userId: 0
       };
 
       this.api.createUser(user).subscribe({
