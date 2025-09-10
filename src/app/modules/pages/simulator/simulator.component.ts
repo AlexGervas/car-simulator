@@ -521,7 +521,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           if (!this.user) return;
           this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
             next: () => {
-              this.levelService.loadLevels();
+              this.levelService.loadLevels(this.user!.userId);
               this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
             },
             error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
@@ -552,7 +552,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.isNextLevel = false;
       if (!this.user) return;
       this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
-        next: () => this.levelService.loadLevels(),
+        next: () => this.levelService.loadLevels(this.user!.userId),
         error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
       });
     } else if (this.bridgeComponentInstance?.outOfBounds) {
@@ -646,7 +646,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
           next: () => {
             this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
-            this.levelService.loadLevels();
+            this.levelService.loadLevels(this.user!.userId);
             this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
           }, 
           error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)

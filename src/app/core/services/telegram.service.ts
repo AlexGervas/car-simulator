@@ -27,11 +27,11 @@ export class TelegramService {
     if (!tgUser) return null;
 
     return {
-      userId: tgUser.id ?? undefined,
+      userId: tgUser.id,
       isTelegram: true,
-      username: tgUser.username || '',
-      userfirstname: tgUser.first_name || '',
-      userlastname: tgUser.last_name || '',
+      username: tgUser.username ?? '',
+      userfirstname: tgUser.first_name ?? '',
+      userlastname: tgUser.last_name ?? '',
       email: '',
       password_plain: ''
     };

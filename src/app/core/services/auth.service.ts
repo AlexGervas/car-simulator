@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { tap } from 'rxjs';
+import { Observable, tap } from 'rxjs';
+import { UserService } from './user.service';
 
 @Injectable({
   providedIn: 'root'
@@ -10,19 +11,20 @@ export class AuthService {
   private apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://car-simulator.onrender.com';
   private readonly TOKEN_KEY = 'auth_token';
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient, private userService: UserService) { }
 
   /**
    * Авторизация
    * @param email 
-   * @param password 
-   * @returns 
+   * @param password
+   * @returns
    */
-  public login(email: string, password: string): any {
+  public login(email: string, password: string): Observable<any> {
     return this.http.post<{ token: string }>(`${this.apiUrl}/login`, { email, password }).pipe(
-      tap((res: { token: string; }) => {
+      tap(res => {
         if (res.token) {
           localStorage.setItem(this.TOKEN_KEY, res.token);
+          this.userService.loadUserFromApi().subscribe();
         }
       })
     );
@@ -33,6 +35,7 @@ export class AuthService {
    */
   public logout(): void {
     localStorage.removeItem(this.TOKEN_KEY);
+    this.userService.clearUser();
   }
 
   /**

@@ -34,6 +34,19 @@ export class ApiService {
   }
 
   /**
+   * Получение текущего пользователя по токену
+   * @returns 
+   */
+  public getCurrentUser(): Observable<User> {
+    const token = localStorage.getItem('auth_token');
+    return this.http.get<User>(`${this.apiUrl}/users/me`, {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    });
+  }
+
+  /**
    * Получение текущего прогресса уровней пользователя
    * @param userId
    * @returns
