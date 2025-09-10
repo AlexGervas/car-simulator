@@ -47,6 +47,21 @@ function isTelegramDataValid(data, botToken) {
 
 module.exports = { isTelegramDataValid };
 
+// middleware для проверки токена
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  const token = authHeader?.split(' ')[1];
+  if (!token) return res.status(401).json({ message: 'No token provided' });
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.userId = decoded.id;
+    next();
+  } catch (err) {
+    return res.status(403).json({ message: 'Invalid token' });
+  }
+}
+
 bot.command('start', async (ctx) => {
     const userId = ctx.from.id;
     const userFirstName = ctx.from.first_name;
@@ -297,20 +312,36 @@ app.get('/users', async (req, res) => {
 });
 
 /**
- * Получение информации пользователя по id
+ * Получение информации пользователя по id или по токену
  */
-app.get('/users/:id', async (req, res) => {
-    const { id } = req.params;
+app.get('/users/:id?', authMiddleware, async (req, res) => {
     try {
-        const result = await pool.query('SELECT * FROM users WHERE id = $1 OR telegram_id = $1', [id]);
+        const { id } = req.params;
+        const userId = id && id !== 'me' ? id : req.userId;
+
+        const result = await pool.query(
+            'SELECT id, username, email, userfirstname, userlastname, telegram_id FROM users WHERE id = $1 OR telegram_id = $1',
+            [userId]
+        );
+
         if (result.rows.length === 0) {
-            res.status(404).send('Пользователь не найден');
-        } else {
-            res.status(200).json(result.rows[0]);
+            return res.status(404).json({ message: 'User not found' });
         }
+
+        const user = result.rows[0];
+
+        res.json({
+            userId: user.id,
+            username: user.username || undefined,
+            email: user.email,
+            userfirstname: user.userfirstname,
+            userlastname: user.userlastname,
+            telegramId: user.telegram_id,
+            isTelegram: !!user.telegram_id
+        });
     } catch (err) {
         console.error('Error fetching user:', err);
-        res.status(500).send('Ошибка при получении пользователя');
+        res.status(500).json({ message: 'Error fetching user' });
     }
 });
 
