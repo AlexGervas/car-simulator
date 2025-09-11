@@ -26,6 +26,7 @@ import { User } from '../../../core/models/user';
 import { ApiService } from '../../../core/services/api.service';
 import { TelegramService } from '../../../core/services/telegram.service';
 import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
+import { UserService } from '../../../core/services/user.service';
 
 @Component({
   selector: 'app-simulator',
@@ -95,7 +96,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     public dialog: MatDialog,
     private api: ApiService,
     private telegramService: TelegramService,
-    private rendererFactory: RendererFactoryService) { }
+    private rendererFactory: RendererFactoryService,
+    private userService: UserService) { }
 
   async ngOnInit() {
     this.modelsLoaderService.show();
@@ -103,12 +105,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.clock = new THREE.Clock();
 
     this.user = this.telegramService.getTelegramUser();
-    console.log("User:", this.user);
-    
 
     if (!this.user) {
-      console.error('Telegram User not found!');
+      console.warn('Telegram User not found!');
+      this.user = this.userService.getUser();
     }
+    console.log("User:", this.user);
 
     this.initSceneAndWorld();
 
