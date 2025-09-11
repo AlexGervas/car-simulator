@@ -16,7 +16,7 @@ export const routes: Routes = [
         path: '',
         canActivateChild: [authGuard],
         children: [
-            { path: 'menu', component: HomePageComponent },
+            { path: 'home', component: HomePageComponent },
             { path: 'game', component: StartPageComponent },
             { path: 'game/simulator', component: SimulatorComponent },
             { path: 'model-viewer', component: ModelViewerComponent },

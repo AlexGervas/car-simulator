@@ -1,9 +1,11 @@
 <mat-toolbar color="primary" class="navbar">
     <span class="menu-logo" (click)="goToHome()" style="cursor: pointer;">CAR SIMULATOR</span>
     <span class="spacer"></span>
+    @if (isAuthenticated()) {
     <button mat-icon-button (click)="snav.toggle()" class="burger-button">
         <mat-icon>menu</mat-icon>
     </button>
+    }
 </mat-toolbar>
 
 <mat-sidenav-container class="example-sidenav-container">

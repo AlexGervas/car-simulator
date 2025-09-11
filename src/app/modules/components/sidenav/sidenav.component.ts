@@ -13,7 +13,7 @@ export class SidenavComponent {
   constructor(private router: Router) { }
 
   navigateToHome() {
-    this.router.navigate(['/']);
+    this.router.navigate(['/home']);
   }
 
   navigateToLevelsPage() {

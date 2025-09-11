@@ -5,6 +5,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('HeaderComponent', () => {
     let component: HeaderComponent;
@@ -17,7 +18,8 @@ describe('HeaderComponent', () => {
                 RouterTestingModule,
                 MatToolbarModule,
                 MatSidenavModule,
-                MatIconModule
+                MatIconModule,
+                HttpClientTestingModule
             ],
             providers: [
                 provideNoopAnimations()

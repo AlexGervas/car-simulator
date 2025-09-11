@@ -4,6 +4,7 @@ import { SidenavComponent } from '../sidenav/sidenav.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatIconModule } from '@angular/material/icon';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-header',
@@ -13,9 +14,14 @@ import { MatIconModule } from '@angular/material/icon';
   styleUrl: './header.component.css'
 })
 export class HeaderComponent {
-  constructor(private router: Router){}
+  constructor(private router: Router, private authService: AuthService) { }
 
-  goToHome(){
-    this.router.navigate(['/']);
+  public goToHome(): void {
+    this.router.navigate(['/home']);
   }
+
+  public isAuthenticated(): boolean {
+    return this.authService.isAuthenticated();
+  }
+
 }

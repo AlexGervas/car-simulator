@@ -56,7 +56,7 @@ describe('LoginComponent', () => {
     expect(authServiceSpy.login).toHaveBeenCalledWith(email, password);
   });
 
-  it('should navigate to /menu on successful login', () => {
+  it('should navigate to /home on successful login', () => {
     const email = 'test@example.com';
     const password = 'password123';
     component.loginForm.setValue({ email, password });
@@ -67,7 +67,7 @@ describe('LoginComponent', () => {
 
     component.onSubmit();
 
-    expect(routerSpy).toHaveBeenCalledWith(['/menu']);
+    expect(routerSpy).toHaveBeenCalledWith(['/home']);
   });
 
   it('should call dialogService.openDialog on login error', () => {
