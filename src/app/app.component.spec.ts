@@ -3,11 +3,12 @@ import { AppComponent } from './app.component';
 import { RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './modules/components/header/header.component';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AppComponent, RouterOutlet, HeaderComponent],
+      imports: [AppComponent, RouterOutlet, HeaderComponent, HttpClientTestingModule],
       providers: [provideNoopAnimations()]
     }).compileComponents();
   });

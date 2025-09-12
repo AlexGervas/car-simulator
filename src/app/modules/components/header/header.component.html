@@ -9,7 +9,7 @@
 </mat-toolbar>
 
 <mat-sidenav-container class="example-sidenav-container">
-    <mat-sidenav #snav [mode]="'over'" [style.width.px]="250" position="end">
+    <mat-sidenav #snav [mode]="'over'" [style.width.px]="250" position="end" [hidden]="!isAuthenticated()">
         <app-sidenav></app-sidenav>
     </mat-sidenav>
 

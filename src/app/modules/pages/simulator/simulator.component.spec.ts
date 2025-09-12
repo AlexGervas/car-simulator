@@ -993,7 +993,7 @@ describe('SimulatorComponent', () => {
                 {} as any, {} as any, {} as any, {} as any,
                 {} as any, {} as any, {} as any, {} as any,
                 {} as any, {} as any, {} as any, {} as any,
-                {} as any, {} as any
+                {} as any, {} as any, {} as any
             );
             (component as any).carComponent = carComponentMock;
             component.isGameOver = false;
