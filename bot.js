@@ -173,6 +173,50 @@ app.post('/login', async (req, res) => {
 });
 
 /**
+ * Логин по telegram_id
+ */
+app.post('/login-telegram', async (req, res) => {
+    const { telegram_id } = req.body;
+    if (!telegram_id) {
+        return res.status(400).json({ message: 'telegram_id is required' });
+    }
+
+    try {
+        const userResult = await pool.query(
+            'SELECT * FROM users WHERE telegram_id = $1',
+            [telegram_id]
+        );
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const user = userResult.rows[0];
+
+        const token = jwt.sign(
+            { id: user.id, telegram_id: user.telegram_id },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN || '1d' }
+        );
+
+        res.status(200).json({
+            message: 'Telegram Login successful',
+            token,
+            user: {
+                id: user.id,
+                telegram_id: user.telegram_id,
+                username: user.username,
+                userFirstName: user.userfirstname,
+                userLastName: user.userlastname,
+            }
+        });
+    } catch (err) {
+        console.error('Error logging in with Telegram:', err);
+        res.status(500).send('Error logging in with Telegram');
+    }
+});
+
+/**
  * Добавление нового пользователя
  */
 app.post('/create-user', async (req, res) => {

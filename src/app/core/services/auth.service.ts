@@ -31,6 +31,22 @@ export class AuthService {
   }
 
   /**
+   * Авторизация через Telegram ID
+   * @param telegramId 
+   * @returns 
+   */
+  public loginWithTelegram(telegramId: number): Observable<any> {
+    return this.http.post<{ token: string; user: any }>(`${this.apiUrl}/login-telegram`, { telegram_id: telegramId }).pipe(
+      tap(res => {
+        if (res.token) {
+          localStorage.setItem(this.TOKEN_KEY, res.token);
+          this.userService.setUser(res.user);
+        }
+      })
+    );
+  }
+
+  /**
    * Выход
    */
   public logout(): void {

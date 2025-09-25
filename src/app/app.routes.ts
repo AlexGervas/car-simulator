@@ -7,9 +7,10 @@ import { HomePageComponent } from './modules/pages/home-page/home-page.component
 import { LoginComponent } from './modules/auth/pages/login/login.component';
 import { authGuard } from './core/services/auth.guard';
 import { RegistrationComponent } from './modules/auth/pages/registration/registration.component';
+import { telegramGuard } from './core/services/telegram.guard';
 
 export const routes: Routes = [
-    { path: '', redirectTo: 'login', pathMatch: 'full' },
+    { path: '', canActivate: [telegramGuard], component: HomePageComponent },
     { path: 'login', component: LoginComponent },
     { path: 'registration', component: RegistrationComponent },
     {
