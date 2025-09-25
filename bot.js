@@ -7,15 +7,17 @@ const cors = require('cors');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const validator = require('validator');
 
 const BOT_TOKEN = process.env.BOT_TOKEN;
 const bot = new Telegraf(BOT_TOKEN);
+const pendingActions = new Map();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'PROD';
 
-const webAppUrl = 'https://alexgervas.github.io/car-simulator/';
+const webAppUrl = 'https://alexgervas.github.io/car-simulator';
 const carImg = "https://i.pinimg.com/736x/6e/3a/67/6e3a6798353975790e656eb7ecafb7d3.jpg";
 
 app.use(cors());
@@ -49,17 +51,17 @@ module.exports = { isTelegramDataValid };
 
 // middleware для проверки токена
 function authMiddleware(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'No token provided' });
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.split(' ')[1];
+    if (!token) return res.status(401).json({ message: 'No token provided' });
 
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.userId = decoded.id;
-    next();
-  } catch (err) {
-    return res.status(403).json({ message: 'Invalid token' });
-  }
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.userId = decoded.id;
+        next();
+    } catch (err) {
+        return res.status(403).json({ message: 'Invalid token' });
+    }
 }
 
 bot.command('start', async (ctx) => {
@@ -84,20 +86,124 @@ bot.command('start', async (ctx) => {
 
         await ctx.replyWithPhoto({ url: carImg }, {
             caption: `Добро пожаловать, @${username}! 🌟\n\n` +
-                'Какой нибудь текст для описания пам пам пам...'
+                'Вы можете играть прямо в Telegram или войти через веб-сайт.'
         });
 
-        const redirectUrl = `${webAppUrl}/registration?first_name=${encodeURIComponent(userFirstName)}&last_name=${encodeURIComponent(userLastName)}&telegram_id=${encodeURIComponent(String(userId))}`;
+        // await ctx.reply('Выберите действие:', Markup.keyboard([
+        //     Markup.button.webApp('Запустить приложение', webAppUrl),
+        // ]).resize());
 
-        await ctx.reply('Выберите действие:', Markup.keyboard([
-            Markup.button.webApp('Запустить приложение', webAppUrl),
-            // Markup.button.webApp('Зарегистрироваться в веб приложении', redirectUrl)
-        ]).resize());
+        const userResult = await pool.query(
+            'SELECT email, password_hash FROM users WHERE telegram_id = $1 LIMIT 1',
+            [String(userId)]
+        );
+        const user = userResult.rows[0];
+
+        const inlineButtons = [
+            [Markup.button.webApp('Запустить приложение', webAppUrl)]
+        ];
+
+        const redirectUrl = `${webAppUrl}/registration?first_name=${encodeURIComponent(userFirstName)}&last_name=${encodeURIComponent(userLastName)}&telegram_id=${encodeURIComponent(String(userId))}`;
+        if (!user?.email || !user?.password_hash) {
+            inlineButtons.push([
+                Markup.button.callback('Привязать логин и пароль', 'link_web_login'),
+                Markup.button.url('Зарегистрироваться на сайте', redirectUrl)
+            ]);
+        }
+        await ctx.reply('Выберите действие:', Markup.inlineKeyboard(inlineButtons));
 
     } catch (err) {
         console.error('Error saving user:', err);
         await ctx.reply('Error saving user');
     }
+});
+
+bot.action('link_web_login', async (ctx) => {
+    await ctx.answerCbQuery();
+    await ctx.reply(
+        'Чтобы привязать вход через веб-сервис, выберите действие:',
+        Markup.keyboard([['Добавить Email', 'Добавить пароль']]).resize().oneTime()
+    );
+});
+
+bot.hears('Добавить пароль', async (ctx) => {
+    const userId = ctx.from.id;
+    pendingActions.set(userId, 'password');
+
+    await ctx.reply(
+        'Введите пароль.\n\n' +
+        'Требования:\n' +
+        '- минимум 8 символов\n' +
+        '- хотя бы одна буква\n' +
+        '- хотя бы одна цифра\n' +
+        '- хотя бы один спецсимвол'
+    );
+});
+
+bot.command('setemail', async (ctx) => {
+    const userId = ctx.from.id;
+    pendingActions.set(userId, 'email');
+    await ctx.reply('Введите ваш email:');
+});
+
+bot.command('setpassword', async (ctx) => {
+    const userId = ctx.from.id;
+    pendingActions.set(userId, 'password');
+    await ctx.reply('🔑 Введите ваш пароль:');
+});
+
+bot.on('text', async (ctx) => {
+    const userId = ctx.from.id;
+    const action = pendingActions.get(userId);
+
+    const input = ctx.message.text.trim();
+
+    if (!action) {
+        if (input === 'Добавить Email') {
+            pendingActions.set(userId, 'email');
+            return ctx.reply('Введите ваш email:');
+        } else if (input === 'Добавить пароль') {
+            pendingActions.set(userId, 'password');
+            return ctx.reply('Введите ваш пароль:');
+        }
+        return;
+    }
+
+    if (action === 'email') {
+        if (!validator.isEmail(input)) {
+            return ctx.reply('Некорректный email. Попробуйте снова:');
+        }
+        await pool.query('UPDATE users SET email = $1 WHERE telegram_id = $2', [
+            input,
+            String(userId),
+        ]);
+        await ctx.reply(`Email сохранён: ${input}`);
+    }
+
+    if (action === 'password') {
+        const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+
+        if (!passwordRegex.test(input)) {
+            return ctx.reply(
+                'Пароль не соответствует требованиям.\n' +
+                'Он должен содержать:\n' +
+                '- минимум 8 символов\n' +
+                '- хотя бы одну букву\n' +
+                '- хотя бы одну цифру\n' +
+                '- хотя бы один спецсимвол\n' +
+                'Попробуйте снова:'
+            );
+        }
+        const hash = await bcrypt.hash(input, 10);
+        await pool.query(
+            'UPDATE users SET password_hash = $1 WHERE telegram_id = $2',
+            [hash, String(userId)]
+        );
+
+        await ctx.reply('Пароль сохранён!');
+    }
+
+    pendingActions.delete(userId);
 });
 
 if (isProduction) {
