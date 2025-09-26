@@ -120,10 +120,35 @@ bot.command('start', async (ctx) => {
 
 bot.action('link_web_login', async (ctx) => {
     await ctx.answerCbQuery();
-    await ctx.reply(
-        'Чтобы привязать вход через веб-сервис, выберите действие:',
-        Markup.keyboard([['Добавить Email', 'Добавить пароль']]).resize().oneTime()
-    );
+    const userId = ctx.from.id;
+
+    try {
+        const userResult = await pool.query(
+            'SELECT email, password_hash FROM users WHERE telegram_id = $1 LIMIT 1',
+            [String(userId)]
+        );
+        const user = userResult.rows[0];
+        const keyboard = [];
+
+        if (!user?.email) {
+            keyboard.push(['Добавить Email']);
+        }
+        if (!user?.password_hash) {
+            keyboard.push(['Добавить пароль']);
+        }
+        if (keyboard.length === 0) {
+            return ctx.reply('У вас уже привязан и email, и пароль');
+        }
+
+        await ctx.reply(
+            'Чтобы привязать вход через веб-сервис, выберите действие:',
+            Markup.keyboard(keyboard).resize().oneTime()
+        );
+
+    } catch (err) {
+        console.error('Error in link_web_login:', err);
+        await ctx.reply('Error when verifying user data');
+    }
 });
 
 bot.hears('Добавить пароль', async (ctx) => {
@@ -201,6 +226,16 @@ bot.on('text', async (ctx) => {
         );
 
         await ctx.reply('Пароль сохранён!');
+    }
+
+    const userResult = await pool.query(
+        'SELECT email, password_hash FROM users WHERE telegram_id = $1 LIMIT 1',
+        [String(userId)]
+    );
+    const user = userResult.rows[0];
+
+    if (user?.email && user?.password_hash) {
+        await ctx.reply('Отлично! Email и пароль сохранены.', Markup.removeKeyboard());
     }
 
     pendingActions.delete(userId);
