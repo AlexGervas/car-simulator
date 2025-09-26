@@ -27,6 +27,7 @@ import { ApiService } from '../../../core/services/api.service';
 import { TelegramService } from '../../../core/services/telegram.service';
 import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
 import { UserService } from '../../../core/services/user.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 @Component({
   selector: 'app-simulator',
@@ -97,20 +98,36 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private api: ApiService,
     private telegramService: TelegramService,
     private rendererFactory: RendererFactoryService,
-    private userService: UserService) { }
+    private userService: UserService,
+    private authService: AuthService) { }
 
   async ngOnInit() {
     this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
     this.clock = new THREE.Clock();
 
-    this.user = this.telegramService.getTelegramUser();
-
-    if (!this.user) {
-      console.warn('Telegram User not found!');
+    if (this.telegramService.isTelegramEnv()) {
+      const tgUser = this.telegramService.getTelegramUser();
+      if (tgUser) {
+        this.authService.loginWithTelegram(tgUser.userId).subscribe({
+          next: () => {
+            this.user = this.userService.getUser();
+            console.log("User (telegram):", this.user);
+          },
+          error: err => {
+            console.error("Telegram login failed:", err);
+          }
+        });
+      }
+    } else {
       this.user = this.userService.getUser();
+      if (!this.user) {
+        this.userService.loadUserFromApi().subscribe(user => {
+          this.user = user;
+          console.log("User (Web):", this.user);
+        });
+      }
     }
-    console.log("User:", this.user);
 
     this.initSceneAndWorld();
 
