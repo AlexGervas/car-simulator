@@ -106,8 +106,8 @@ bot.command('start', async (ctx) => {
         const redirectUrl = `${webAppUrl}/registration?first_name=${encodeURIComponent(userFirstName)}&last_name=${encodeURIComponent(userLastName)}&telegram_id=${encodeURIComponent(String(userId))}`;
         if (!user?.email || !user?.password_hash) {
             inlineButtons.push([
-                Markup.button.callback('Привязать логин и пароль', 'link_web_login'),
-                Markup.button.url('Зарегистрироваться на сайте', redirectUrl)
+                Markup.button.callback('Привязать аккаунт', 'link_web_login'),
+                Markup.button.url('Регистрация', redirectUrl)
             ]);
         }
         await ctx.reply('Выберите действие:', Markup.inlineKeyboard(inlineButtons));
