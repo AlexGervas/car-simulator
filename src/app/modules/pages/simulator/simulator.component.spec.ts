@@ -3,7 +3,7 @@ import { SimulatorComponent } from './simulator.component';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { ApiService } from '../../../core/services/api.service';
 import { LevelService } from '../../../core/services/level.service';
 import { DeviceService } from '../../../core/services/device.service';
@@ -17,6 +17,7 @@ import { TelegramService } from '../../../core/services/telegram.service';
 import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
+import { AuthService } from '../../../core/services/auth.service';
 
 describe('SimulatorComponent', () => {
     let component: SimulatorComponent;
@@ -48,12 +49,23 @@ describe('SimulatorComponent', () => {
                 }
             }
         },
+        isTelegramEnv: () => true,
         getTelegramUser: () => ({
             userId: 784002330,
             username: "alex_gervas",
             userfirstname: "Alexandra",
             userlastname: "Gervas"
         })
+    };
+
+    const mockAuthService = {
+        loginWithTelegram: jasmine.createSpy('loginWithTelegram').and.returnValue(of({ token: 'mockToken', user: {} })),
+        setUser: jasmine.createSpy('setUser')
+    }
+
+    const mockUserService = {
+        loadUserFromApi: jasmine.createSpy('loadUserFromApi').and.returnValue(of({})),
+        getUser: jasmine.createSpy('getUser').and.returnValue(null)
     };
 
     const mockDeviceService = {
@@ -78,9 +90,13 @@ describe('SimulatorComponent', () => {
                     provide: TelegramService,
                     useValue: mockTelegramService
                 },
-                { 
-                    provide: DeviceService, 
-                    useValue: mockDeviceService 
+                {
+                    provide: AuthService,
+                    useValue: mockAuthService
+                },
+                {
+                    provide: DeviceService,
+                    useValue: mockDeviceService
                 },
                 {
                     provide: RendererFactoryService,
@@ -106,6 +122,67 @@ describe('SimulatorComponent', () => {
 
     it('should create the component', () => {
         expect(component).toBeTruthy();
+    });
+
+    describe('ngOnInit', () => {
+        it('should login with Telegram user if in Telegram environment', async () => {
+            spyOn(mockTelegramService, 'isTelegramEnv').and.returnValue(true);
+            spyOn(mockTelegramService, 'getTelegramUser').and.returnValue({
+                userId: 784002330,
+                username: "alex_gervas",
+                userfirstname: '',
+                userlastname: ''
+            });
+            mockAuthService.loginWithTelegram.and.returnValue(of({ token: 'mockToken' }));
+            await component.ngOnInit();
+            expect(mockAuthService.loginWithTelegram).toHaveBeenCalledWith(784002330);
+        });
+
+        it('should not call loginWithTelegram if in Telegram environment but user is missing', async () => {
+            spyOn(mockTelegramService, 'isTelegramEnv').and.returnValue(true);
+            spyOn(mockTelegramService, 'getTelegramUser').and.returnValue(null as any);
+            mockAuthService.loginWithTelegram.calls.reset();
+
+            await component.ngOnInit();
+
+            expect(mockAuthService.loginWithTelegram).not.toHaveBeenCalled();
+        });
+
+        it('should load user from API if not in Telegram environment and user is null', async () => {
+            spyOn(mockTelegramService, 'isTelegramEnv').and.returnValue(false);
+
+            (component as any).userService = mockUserService;
+
+            mockUserService.getUser.and.returnValue(null);
+            mockUserService.loadUserFromApi.and.returnValue(of({ id: 1, username: 'web_user' }));
+
+            await component.ngOnInit();
+
+            expect(mockUserService.loadUserFromApi).toHaveBeenCalled();
+            expect(component.user).toEqual(jasmine.objectContaining({ username: 'web_user' }));
+        });
+
+        it('should handle loginWithTelegram error gracefully', async () => {
+            spyOn(mockTelegramService, 'isTelegramEnv').and.returnValue(true);
+            spyOn(mockTelegramService, 'getTelegramUser').and.returnValue({
+                userId: 784002330,
+                username: 'alex_gervas',
+                userfirstname: '',
+                userlastname: ''
+            });
+            mockAuthService.loginWithTelegram.and.returnValue(
+                throwError(() => new Error('Telegram login failed'))
+            );
+
+            const consoleErrorSpy = spyOn(console, 'error');
+            await component.ngOnInit();
+
+            expect(consoleErrorSpy).toHaveBeenCalledWith(
+                'Telegram login failed:',
+                jasmine.any(Error)
+            );
+        });
+
     });
 
     describe('Level initialization', () => {
@@ -993,7 +1070,7 @@ describe('SimulatorComponent', () => {
                 {} as any, {} as any, {} as any, {} as any,
                 {} as any, {} as any, {} as any, {} as any,
                 {} as any, {} as any, {} as any, {} as any,
-                {} as any, {} as any, {} as any
+                {} as any, {} as any, {} as any, {} as any
             );
             (component as any).carComponent = carComponentMock;
             component.isGameOver = false;
