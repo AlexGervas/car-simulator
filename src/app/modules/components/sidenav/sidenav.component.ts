@@ -1,22 +1,36 @@
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { MatListModule } from '@angular/material/list';
 import { Router } from '@angular/router';
+import { MatIcon } from "@angular/material/icon";
+import { AuthService } from '../../../core/services/auth.service';
+import { MatSidenav } from '@angular/material/sidenav';
 
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [MatListModule],
+  imports: [MatListModule, MatIcon],
   templateUrl: './sidenav.component.html',
   styleUrl: './sidenav.component.css'
 })
 export class SidenavComponent {
-  constructor(private router: Router) { }
+  @Input() sidenav!: MatSidenav;
 
-  navigateToHome() {
-    this.router.navigate(['/home']);
+  constructor(private router: Router, private auth: AuthService) { }
+
+  async navigateToHome() {
+    await this.router.navigate(['/home']);
+    await this.sidenav?.close();
   }
 
-  navigateToLevelsPage() {
-    this.router.navigate(['/game']);
+  async navigateToLevelsPage() {
+    await this.router.navigate(['/game']);
+    await this.sidenav?.close();
   }
+
+  async logout() {
+    await this.sidenav?.close();
+    this.auth.logout();
+    await this.router.navigate(['/login']);
+  }
+
 }

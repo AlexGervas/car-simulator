@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HeaderComponent } from './header.component';
-import { provideNoopAnimations } from '@angular/platform-browser/animations';
+import { NoopAnimationsModule, provideNoopAnimations } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -24,7 +24,8 @@ describe('HeaderComponent', () => {
                 MatSidenavModule,
                 MatIconModule,
                 MatButtonModule,
-                HttpClientTestingModule
+                HttpClientTestingModule,
+                NoopAnimationsModule
             ],
             providers: [
                 provideNoopAnimations()
