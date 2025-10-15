@@ -18,8 +18,11 @@ describe('SidenavComponent', () => {
 
     beforeEach(async () => {
         routerSpy = jasmine.createSpyObj('Router', ['navigate']);
-        authSpy = jasmine.createSpyObj('AuthService', ['logout']);
+        authSpy = jasmine.createSpyObj('AuthService', ['logout'], ['logout$']);
+        authSpy.logout.and.returnValue(Promise.resolve());
         sidenavMock = jasmine.createSpyObj('MatSidenav', ['close']);
+        sidenavMock.close.and.returnValue(Promise.resolve('close' as MatDrawerToggleResult));
+        routerSpy.navigate.and.returnValue(Promise.resolve(true));
 
         await TestBed.configureTestingModule({
             imports: [SidenavComponent, MatListModule, MatIconModule, MatDividerModule, HttpClientTestingModule, NoopAnimationsModule],

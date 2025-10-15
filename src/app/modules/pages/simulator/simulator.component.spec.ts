@@ -60,7 +60,8 @@ describe('SimulatorComponent', () => {
 
     const mockAuthService = {
         loginWithTelegram: jasmine.createSpy('loginWithTelegram').and.returnValue(of({ token: 'mockToken', user: {} })),
-        setUser: jasmine.createSpy('setUser')
+        setUser: jasmine.createSpy('setUser'),
+        getToken: jasmine.createSpy('getToken').and.returnValue('mockToken')
     }
 
     const mockUserService = {
