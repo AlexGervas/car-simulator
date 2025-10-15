@@ -6,13 +6,21 @@
     "outDir": "./out-tsc/app",
     "target": "ES2022",
     "useDefineForClassFields": true,
+    "typeRoots": [
+      "src/app/core/typings",
+      "node_modules/@types"
+    ],
     "types": []
   },
   "files": [
     "src/main.ts"
   ],
   "include": [
+    "src/**/*.ts",
     "src/**/*.d.ts",
     "src/app/core/typings/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/**/*.spec.ts"
   ]
 }

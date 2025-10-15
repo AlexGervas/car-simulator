@@ -14,10 +14,24 @@ export class UserService {
 
   constructor(private telegramService: TelegramService, private api: ApiService) { }
 
-  public init(): void {
+    public init(): void {
     const tgUser = this.telegramService.getTelegramUser();
     if (tgUser) {
-      this.userSubject.next(tgUser);
+      this.userSubject.next({ ...tgUser, isTelegram: true });
+      return;
+    }
+
+    const token = localStorage.getItem('auth_token');
+
+    if (token) {
+      this.api.getCurrentUser().subscribe({
+        next: user => {
+          this.userSubject.next({ ...user, isTelegram: false });
+        },
+        error: err => {
+          console.warn('Couldnt upload user by token', err);
+        }
+      });
     }
   }
 

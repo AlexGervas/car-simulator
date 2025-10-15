@@ -4,13 +4,22 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "outDir": "./out-tsc/spec",
-    "types": ["jasmine", "node"]
+    "target": "ES2022",
+    "types": ["jasmine", "node"],
+    "typeRoots": [
+      "src/app/core/typings",
+      "node_modules/@types"
+    ]
   },
   "files": [
     "src/test.ts"
   ],
   "include": [
     "src/**/*.spec.ts",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "src/app/core/typings/**/*.d.ts"
+  ],
+  "exclude": [
+    "src/main.ts"
   ]
 }

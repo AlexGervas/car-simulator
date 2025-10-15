@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { UserService } from './user.service';
+import { StorageService } from './storage.service';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +12,7 @@ export class AuthService {
   private apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://car-simulator.onrender.com';
   private readonly TOKEN_KEY = 'auth_token';
 
-  constructor(private http: HttpClient, private userService: UserService) { }
+  constructor(private http: HttpClient, private userService: UserService, private storage: StorageService) { }
 
   /**
    * Авторизация
@@ -49,8 +50,18 @@ export class AuthService {
   /**
    * Выход
    */
-  public logout(): void {
+  public async logout(): Promise<void> {
+    const user = this.userService.getUser();
+    const userId = user?.userId;
+
     localStorage.removeItem(this.TOKEN_KEY);
+
+    if (userId != null) {
+      await this.storage.removeItem(`levels_${userId}`);
+    }
+
+    localStorage.clear();
+    sessionStorage.clear();
     this.userService.clearUser();
   }
 
