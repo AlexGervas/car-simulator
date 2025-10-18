@@ -44,7 +44,7 @@
         <mat-card-header>Choosing an action</mat-card-header>
         <mat-card-actions class="button-container">
             <button mat-raised-button color="primary" (click)="resetGameState()" class="restart-button">Try again</button>
-            @if(isNextLevel) {
+            @if(isNextLevel && currentLevel !== 'steep-grade') {
             <button mat-raised-button color="accent" (click)="goToNextLevel()" class="next-level-button">Next
                 level</button>
             }

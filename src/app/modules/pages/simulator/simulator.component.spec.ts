@@ -833,10 +833,19 @@ describe('SimulatorComponent', () => {
             (component as any).dialogService = { openDialog: mockDialog };
             (component as any).api = mockApi;
             (component as any).user = { userId: 123 };
-            (component as any).levelService = { loadLevels: jasmine.createSpy(), isNextLevelAvailable: () => false };
+            (component as any).currentLevel = 'snake';
+            (component as any).levelService = {
+                loadLevels: jasmine.createSpy('loadLevels').and.returnValue(Promise.resolve()),
+                isNextLevelAvailable: jasmine.createSpy('isNextLevelAvailable').and.returnValue(true)
+            };
+            (component as any).userService = {
+                getUser: jasmine.createSpy('getUser').and.returnValue({ userId: 123 }),
+                loadUserFromApi: jasmine.createSpy('loadUserFromApi')
+            };
         });
 
         it('should end the game if the car has crossed the stop line', () => {
+            (component as any).hitConeCount = 2;
             (component as any).handleSnakeLevelGameOver();
             expect(mockDialog).toHaveBeenCalledWith('Игра окончена', jasmine.stringMatching(/сбили 2 конусов/), false);
             expect((component as any).isGameOver).toBeTrue();
@@ -896,6 +905,14 @@ describe('SimulatorComponent', () => {
             (component as any).dialogService = { openDialog: mockDialog };
             (component as any).api = mockApi;
             (component as any).user = { userId: 123 };
+            (component as any).currentLevel = 'steep-grade';
+            (component as any).levelService = {
+                loadLevels: jasmine.createSpy('loadLevels').and.returnValue(Promise.resolve())
+            };
+            (component as any).userService = {
+                getUser: jasmine.createSpy('getUser').and.returnValue({ userId: 123 }),
+                loadUserFromApi: jasmine.createSpy('loadUserFromApi')
+            };
         });
 
         it('should complete the game with success if the bridge is passed', () => {
@@ -998,7 +1015,7 @@ describe('SimulatorComponent', () => {
             };
             (component as any).dialogService = { openDialog: jasmine.createSpy('openDialog') };
             (component as any).levelService = {
-                loadLevels: jasmine.createSpy('loadLevels'),
+                loadLevels: jasmine.createSpy('loadLevels').and.returnValue(Promise.resolve()),
                 isNextLevelAvailable: jasmine.createSpy('isNextLevelAvailable').and.returnValue(true)
             };
             (component as any).user = { userId: 123 };
@@ -1006,6 +1023,7 @@ describe('SimulatorComponent', () => {
             (component as any).hitConeCount = 0;
             (component as any).isCheckingConditions = false;
             (component as any).car = { rotation: { y: 0 } };
+            (component as any).ensureUser$ = jasmine.createSpy('ensureUser$').and.returnValue(of({ userId: 123 }));
         });
 
         afterEach(() => {
@@ -1016,14 +1034,20 @@ describe('SimulatorComponent', () => {
             (component as any).isCheckingConditions = true;
             (component as any).startParkingCheck();
             expect((component as any).isCheckingConditions).toBeTrue();
+            expect((component as any).dialogService.openDialog).not.toHaveBeenCalled();
         });
 
-        it('should show a successful dialog when parking correctly', () => {
+        it('should show a successful dialog when parking correctly', fakeAsync(() => {
             (component as any).startParkingCheck();
             jasmine.clock().tick(2000);
+            tick(200);
+
+            expect((component as any).ensureUser$).toHaveBeenCalled();
+            expect((component as any).api.completeLevel).toHaveBeenCalledWith(123, 'parallel-parking');
             expect((component as any).dialogService.openDialog).toHaveBeenCalledWith('Поздравляем!', 'Задание выполнено', false);
+            expect((component as any).levelService.loadLevels).toHaveBeenCalledWith(123);
             expect((component as any).isNextLevel).toBeTrue();
-        });
+        }));
 
         it('should show an error message if the car has hit a cone', () => {
             (component as any).hitConeCount = 1;
@@ -1033,6 +1057,53 @@ describe('SimulatorComponent', () => {
             expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
                 'Задание не выполнено',
                 jasmine.stringMatching(/Машина задела 1 конус/),
+                false
+            );
+            expect((component as any).api.completeLevel).not.toHaveBeenCalled();
+        });
+
+        it('should show a warning if car is not inside parking pocket', () => {
+    (component as any).hitConeCount = 0;
+            (component as any).trafficCones.checkCarInsideParkingPocket
+                .and.returnValue({ preciseMatch: false, nearMatch: false });
+
+            (component as any).startParkingCheck();
+            jasmine.clock().tick(2000);
+
+            expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
+                'Задание не выполнено',
+                jasmine.stringMatching(/Машина не находится в парковочном кармане/),
+                false
+            );
+        });
+
+        it('should show "near match" message if car is near pocket', () => {
+            (component as any).hitConeCount = 0;
+            (component as any).trafficCones.checkCarInsideParkingPocket
+                .and.returnValue({ preciseMatch: false, nearMatch: true });
+
+            (component as any).startParkingCheck();
+            jasmine.clock().tick(2000);
+
+            expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
+                'Задание не выполнено',
+                jasmine.stringMatching(/не точно в кармане/),
+                false
+            );
+        });
+
+        it('should include rotation error for non-parallel car', () => {
+            (component as any).hitConeCount = 0;
+            (component as any).car.rotation.y = 0.5;
+            (component as any).trafficCones.checkCarInsideParkingPocket
+                .and.returnValue({ preciseMatch: true, nearMatch: false });
+
+            (component as any).startParkingCheck();
+            jasmine.clock().tick(2000);
+
+            expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
+                'Задание не выполнено',
+                jasmine.stringMatching(/Машина не параллельна конусам/),
                 false
             );
         });

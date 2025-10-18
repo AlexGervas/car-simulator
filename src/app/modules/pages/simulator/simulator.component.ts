@@ -19,7 +19,7 @@ import { CarComponent } from "../../entities/car/car.component";
 import { LevelService } from '../../../core/services/level.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
-import { Subscription } from 'rxjs';
+import { of, Subscription, switchMap, tap } from 'rxjs';
 import { StopLineComponent } from "../../entities/stop-line/stop-line.component";
 import { DialogService } from '../../../core/services/dialog.service';
 import { User } from '../../../core/models/user';
@@ -526,6 +526,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
   }
 
+  private ensureUser$() {
+    const cached = this.userService.getUser();
+    if (cached) {
+      return of(cached);
+    }
+    return this.userService.loadUserFromApi().pipe(
+      tap(user => this.user = user)
+    );
+  }
+
   private handleSnakeLevelGameOver(): void {
     const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
     if (lastConeBox) {
@@ -536,12 +546,20 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.isGameOver = true;
         this.controlsEnabled = true;
         this.isNextLevel = false;
+
         if (this.hitConeCount === 0) {
-          if (!this.user) return;
-          this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
-            next: () => {
-              this.levelService.loadLevels(this.user!.userId);
-              this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+          this.ensureUser$().pipe(
+            switchMap(user => this.api.completeLevel(user.userId, this.currentLevel))
+          ).subscribe({
+            next: async () => {
+              try {
+                await this.levelService.loadLevels(this.user!.userId);
+                setTimeout(() => {
+                  this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+                }, 200);
+              } catch (err) {
+                console.error(`Error loading levels after level ${this.currentLevel}:`, err);
+              }
             },
             error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
           });
@@ -565,13 +583,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private handleSteepGradeLevelGameOver(): void {
     if (this.bridgeComponentInstance?.hasCrossedBridge) {
-      this.dialogService.openDialog('Поздравляем!', 'Вы успешно проехали мост!', false);
+      this.dialogService.openDialog('Поздравляем!', 'Вы успешно проехали мост! Все упражнения завершены!', false);
       this.isGameOver = true;
       this.controlsEnabled = true;
       this.isNextLevel = false;
-      if (!this.user) return;
-      this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
-        next: () => this.levelService.loadLevels(this.user!.userId),
+
+      this.ensureUser$().pipe(
+        switchMap(user => this.api.completeLevel(user.userId, this.currentLevel))
+      ).subscribe({
+        next: async () => {
+          try {
+            await this.levelService.loadLevels(this.user!.userId);
+          } catch (err) {
+            console.error(`Error loading levels after level ${this.currentLevel}:`, err);
+          }
+        },
         error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
       });
     } else if (this.bridgeComponentInstance?.outOfBounds) {
@@ -661,13 +687,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       } else {
         this.isResultDialogShown = true;
         this.isGameOver = true;
-        if (!this.user) return;
-        this.api.completeLevel(this.user.userId, this.currentLevel).subscribe({
-          next: () => {
+
+        this.ensureUser$().pipe(
+          switchMap(user => this.api.completeLevel(user.userId, this.currentLevel))
+        ).subscribe({
+          next: async () => {
             this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
-            this.levelService.loadLevels(this.user!.userId);
-            this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-          }, 
+            try {
+              await this.levelService.loadLevels(this.user!.userId);
+              setTimeout(() => {
+                this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
+              }, 200);
+            } catch (err) {
+              console.error(`Error loading levels after level ${this.currentLevel}:`, err);
+            }
+          },
           error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
         });
       }
