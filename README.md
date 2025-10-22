@@ -18,9 +18,9 @@ A web application on **Angular** for car driving simulation with support for a m
 
 ## Technologies used
 
-<div style="display: flex; flex-wrap: wrap; gap: 20px;">
-
-<div style="flex: 1; min-width: 100px;">
+<table>
+<tr>
+<td valign="top" width="50%">
 
 ### Frontend
 - **Angular 18**
@@ -31,21 +31,20 @@ A web application on **Angular** for car driving simulation with support for a m
 - **Karma + Jasmine**
 - **GitHub Actions / GitHub Pages**
 
-</div>
-
-<div style="flex: 1; min-width: 100px;">
+</td>
+<td valign="top" width="50%">
 
 ### Backend
 - **Node.js + Express**
-- **PostgreSQL** 
+- **PostgreSQL**
 - **JWT / bcrypt / dotenv**
-- **Telegraf.js** 
+- **Telegraf.js**
 - **Render.com**
 - **Postman**
 
-</div>
-
-</div>
+</td>
+</tr>
+</table>
 
 ## Installation and launch
 
