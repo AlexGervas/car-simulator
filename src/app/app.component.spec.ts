@@ -8,8 +8,13 @@ import { HttpClientTestingModule } from '@angular/common/http/testing';
 describe('AppComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AppComponent, RouterOutlet, HeaderComponent, HttpClientTestingModule],
-      providers: [provideNoopAnimations()]
+      imports: [
+        AppComponent,
+        RouterOutlet,
+        HeaderComponent,
+        HttpClientTestingModule,
+      ],
+      providers: [provideNoopAnimations()],
     }).compileComponents();
   });
 
@@ -24,5 +29,4 @@ describe('AppComponent', () => {
     const app = fixture.componentInstance;
     expect(app.title).toEqual('car-simulator');
   });
-
 });

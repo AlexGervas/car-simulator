@@ -6,15 +6,18 @@ import { tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class UserService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public readonly user$ = this.userSubject.asObservable();
 
-  constructor(private telegramService: TelegramService, private api: ApiService) { }
+  constructor(
+    private telegramService: TelegramService,
+    private api: ApiService,
+  ) {}
 
-    public init(): void {
+  public init(): void {
     const tgUser = this.telegramService.getTelegramUser();
     if (tgUser) {
       this.userSubject.next({ ...tgUser, isTelegram: true });
@@ -25,20 +28,22 @@ export class UserService {
 
     if (token) {
       this.api.getCurrentUser().subscribe({
-        next: user => {
+        next: (user) => {
           this.userSubject.next({ ...user, isTelegram: false });
         },
-        error: err => {
+        error: (err) => {
           console.warn('Couldnt upload user by token', err);
-        }
+        },
       });
     }
   }
 
   public loadUserFromApi(): Observable<User> {
-    return this.api.getCurrentUser().pipe(
-      tap(user => this.userSubject.next({ ...user, isTelegram: false }))
-    );
+    return this.api
+      .getCurrentUser()
+      .pipe(
+        tap((user) => this.userSubject.next({ ...user, isTelegram: false })),
+      );
   }
 
   public getUser(): User | null {
@@ -52,5 +57,4 @@ export class UserService {
   public clearUser(): void {
     this.userSubject.next(null);
   }
-
 }

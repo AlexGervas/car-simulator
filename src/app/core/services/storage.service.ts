@@ -1,12 +1,15 @@
 import { Injectable } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class StorageService {
-  private isTelegram = typeof window !== 'undefined' && !!window['Telegram']?.WebApp && window.Telegram.WebApp.initDataUnsafe?.user != null;
+  private isTelegram =
+    typeof window !== 'undefined' &&
+    !!window['Telegram']?.WebApp &&
+    window.Telegram.WebApp.initDataUnsafe?.user != null;
 
-  constructor() { }
+  constructor() {}
 
   public async getItem(key: string): Promise<string | null> {
     if (this.isTelegram) {
@@ -24,7 +27,9 @@ export class StorageService {
             });
           });
         } catch (e) {
-          console.warn('CloudStorage not supported, fallback to sessionStorage');
+          console.warn(
+            'CloudStorage not supported, fallback to sessionStorage',
+          );
           return sessionStorage.getItem(key);
         }
       } else {
@@ -55,7 +60,9 @@ export class StorageService {
           });
           return;
         } catch (e) {
-          console.warn('CloudStorage not supported, fallback to sessionStorage');
+          console.warn(
+            'CloudStorage not supported, fallback to sessionStorage',
+          );
           sessionStorage.setItem(key, value);
           return;
         }
@@ -86,7 +93,9 @@ export class StorageService {
           });
           return;
         } catch (e) {
-          console.warn('CloudStorage not supported, fallback to sessionStorage');
+          console.warn(
+            'CloudStorage not supported, fallback to sessionStorage',
+          );
           sessionStorage.removeItem(key);
           return;
         }
@@ -101,5 +110,4 @@ export class StorageService {
       }
     }
   }
-
 }

@@ -3,7 +3,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, forkJoin, map, Observable } from 'rxjs';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ModelsLoaderService {
   private loadingSubject = new BehaviorSubject<boolean>(false);
@@ -16,5 +16,4 @@ export class ModelsLoaderService {
   public hide() {
     this.loadingSubject.next(false);
   }
-
 }

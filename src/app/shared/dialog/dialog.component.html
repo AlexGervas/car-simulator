@@ -1,14 +1,16 @@
 <div class="dialog-container">
-    <div class="dialog-header">
-        {{ data.title }}
-    </div>
-    <div class="dialog-message">
-        {{ data.message }}
-    </div>
-    @if(data.showButtons){
+  <div class="dialog-header">
+    {{ data.title }}
+  </div>
+  <div class="dialog-message">
+    {{ data.message }}
+  </div>
+  @if (data.showButtons) {
     <div class="dialog-buttons">
-        <button mat-raised-button color="primary" (click)="onConfirm()">Да</button>
-        <button mat-raised-button color="warn" (click)="onCancel()">Нет</button>
+      <button mat-raised-button color="primary" (click)="onConfirm()">
+        Да
+      </button>
+      <button mat-raised-button color="warn" (click)="onCancel()">Нет</button>
     </div>
-    }
+  }
 </div>

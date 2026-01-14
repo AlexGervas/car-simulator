@@ -8,11 +8,10 @@ import { MatButtonModule } from '@angular/material/button';
   standalone: true,
   imports: [MatCardModule, MatButtonModule],
   templateUrl: './home-page.component.html',
-  styleUrl: './home-page.component.css'
+  styleUrl: './home-page.component.css',
 })
 export class HomePageComponent {
-
-  constructor(private router: Router) { }
+  constructor(private router: Router) {}
 
   public openStartGame(): void {
     this.router.navigate(['game']);
@@ -23,7 +22,6 @@ export class HomePageComponent {
   }
 
   public openSettings(): void {
-    alert("Coming soon!");
+    alert('Coming soon!');
   }
-
 }

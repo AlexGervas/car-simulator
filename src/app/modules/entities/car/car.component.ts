@@ -1,4 +1,11 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  ViewChild,
+} from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as CANNON from 'cannon-es';
@@ -12,14 +19,19 @@ import { SimulatorComponent } from '../../pages/simulator/simulator.component';
   standalone: true,
   imports: [],
   templateUrl: './car.component.html',
-  styleUrl: './car.component.css'
+  styleUrl: './car.component.css',
 })
 export class CarComponent implements OnInit {
   @Input() scene!: THREE.Scene;
   @Input() world!: CANNON.World;
   @Input() ground!: GroundComponent;
   @Input() bridge!: BridgeComponent;
-  @Input() currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' | null = null;
+  @Input() currentLevel:
+    | 'parallel-parking'
+    | 'snake'
+    | 'garage'
+    | 'steep-grade'
+    | null = null;
 
   @Output() carLoaded = new EventEmitter<THREE.Object3D>();
   @Output() carCheckCollisionWithCones = new EventEmitter<CANNON.Vec3>();
@@ -31,19 +43,27 @@ export class CarComponent implements OnInit {
   public carBody!: CANNON.Body;
   public vehicle!: CANNON.RaycastVehicle;
   public wheels: Record<string, THREE.Object3D> = {};
-  public wheelData: Record<string, { radius: number; position: THREE.Vector3 }> = {};
+  public wheelData: Record<
+    string,
+    { radius: number; position: THREE.Vector3 }
+  > = {};
 
   public currentSpeed: number = 0;
   private accelerationRate: number = 1;
   private decelerationRate: number = 5;
   private turnRate: number = 1;
   private maxSpeed: number = 5;
-  private wheelKeys: string[] = ['frontLeft', 'frontRight', 'backLeft', 'backRight'];
+  private wheelKeys: string[] = [
+    'frontLeft',
+    'frontRight',
+    'backLeft',
+    'backRight',
+  ];
 
   public finalHeight: number = 0;
   public scaleFactor: number = 0;
 
-  constructor() { }
+  constructor() {}
 
   async ngOnInit() {
     try {
@@ -99,7 +119,10 @@ export class CarComponent implements OnInit {
       position: new CANNON.Vec3(0, finalHeight / 2, 0),
       shape: carShape,
       collisionFilterGroup: CarComponent.GROUP_CAR,
-      collisionFilterMask: GroundComponent.GROUP_GROUND | BridgeComponent.GROUP_BRIDGE | TrafficConesComponent.GROUP_CONE
+      collisionFilterMask:
+        GroundComponent.GROUP_GROUND |
+        BridgeComponent.GROUP_BRIDGE |
+        TrafficConesComponent.GROUP_CONE,
     });
     this.carBody.quaternion.setFromEuler(0, Math.PI, 0);
     this.world.addBody(this.carBody);
@@ -108,7 +131,7 @@ export class CarComponent implements OnInit {
       chassisBody: this.carBody,
       indexRightAxis: 0,
       indexUpAxis: 1,
-      indexForwardAxis: 2
+      indexForwardAxis: 2,
     });
   }
 
@@ -116,31 +139,42 @@ export class CarComponent implements OnInit {
     this.car.traverse((child) => {
       if (child.name === 'Wheel_1_R') {
         this.wheels['frontRight'] = child;
-      } else if (child.name === "Wheel_1_L") {
+      } else if (child.name === 'Wheel_1_L') {
         this.wheels['frontLeft'] = child;
-      } else if (child.name === "Wheel_2_R") {
+      } else if (child.name === 'Wheel_2_R') {
         this.wheels['backRight'] = child;
-      } else if (child.name === "Wheel_2_L") {
+      } else if (child.name === 'Wheel_2_L') {
         this.wheels['backLeft'] = child;
       }
 
-      if (['Wheel_1_R', 'Wheel_1_L', 'Wheel_2_R', 'Wheel_2_L'].includes(child.name)) {
+      if (
+        ['Wheel_1_R', 'Wheel_1_L', 'Wheel_2_R', 'Wheel_2_L'].includes(
+          child.name,
+        )
+      ) {
         const wheelBox = new THREE.Box3().setFromObject(child);
         const wheelSize = wheelBox.getSize(new THREE.Vector3());
-        const radius = Math.max(wheelSize.x, wheelSize.y, wheelSize.z) / 2 * scaleFactor * 5;
+        const radius =
+          (Math.max(wheelSize.x, wheelSize.y, wheelSize.z) / 2) *
+          scaleFactor *
+          5;
         this.wheelData[child.name] = {
           radius,
-          position: child.position.clone()
+          position: child.position.clone(),
         };
       }
     });
-    console.log("wheels: ", this.wheels)
+    console.log('wheels: ', this.wheels);
 
     Object.keys(this.wheelData).forEach((wheelName) => {
       const wheel = this.wheelData[wheelName];
 
       this.vehicle.addWheel({
-        chassisConnectionPointLocal: new CANNON.Vec3(wheel.position.x, wheel.position.y, wheel.position.z),
+        chassisConnectionPointLocal: new CANNON.Vec3(
+          wheel.position.x,
+          wheel.position.y,
+          wheel.position.z,
+        ),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
         directionLocal: new CANNON.Vec3(0, -1, 0),
         radius: wheel.radius,
@@ -149,7 +183,7 @@ export class CarComponent implements OnInit {
         maxSuspensionForce: 50,
         dampingRelaxation: 1,
         dampingCompression: 20,
-        frictionSlip: 20
+        frictionSlip: 20,
       });
     });
 
@@ -159,14 +193,20 @@ export class CarComponent implements OnInit {
   public updateCarPosition(
     deltaTime: number,
     controls: {
-      isMovingForward: boolean,
-      isMovingBackward: boolean,
-      isTurningLeft: boolean,
-      isTurningRight: boolean,
-      isGameOver: boolean
-    }
+      isMovingForward: boolean;
+      isMovingBackward: boolean;
+      isTurningLeft: boolean;
+      isTurningRight: boolean;
+      isGameOver: boolean;
+    },
   ): void {
-    const { isMovingForward, isMovingBackward, isTurningLeft, isTurningRight, isGameOver } = controls;
+    const {
+      isMovingForward,
+      isMovingBackward,
+      isTurningLeft,
+      isTurningRight,
+      isGameOver,
+    } = controls;
     if (!this.car || !this.carBody || !this.vehicle) {
       console.warn('Car or physics properties not initialized yet');
       return;
@@ -175,7 +215,12 @@ export class CarComponent implements OnInit {
     if (isGameOver) return;
 
     this.updateCarSpeed(deltaTime, isMovingForward, isMovingBackward);
-    this.updateCarRotation(isMovingForward, isMovingBackward, isTurningLeft, isTurningRight);
+    this.updateCarRotation(
+      isMovingForward,
+      isMovingBackward,
+      isTurningLeft,
+      isTurningRight,
+    );
 
     if (this.currentLevel === 'steep-grade' && this.bridge?.bridgeBody) {
       this.bridge.handleCarOnBridge(this.carBody.position, this.carBody);
@@ -190,7 +235,11 @@ export class CarComponent implements OnInit {
     this.gameOverCheck.emit();
   }
 
-  public updateCarSpeed(deltaTime: number, isMovingForward: boolean, isMovingBackward: boolean): void {
+  public updateCarSpeed(
+    deltaTime: number,
+    isMovingForward: boolean,
+    isMovingBackward: boolean,
+  ): void {
     const direction = new THREE.Vector3();
     this.car.getWorldDirection(direction);
     direction.y = 0;
@@ -210,14 +259,25 @@ export class CarComponent implements OnInit {
       }
     }
 
-    this.currentSpeed = Math.max(-maxReverseSpeed, Math.min(this.currentSpeed, this.maxSpeed));
+    this.currentSpeed = Math.max(
+      -maxReverseSpeed,
+      Math.min(this.currentSpeed, this.maxSpeed),
+    );
 
     const currentVelocity = this.carBody.velocity;
-    this.carBody.velocity.set(direction.x * this.currentSpeed, currentVelocity.y, direction.z * this.currentSpeed);
-
+    this.carBody.velocity.set(
+      direction.x * this.currentSpeed,
+      currentVelocity.y,
+      direction.z * this.currentSpeed,
+    );
   }
 
-  public updateCarRotation(isMovingForward: boolean, isMovingBackward: boolean, isTurningLeft: boolean, isTurningRight: boolean): void {
+  public updateCarRotation(
+    isMovingForward: boolean,
+    isMovingBackward: boolean,
+    isTurningLeft: boolean,
+    isTurningRight: boolean,
+  ): void {
     if (isMovingForward || isMovingBackward) {
       const turnDirection = isMovingForward ? 1 : -1;
       if (isTurningLeft) {
@@ -244,13 +304,19 @@ export class CarComponent implements OnInit {
       if (wheelObject) {
         const wheelRadius = wheel.radius;
         const speedFactor = Math.abs(this.currentSpeed) / this.maxSpeed;
-        const desiredDeltaRotation = (this.currentSpeed / wheelRadius) * (1 / 60);
+        const desiredDeltaRotation =
+          (this.currentSpeed / wheelRadius) * (1 / 60);
 
         if (Math.abs(this.currentSpeed) < 0.1) {
-          wheel.deltaRotation = Math.max(0, wheel.deltaRotation - (this.decelerationRate * speedFactor / wheelRadius));
+          wheel.deltaRotation = Math.max(
+            0,
+            wheel.deltaRotation -
+              (this.decelerationRate * speedFactor) / wheelRadius,
+          );
         } else {
           const interpolationFactor = 0.00001;
-          wheel.deltaRotation += (desiredDeltaRotation - wheel.deltaRotation) * interpolationFactor;
+          wheel.deltaRotation +=
+            (desiredDeltaRotation - wheel.deltaRotation) * interpolationFactor;
         }
         wheel.deltaRotation = Math.max(-2, Math.min(2, wheel.deltaRotation));
 
@@ -264,7 +330,11 @@ export class CarComponent implements OnInit {
 
   public updateFrontWheels(isTurningLeft: boolean, isTurningRight: boolean) {
     if (this.wheels) {
-      const frontWheelAngle = isTurningLeft ? Math.PI / 6 : isTurningRight ? -Math.PI / 6 : 0;
+      const frontWheelAngle = isTurningLeft
+        ? Math.PI / 6
+        : isTurningRight
+          ? -Math.PI / 6
+          : 0;
       if (this.wheels['frontLeft']) {
         this.wheels['frontLeft'].rotation.set(0, 0, frontWheelAngle);
       }
@@ -278,5 +348,4 @@ export class CarComponent implements OnInit {
     this.car.position.set(0, 0, 0);
     this.car.rotation.set(0, Math.PI, 0);
   }
-
 }

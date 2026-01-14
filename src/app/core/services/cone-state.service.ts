@@ -1,12 +1,12 @@
 import { Injectable } from '@angular/core';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class ConeStateService {
   private coneStates: boolean[] = [];
 
-  constructor() { }
+  constructor() {}
 
   public initializeConeStates(count: number): void {
     this.coneStates = new Array(count).fill(false);

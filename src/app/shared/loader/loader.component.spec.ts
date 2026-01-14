@@ -5,75 +5,73 @@ import { BehaviorSubject, of } from 'rxjs';
 import { ModelsLoaderService } from '../../core/services/models-loader.service';
 
 class MockModelsLoaderService {
-    private loadingSubject = new BehaviorSubject<boolean>(false);
-    isLoading$ = this.loadingSubject.asObservable();
+  private loadingSubject = new BehaviorSubject<boolean>(false);
+  isLoading$ = this.loadingSubject.asObservable();
 
-    setLoading(value: boolean) {
-        this.loadingSubject.next(value);
-    }
+  setLoading(value: boolean) {
+    this.loadingSubject.next(value);
+  }
 }
 
 describe('LoaderComponent', () => {
-    let component: LoaderComponent;
-    let fixture: ComponentFixture<LoaderComponent>;
-    let mockService: MockModelsLoaderService;
-    let compiled: HTMLElement;
+  let component: LoaderComponent;
+  let fixture: ComponentFixture<LoaderComponent>;
+  let mockService: MockModelsLoaderService;
+  let compiled: HTMLElement;
 
-    beforeEach(async () => {
-        mockService = new MockModelsLoaderService();
+  beforeEach(async () => {
+    mockService = new MockModelsLoaderService();
 
-        await TestBed.configureTestingModule({
-            imports: [LoaderComponent],
-            providers: [
-                provideNoopAnimations(),
-                { provide: ModelsLoaderService, useValue: mockService }
-            ]
-        }).compileComponents();
+    await TestBed.configureTestingModule({
+      imports: [LoaderComponent],
+      providers: [
+        provideNoopAnimations(),
+        { provide: ModelsLoaderService, useValue: mockService },
+      ],
+    }).compileComponents();
 
-        fixture = TestBed.createComponent(LoaderComponent);
-        component = fixture.componentInstance;
-        compiled = fixture.nativeElement as HTMLElement;
-        fixture.detectChanges();
+    fixture = TestBed.createComponent(LoaderComponent);
+    component = fixture.componentInstance;
+    compiled = fixture.nativeElement as HTMLElement;
+    fixture.detectChanges();
+  });
+
+  describe('Initialization', () => {
+    it('should create the component', () => {
+      expect(component).toBeTruthy();
     });
 
-    describe('Initialization', () => {
-        it('should create the component', () => {
-            expect(component).toBeTruthy();
-        });
+    it('should initialize with isLoading = false', () => {
+      expect(component.isLoading).toBeFalse();
+    });
+  });
 
-        it('should initialize with isLoading = false', () => {
-            expect(component.isLoading).toBeFalse();
-        });
+  describe('Loader display', () => {
+    it('should not show loader when isLoading is false', () => {
+      expect(compiled.querySelector('.loader-overlay')).toBeNull();
     });
 
-    describe('Loader display', () => {
-        it('should not show loader when isLoading is false', () => {
-            expect(compiled.querySelector('.loader-overlay')).toBeNull();
-        });
+    it('should show loader when isLoading is true', async () => {
+      mockService.setLoading(true);
+      fixture.detectChanges();
 
-        it('should show loader when isLoading is true', async () => {
-            mockService.setLoading(true);
-            fixture.detectChanges();
+      await fixture.whenStable();
+      fixture.detectChanges();
 
-            await fixture.whenStable();
-            fixture.detectChanges();
-
-            const loader = compiled.querySelector('.loader-overlay');
-            expect(loader).not.toBeNull();
-            expect(loader?.classList.contains('loader-overlay')).toBeTrue();
-        });
-
-        it('should not show loader when isLoading is false', async () => {
-            mockService.setLoading(false);
-            fixture.detectChanges();
-
-            await fixture.whenStable();
-            fixture.detectChanges();
-
-            const loader = compiled.querySelector('.loader-overlay');
-            expect(loader).toBeNull();
-        });
-
+      const loader = compiled.querySelector('.loader-overlay');
+      expect(loader).not.toBeNull();
+      expect(loader?.classList.contains('loader-overlay')).toBeTrue();
     });
 
+    it('should not show loader when isLoading is false', async () => {
+      mockService.setLoading(false);
+      fixture.detectChanges();
+
+      await fixture.whenStable();
+      fixture.detectChanges();
+
+      const loader = compiled.querySelector('.loader-overlay');
+      expect(loader).toBeNull();
+    });
+  });
 });

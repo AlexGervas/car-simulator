@@ -6,26 +6,38 @@ import { StorageService } from './storage.service';
 import { AuthService } from './auth.service';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class LevelService {
-  public readonly levelOrder: string[] = ['snake', 'parallel-parking', 'garage', 'steep-grade'];
+  public readonly levelOrder: string[] = [
+    'snake',
+    'parallel-parking',
+    'garage',
+    'steep-grade',
+  ];
 
   private levels: { [key: string]: boolean } = {
-    'snake': true,
+    snake: true,
     'parallel-parking': false,
-    'garage': false,
-    'steep-grade': false
+    garage: false,
+    'steep-grade': false,
   };
 
-  private levelsSubject = new BehaviorSubject<{ [key: string]: boolean }>(this.levels);
+  private levelsSubject = new BehaviorSubject<{ [key: string]: boolean }>(
+    this.levels,
+  );
   public readonly levels$ = this.levelsSubject.asObservable();
   public levelsLoaded = false;
 
   private isLoggedOut = false;
 
-  constructor(private api: ApiService, private userService: UserService, private storage: StorageService, private auth: AuthService) {
-    this.userService.user$.subscribe(user => {
+  constructor(
+    private api: ApiService,
+    private userService: UserService,
+    private storage: StorageService,
+    private auth: AuthService,
+  ) {
+    this.userService.user$.subscribe((user) => {
       if (user && !this.isLoggedOut) {
         this.loadLevels(user.userId);
       }
@@ -35,27 +47,30 @@ export class LevelService {
 
     if (token) {
       this.api.getCurrentUser().subscribe({
-        next: user => {
+        next: (user) => {
           if (!this.isLoggedOut) {
             this.loadLevels(user.userId);
           }
         },
-        error: () => console.warn('Failed to load the user at the start of LevelService')
+        error: () =>
+          console.warn('Failed to load the user at the start of LevelService'),
       });
     }
   }
 
   public getNextLevel(level: string): string | null {
     const currentIndex = this.levelOrder.indexOf(level);
-    return (currentIndex >= 0 && currentIndex < this.levelOrder.length - 1) ? this.levelOrder[currentIndex + 1] : null
+    return currentIndex >= 0 && currentIndex < this.levelOrder.length - 1
+      ? this.levelOrder[currentIndex + 1]
+      : null;
   }
 
   /**
    * Loading levels from CloudStorage/localStorage and api
-   * @param userId 
+   * @param userId
    */
   public async loadLevels(userId: number): Promise<void> {
-    if (this.isLoggedOut) return; 
+    if (this.isLoggedOut) return;
 
     try {
       const cached = await this.storage.getItem(`levels_${userId}`);
@@ -70,13 +85,16 @@ export class LevelService {
             this.levels[level] = !!levels[level];
           });
           this.levelsSubject.next({ ...this.levels });
-          await this.storage.setItem(`levels_${userId}`, JSON.stringify(this.levels));
+          await this.storage.setItem(
+            `levels_${userId}`,
+            JSON.stringify(this.levels),
+          );
           this.levelsLoaded = true;
         },
         error: (err) => {
           console.error('Error loading levels:', err);
           this.levelsLoaded = true;
-        }
+        },
       });
     } catch (e) {
       console.error('Unexpected error loading levels:', e);
@@ -96,5 +114,4 @@ export class LevelService {
     }
     return false;
   }
-
 }

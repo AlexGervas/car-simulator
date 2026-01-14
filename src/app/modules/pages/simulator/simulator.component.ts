@@ -1,4 +1,15 @@
-import { Component, OnInit, ElementRef, ViewChild, HostListener, AfterViewInit, AfterViewChecked, ViewContainerRef, ComponentFactoryResolver, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ElementRef,
+  ViewChild,
+  HostListener,
+  AfterViewInit,
+  AfterViewChecked,
+  ViewContainerRef,
+  ComponentFactoryResolver,
+  OnDestroy,
+} from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { TrafficConesComponent } from '../../entities/traffic-cones/traffic-cones.component';
@@ -15,12 +26,12 @@ import * as CANNON from 'cannon-es';
 import CannonDebugger from 'cannon-es-debugger';
 import { BridgeComponent } from '../../entities/bridge/bridge.component';
 import { GroundComponent } from '../../entities/ground/ground.component';
-import { CarComponent } from "../../entities/car/car.component";
+import { CarComponent } from '../../entities/car/car.component';
 import { LevelService } from '../../../core/services/level.service';
 import { MatCardModule } from '@angular/material/card';
 import { MatButtonModule } from '@angular/material/button';
 import { of, Subscription, switchMap, tap } from 'rxjs';
-import { StopLineComponent } from "../../entities/stop-line/stop-line.component";
+import { StopLineComponent } from '../../entities/stop-line/stop-line.component';
 import { DialogService } from '../../../core/services/dialog.service';
 import { User } from '../../../core/models/user';
 import { ApiService } from '../../../core/services/api.service';
@@ -32,19 +43,33 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-simulator',
   standalone: true,
-  imports: [CommonModule, LoaderComponent, TrafficConesComponent, BridgeComponent, GroundComponent, CarComponent, MatCardModule, MatButtonModule, StopLineComponent],
+  imports: [
+    CommonModule,
+    LoaderComponent,
+    TrafficConesComponent,
+    BridgeComponent,
+    GroundComponent,
+    CarComponent,
+    MatCardModule,
+    MatButtonModule,
+    StopLineComponent,
+  ],
   templateUrl: './simulator.component.html',
-  styleUrl: './simulator.component.css'
+  styleUrl: './simulator.component.css',
 })
-export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy {
+export class SimulatorComponent
+  implements OnInit, AfterViewInit, AfterViewChecked, OnDestroy
+{
   @ViewChild('canvas') canvasRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('LoaderComponent') loader!: LoaderComponent;
   @ViewChild('StopLineComponent') stopLineComponent!: StopLineComponent;
   @ViewChild(CarComponent, { static: false }) carComponent!: CarComponent;
-  @ViewChild(TrafficConesComponent, { static: false }) trafficCones!: TrafficConesComponent;
+  @ViewChild(TrafficConesComponent, { static: false })
+  trafficCones!: TrafficConesComponent;
   @ViewChild(GroundComponent) ground!: GroundComponent;
 
-  @ViewChild('dynamicComponents', { read: ViewContainerRef, static: true }) dynamicComponents!: ViewContainerRef;
+  @ViewChild('dynamicComponents', { read: ViewContainerRef, static: true })
+  dynamicComponents!: ViewContainerRef;
   public bridgeComponentInstance?: BridgeComponent;
 
   private carCollisionSubscription: Subscription | undefined;
@@ -76,7 +101,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   public isResultDialogShown: boolean = false;
   public isNextLevel: boolean = false;
 
-  public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' = 'snake';
+  public currentLevel: 'parallel-parking' | 'snake' | 'garage' | 'steep-grade' =
+    'snake';
   public clock!: THREE.Clock;
 
   private stopCheckTimeout: number | null = null;
@@ -84,7 +110,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public user: User | null = null;
 
-  constructor(private el: ElementRef,
+  constructor(
+    private el: ElementRef,
     public router: Router,
     public route: ActivatedRoute,
     private deviceService: DeviceService,
@@ -99,7 +126,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     private telegramService: TelegramService,
     private rendererFactory: RendererFactoryService,
     private userService: UserService,
-    private authService: AuthService) { }
+    private authService: AuthService,
+  ) {}
 
   async ngOnInit() {
     this.modelsLoaderService.show();
@@ -112,19 +140,19 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.authService.loginWithTelegram(tgUser.userId).subscribe({
           next: () => {
             this.user = this.userService.getUser();
-            console.log("User (telegram):", this.user);
+            console.log('User (telegram):', this.user);
           },
-          error: err => {
-            console.error("Telegram login failed:", err);
-          }
+          error: (err) => {
+            console.error('Telegram login failed:', err);
+          },
         });
       }
     } else {
       this.user = this.userService.getUser();
       if (!this.user) {
-        this.userService.loadUserFromApi().subscribe(user => {
+        this.userService.loadUserFromApi().subscribe((user) => {
           this.user = user;
-          console.log("User (Web):", this.user);
+          console.log('User (Web):', this.user);
         });
       }
     }
@@ -133,18 +161,23 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
     try {
       this.car = await this.loadCarFromCarComponent();
-      console.log("Car is loaded!", this.car);
+      console.log('Car is loaded!', this.car);
     } catch (error) {
-      console.error("Car loading error", error);
+      console.error('Car loading error', error);
       this.modelsLoaderService.hide();
       return;
     }
 
     if (this.carComponent) {
-      this.carCollisionSubscription = this.carComponent.carCheckCollisionWithCones.subscribe((position: CANNON.Vec3) => {
-        this.checkCollisionWithCones(position);
-      });
-      this.gameOverSubscription = this.carComponent.gameOverCheck.subscribe(() => this.checkGameOverConditions());
+      this.carCollisionSubscription =
+        this.carComponent.carCheckCollisionWithCones.subscribe(
+          (position: CANNON.Vec3) => {
+            this.checkCollisionWithCones(position);
+          },
+        );
+      this.gameOverSubscription = this.carComponent.gameOverCheck.subscribe(
+        () => this.checkGameOverConditions(),
+      );
     }
 
     if (this.ground) {
@@ -153,10 +186,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       console.error('GroundComponent is not initialized yet');
     }
 
-    this.route.queryParams.subscribe(params => {
+    this.route.queryParams.subscribe((params) => {
       const level = params['level'] || 'snake';
       this.currentLevel = level;
-      console.log("Level: ", this.currentLevel);
+      console.log('Level: ', this.currentLevel);
 
       const checkTrafficCones = setInterval(() => {
         if (this.trafficCones) {
@@ -164,7 +197,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           clearInterval(checkTrafficCones);
           this.initLevel(level);
         }
-      }, 0)
+      }, 0);
     });
 
     this.startRenderingLoop();
@@ -173,7 +206,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   ngAfterViewInit() {
     if (!this.scene) {
-      console.error('Error: the scene is not initialized before being passed to TrafficCones');
+      console.error(
+        'Error: the scene is not initialized before being passed to TrafficCones',
+      );
       return;
     }
 
@@ -181,7 +216,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.trafficCones.setScene(this.scene);
       this.trafficCones.camera = this.camera;
     } else {
-      console.warn("TrafficConesComponent is not yet available in ngAfterViewInit");
+      console.warn(
+        'TrafficConesComponent is not yet available in ngAfterViewInit',
+      );
     }
 
     if (this.carComponent) {
@@ -189,7 +226,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     }
 
     if (this.stopLineComponent) {
-      this.stopLineService.setCreateStopLineCallback(this.createStopLine.bind(this));
+      this.stopLineService.setCreateStopLineCallback(
+        this.createStopLine.bind(this),
+      );
     }
   }
 
@@ -217,7 +256,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public async loadCarFromCarComponent(): Promise<THREE.Object3D> {
     while (!this.carComponent) {
-      await new Promise(resolve => setTimeout(resolve, 5));
+      await new Promise((resolve) => setTimeout(resolve, 5));
     }
 
     return new Promise((resolve, reject) => {
@@ -229,7 +268,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private startRenderingLoop() {
     if (!this.car) {
-      console.error("Error: Machine not yet loaded in startRenderingLoop");
+      console.error('Error: Machine not yet loaded in startRenderingLoop');
       return;
     }
 
@@ -272,7 +311,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     console.log('Initializing the Snake scene');
     try {
       await this.trafficCones.createSnake();
-      this.coneStateService.initializeConeStates(this.trafficCones.cones.length);
+      this.coneStateService.initializeConeStates(
+        this.trafficCones.cones.length,
+      );
       console.log('The snake scene is ready');
     } catch (error) {
       console.error('Error when initializing Snake scene:', error);
@@ -284,14 +325,16 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.checkDialogShown = false;
     this.stoppedOnce = false;
     this.isCheckingConditions = false;
-    
+
     if (!this.scene) {
       return Promise.reject('Scene is not initialized');
     }
 
     try {
       this.trafficCones.createParallelParking();
-      this.coneStateService.initializeConeStates(this.trafficCones.cones.length);
+      this.coneStateService.initializeConeStates(
+        this.trafficCones.cones.length,
+      );
       console.log('ParallelParking scene is ready.');
     } catch {
       console.error('Error initialization of the ParallelParking scene:');
@@ -305,7 +348,9 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.isCheckingConditions = false;
     try {
       this.trafficCones.createGarage();
-      this.coneStateService.initializeConeStates(this.trafficCones.cones.length);
+      this.coneStateService.initializeConeStates(
+        this.trafficCones.cones.length,
+      );
       console.log('Garage scene is ready.');
     } catch {
       console.error('Error initialization of the Garage scene');
@@ -314,8 +359,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public async initSteepGradeScene(): Promise<void> {
     if (!this.bridgeComponentInstance) {
-      const factory = this.componentFactoryResolver.resolveComponentFactory(BridgeComponent);
-      const bridgeComponentRef = this.dynamicComponents?.createComponent(factory);
+      const factory =
+        this.componentFactoryResolver.resolveComponentFactory(BridgeComponent);
+      const bridgeComponentRef =
+        this.dynamicComponents?.createComponent(factory);
       this.bridgeComponentInstance = bridgeComponentRef?.instance;
 
       if (!this.bridgeComponentInstance) {
@@ -364,7 +411,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       this.carComponent.resetCarPosition();
       this.carComponent.createPhysicsCarBody(this.carComponent.finalHeight);
 
-      this.carComponent.vehicle.wheelInfos.forEach(wheel => {
+      this.carComponent.vehicle.wheelInfos.forEach((wheel) => {
         wheel.deltaRotation = 0;
       });
       this.carComponent.createPhysicsWheels(this.carComponent.scaleFactor);
@@ -384,19 +431,21 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   public async goToNextLevel(): Promise<void> {
     const nextLevel = this.levelService.getNextLevel(this.currentLevel);
-    console.log(44, "nextLevel", nextLevel);
-    
-    if (nextLevel && this.levelService.isNextLevelAvailable(this.currentLevel)) {
+    console.log(44, 'nextLevel', nextLevel);
+
+    if (
+      nextLevel &&
+      this.levelService.isNextLevelAvailable(this.currentLevel)
+    ) {
       this.resetGameState();
       this.coneStateService.resetConeState();
       this.trafficCones.clearParkingLines();
       this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { level: nextLevel },
-        queryParamsHandling: 'merge'
+        queryParamsHandling: 'merge',
       });
     }
-
   }
 
   public initSceneAndWorld(): void {
@@ -406,7 +455,12 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.world = new CANNON.World();
     this.world.gravity.set(0, -9.82, 0);
 
-    this.camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
+    this.camera = new THREE.PerspectiveCamera(
+      70,
+      window.innerWidth / window.innerHeight,
+      0.1,
+      1000,
+    );
     this.camera.position.set(0, 2, 5);
     this.camera.lookAt(0, 0, 0);
 
@@ -428,14 +482,28 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.world.step(fixedTimeStep, deltaTime, maxSubSteps);
 
     if (this.carBody) {
-      this.car.position.set(this.carBody.position.x, this.carBody.position.y, this.carBody.position.z);
-      this.car.quaternion.set(this.carBody.quaternion.x, this.carBody.quaternion.y, this.carBody.quaternion.z, this.carBody.quaternion.w);
+      this.car.position.set(
+        this.carBody.position.x,
+        this.carBody.position.y,
+        this.carBody.position.z,
+      );
+      this.car.quaternion.set(
+        this.carBody.quaternion.x,
+        this.carBody.quaternion.y,
+        this.carBody.quaternion.z,
+        this.carBody.quaternion.w,
+      );
     }
 
     this.trafficCones.coneBodies.forEach((body, index) => {
       const cone = this.trafficCones.getCones()[index];
       cone.position.set(body.position.x, 0, body.position.z);
-      cone.quaternion.set(body.quaternion.x, body.quaternion.y, body.quaternion.z, body.quaternion.w);
+      cone.quaternion.set(
+        body.quaternion.x,
+        body.quaternion.y,
+        body.quaternion.z,
+        body.quaternion.w,
+      );
     });
   }
 
@@ -449,7 +517,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       isMovingBackward: this.isMovingBackward,
       isTurningLeft: this.isTurningLeft,
       isTurningRight: this.isTurningRight,
-      isGameOver: this.isGameOver
+      isGameOver: this.isGameOver,
     });
 
     this.updateCameraPosition();
@@ -501,10 +569,14 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
           const fallDirection = new CANNON.Vec3(
             coneBody.position.x - carPosition.x,
             0.1,
-            coneBody.position.z - carPosition.z
+            coneBody.position.z - carPosition.z,
           ).unit();
 
-          const impulse = new CANNON.Vec3(fallDirection.x * 0.2, 0.5, fallDirection.z * 0.2);
+          const impulse = new CANNON.Vec3(
+            fallDirection.x * 0.2,
+            0.5,
+            fallDirection.z * 0.2,
+          );
           coneBody.applyImpulse(impulse, coneBody.position);
         }
       }
@@ -531,39 +603,58 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     if (cached) {
       return of(cached);
     }
-    return this.userService.loadUserFromApi().pipe(
-      tap(user => this.user = user)
-    );
+    return this.userService
+      .loadUserFromApi()
+      .pipe(tap((user) => (this.user = user)));
   }
 
   private handleSnakeLevelGameOver(): void {
-    const lastConeBox = this.trafficCones.getConeBoxes()[this.trafficCones.getConeBoxes().length - 1];
+    const lastConeBox =
+      this.trafficCones.getConeBoxes()[
+        this.trafficCones.getConeBoxes().length - 1
+      ];
     if (lastConeBox) {
       const stopLineZ = Math.floor(lastConeBox.max.z - 8);
 
       if (this.carComponent.car.position.z < stopLineZ) {
-        this.dialogService.openDialog('Игра окончена', 'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.', false);
+        this.dialogService.openDialog(
+          'Игра окончена',
+          'Вы проехали стоп-линию и сбили ' + this.hitConeCount + ' конусов.',
+          false,
+        );
         this.isGameOver = true;
         this.controlsEnabled = true;
         this.isNextLevel = false;
 
         if (this.hitConeCount === 0) {
-          this.ensureUser$().pipe(
-            switchMap(user => this.api.completeLevel(user.userId, this.currentLevel))
-          ).subscribe({
-            next: async () => {
-              try {
-                await this.levelService.loadLevels(this.user!.userId);
-                setTimeout(() => {
-                  this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-                }, 200);
-              } catch (err) {
-                console.error(`Error loading levels after level ${this.currentLevel}:`, err);
-              }
-            },
-            error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
-          });
-
+          this.ensureUser$()
+            .pipe(
+              switchMap((user) =>
+                this.api.completeLevel(user.userId, this.currentLevel),
+              ),
+            )
+            .subscribe({
+              next: async () => {
+                try {
+                  await this.levelService.loadLevels(this.user!.userId);
+                  setTimeout(() => {
+                    this.isNextLevel = this.levelService.isNextLevelAvailable(
+                      this.currentLevel,
+                    );
+                  }, 200);
+                } catch (err) {
+                  console.error(
+                    `Error loading levels after level ${this.currentLevel}:`,
+                    err,
+                  );
+                }
+              },
+              error: (err) =>
+                console.error(
+                  `Error updating level ${this.currentLevel} on server:`,
+                  err,
+                ),
+            });
         }
       }
     }
@@ -583,36 +674,64 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
 
   private handleSteepGradeLevelGameOver(): void {
     if (this.bridgeComponentInstance?.hasCrossedBridge) {
-      this.dialogService.openDialog('Поздравляем!', 'Вы успешно проехали мост! Все упражнения завершены!', false);
+      this.dialogService.openDialog(
+        'Поздравляем!',
+        'Вы успешно проехали мост! Все упражнения завершены!',
+        false,
+      );
       this.isGameOver = true;
       this.controlsEnabled = true;
       this.isNextLevel = false;
 
-      this.ensureUser$().pipe(
-        switchMap(user => this.api.completeLevel(user.userId, this.currentLevel))
-      ).subscribe({
-        next: async () => {
-          try {
-            await this.levelService.loadLevels(this.user!.userId);
-          } catch (err) {
-            console.error(`Error loading levels after level ${this.currentLevel}:`, err);
-          }
-        },
-        error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
-      });
+      this.ensureUser$()
+        .pipe(
+          switchMap((user) =>
+            this.api.completeLevel(user.userId, this.currentLevel),
+          ),
+        )
+        .subscribe({
+          next: async () => {
+            try {
+              await this.levelService.loadLevels(this.user!.userId);
+            } catch (err) {
+              console.error(
+                `Error loading levels after level ${this.currentLevel}:`,
+                err,
+              );
+            }
+          },
+          error: (err) =>
+            console.error(
+              `Error updating level ${this.currentLevel} on server:`,
+              err,
+            ),
+        });
     } else if (this.bridgeComponentInstance?.outOfBounds) {
-      this.dialogService.openDialog('Задание не выполнено', 'Вы вышли за пределы моста. Начните заново.', false);
+      this.dialogService.openDialog(
+        'Задание не выполнено',
+        'Вы вышли за пределы моста. Начните заново.',
+        false,
+      );
       this.isGameOver = true;
       this.controlsEnabled = true;
     } else if (this.bridgeComponentInstance?.hasPassedByBridge) {
-      this.dialogService.openDialog('Задание не выполнено', 'Машина проехала мимо моста.', false);
+      this.dialogService.openDialog(
+        'Задание не выполнено',
+        'Машина проехала мимо моста.',
+        false,
+      );
       this.isGameOver = true;
       this.controlsEnabled = true;
     }
   }
 
   private shouldShowCheckDialog(): boolean {
-    if (this.checkDialogShown || this.isCheckingConditions || this.temporaryBlockDialog || this.isResultDialogShown) {
+    if (
+      this.checkDialogShown ||
+      this.isCheckingConditions ||
+      this.temporaryBlockDialog ||
+      this.isResultDialogShown
+    ) {
       return false;
     }
 
@@ -620,7 +739,8 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       return false;
     }
 
-    const { preciseMatch, nearMatch } = this.trafficCones.checkCarInsideParkingPocket();
+    const { preciseMatch, nearMatch } =
+      this.trafficCones.checkCarInsideParkingPocket();
 
     return preciseMatch || nearMatch;
   }
@@ -628,7 +748,11 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
   private showCheckDialog(): void {
     this.checkDialogShown = true;
 
-    const dialogRef = this.dialogService.openDialogWithRef('Остановились', 'Можно проверять задание?', true);
+    const dialogRef = this.dialogService.openDialogWithRef(
+      'Остановились',
+      'Можно проверять задание?',
+      true,
+    );
 
     dialogRef.afterClosed().subscribe((result: boolean) => {
       this.checkDialogShown = false;
@@ -656,7 +780,7 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.isCheckingConditions = true;
 
     this.stopCheckTimeout = window.setTimeout(() => {
-      let errorMessage = "";
+      let errorMessage = '';
 
       if (this.hitConeCount > 0) {
         errorMessage += `Машина задела ${this.hitConeCount} конус(ы). \n`;
@@ -665,17 +789,20 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       if (this.currentLevel === 'parallel-parking') {
         const carRotationTolerance = 0.1;
         const carRotation = this.car.rotation.y % (2 * Math.PI);
-        const isParallel = Math.abs(carRotation - Math.PI) < carRotationTolerance || Math.abs(carRotation) < carRotationTolerance;
+        const isParallel =
+          Math.abs(carRotation - Math.PI) < carRotationTolerance ||
+          Math.abs(carRotation) < carRotationTolerance;
         if (!isParallel) {
-          errorMessage += "Машина не параллельна конусам.\n";
+          errorMessage += 'Машина не параллельна конусам.\n';
         }
       }
 
-      const { preciseMatch, nearMatch } = this.trafficCones.checkCarInsideParkingPocket();
+      const { preciseMatch, nearMatch } =
+        this.trafficCones.checkCarInsideParkingPocket();
       if (!preciseMatch && nearMatch) {
-        errorMessage += "Машина находится не точно в кармане, но допустимо.\n";
+        errorMessage += 'Машина находится не точно в кармане, но допустимо.\n';
       } else if (!preciseMatch) {
-        errorMessage += "Машина не находится в парковочном кармане.\n";
+        errorMessage += 'Машина не находится в парковочном кармане.\n';
       }
 
       if (errorMessage) {
@@ -683,27 +810,48 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         this.isResultDialogShown = true;
         this.isGameOver = true;
         this.controlsEnabled = true;
-        this.dialogService.openDialog('Задание не выполнено', `${errorMessage} Попробуйте снова.`, false);
+        this.dialogService.openDialog(
+          'Задание не выполнено',
+          `${errorMessage} Попробуйте снова.`,
+          false,
+        );
       } else {
         this.isResultDialogShown = true;
         this.isGameOver = true;
 
-        this.ensureUser$().pipe(
-          switchMap(user => this.api.completeLevel(user.userId, this.currentLevel))
-        ).subscribe({
-          next: async () => {
-            this.dialogService.openDialog('Поздравляем!', 'Задание выполнено', false);
-            try {
-              await this.levelService.loadLevels(this.user!.userId);
-              setTimeout(() => {
-                this.isNextLevel = this.levelService.isNextLevelAvailable(this.currentLevel);
-              }, 200);
-            } catch (err) {
-              console.error(`Error loading levels after level ${this.currentLevel}:`, err);
-            }
-          },
-          error: (err) => console.error(`Error updating level ${this.currentLevel} on server:`, err)
-        });
+        this.ensureUser$()
+          .pipe(
+            switchMap((user) =>
+              this.api.completeLevel(user.userId, this.currentLevel),
+            ),
+          )
+          .subscribe({
+            next: async () => {
+              this.dialogService.openDialog(
+                'Поздравляем!',
+                'Задание выполнено',
+                false,
+              );
+              try {
+                await this.levelService.loadLevels(this.user!.userId);
+                setTimeout(() => {
+                  this.isNextLevel = this.levelService.isNextLevelAvailable(
+                    this.currentLevel,
+                  );
+                }, 200);
+              } catch (err) {
+                console.error(
+                  `Error loading levels after level ${this.currentLevel}:`,
+                  err,
+                );
+              }
+            },
+            error: (err) =>
+              console.error(
+                `Error updating level ${this.currentLevel} on server:`,
+                err,
+              ),
+          });
       }
       this.isCheckingConditions = false;
     }, 2000);
@@ -719,33 +867,45 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
         return;
       }
 
-      this.stopLineComponent.createStopLine(lastConeBox)
+      this.stopLineComponent
+        .createStopLine(lastConeBox)
         .then(() => resolve())
         .catch((error) => reject(error));
     });
-
   }
 
   public turnLeft() {
     this.isTurningLeft = true;
     this.isTurningRight = false;
-    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+    this.carComponent.updateFrontWheels(
+      this.isTurningLeft,
+      this.isTurningRight,
+    );
   }
 
   public stopTurningLeft() {
     this.isTurningLeft = false;
-    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+    this.carComponent.updateFrontWheels(
+      this.isTurningLeft,
+      this.isTurningRight,
+    );
   }
 
   public turnRight() {
     this.isTurningRight = true;
     this.isTurningLeft = false;
-    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+    this.carComponent.updateFrontWheels(
+      this.isTurningLeft,
+      this.isTurningRight,
+    );
   }
 
   public stopTurningRight() {
     this.isTurningRight = false;
-    this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+    this.carComponent.updateFrontWheels(
+      this.isTurningLeft,
+      this.isTurningRight,
+    );
   }
 
   @HostListener('window:keydown', ['$event'])
@@ -760,11 +920,17 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
       } else if (event.key === 'ArrowLeft') {
         this.isTurningLeft = true;
         this.isTurningRight = false;
-        this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+        this.carComponent.updateFrontWheels(
+          this.isTurningLeft,
+          this.isTurningRight,
+        );
       } else if (event.key === 'ArrowRight') {
         this.isTurningRight = true;
         this.isTurningLeft = false;
-        this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+        this.carComponent.updateFrontWheels(
+          this.isTurningLeft,
+          this.isTurningRight,
+        );
       }
     }
   }
@@ -780,7 +946,10 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       this.isTurningLeft = false;
       this.isTurningRight = false;
-      this.carComponent.updateFrontWheels(this.isTurningLeft, this.isTurningRight);
+      this.carComponent.updateFrontWheels(
+        this.isTurningLeft,
+        this.isTurningRight,
+      );
     }
   }
 
@@ -799,5 +968,4 @@ export class SimulatorComponent implements OnInit, AfterViewInit, AfterViewCheck
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(window.innerWidth, window.innerHeight);
   }
-
 }

@@ -1,54 +1,98 @@
 <div class="score-container">
-    <p>Сбитые конусы: {{ hitConeCount }}</p>
+  <p>Сбитые конусы: {{ hitConeCount }}</p>
 </div>
 
 <div class="container">
-    <app-loader></app-loader>
-    <canvas #canvas id="webgl-canvas" (touchstart)="preventDefault($event)"></canvas>
-    <app-car [scene]="scene" [world]="world" [currentLevel]="currentLevel" (carLoaded)="onCarLoaded($event)"></app-car>
-    <app-traffic-cones #TrafficConesComponent [car]="car" [camera]="camera" [world]="world"></app-traffic-cones>
-    <app-stop-line #StopLineComponent [scene]="scene"></app-stop-line>
-    <app-bridge #dynamicComponents [scene]="scene" [world]="world"></app-bridge>
-    <app-ground #GroundComponent [car]="car" [scene]="scene" [world]="world"></app-ground>
+  <app-loader></app-loader>
+  <canvas
+    #canvas
+    id="webgl-canvas"
+    (touchstart)="preventDefault($event)"
+  ></canvas>
+  <app-car
+    [scene]="scene"
+    [world]="world"
+    [currentLevel]="currentLevel"
+    (carLoaded)="onCarLoaded($event)"
+  ></app-car>
+  <app-traffic-cones
+    #TrafficConesComponent
+    [car]="car"
+    [camera]="camera"
+    [world]="world"
+  ></app-traffic-cones>
+  <app-stop-line #StopLineComponent [scene]="scene"></app-stop-line>
+  <app-bridge #dynamicComponents [scene]="scene" [world]="world"></app-bridge>
+  <app-ground
+    #GroundComponent
+    [car]="car"
+    [scene]="scene"
+    [world]="world"
+  ></app-ground>
 
-    @if (isMobileDevice) {
+  @if (isMobileDevice) {
     <div class="controls">
-        <div class="turn-controls">
-            <button mat-raised-button (touchstart)="turnLeft(); preventDefault($event)"
-                (touchend)="stopTurningLeft(); preventDefault($event)">
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <button mat-raised-button (touchstart)="turnRight(); preventDefault($event)"
-                (touchend)="stopTurningRight(); preventDefault($event)">
-                <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-        <div class="up-control">
-            <button mat-raised-button (touchstart)="isMovingForward = true; preventDefault($event)"
-                (touchend)="isMovingForward = false; preventDefault($event)">
-                <i class="fas fa-arrow-up"></i>
-            </button>
-        </div>
+      <div class="turn-controls">
+        <button
+          mat-raised-button
+          (touchstart)="turnLeft(); preventDefault($event)"
+          (touchend)="stopTurningLeft(); preventDefault($event)"
+        >
+          <i class="fas fa-arrow-left"></i>
+        </button>
+        <button
+          mat-raised-button
+          (touchstart)="turnRight(); preventDefault($event)"
+          (touchend)="stopTurningRight(); preventDefault($event)"
+        >
+          <i class="fas fa-arrow-right"></i>
+        </button>
+      </div>
+      <div class="up-control">
+        <button
+          mat-raised-button
+          (touchstart)="isMovingForward = true; preventDefault($event)"
+          (touchend)="isMovingForward = false; preventDefault($event)"
+        >
+          <i class="fas fa-arrow-up"></i>
+        </button>
+      </div>
 
-        <div class="down-control">
-            <button mat-raised-button (touchstart)="isMovingBackward = true; preventDefault($event)"
-                (touchend)="isMovingBackward = false; preventDefault($event)">
-                <i class="fas fa-arrow-down"></i>
-            </button>
-        </div>
+      <div class="down-control">
+        <button
+          mat-raised-button
+          (touchstart)="isMovingBackward = true; preventDefault($event)"
+          (touchend)="isMovingBackward = false; preventDefault($event)"
+        >
+          <i class="fas fa-arrow-down"></i>
+        </button>
+      </div>
     </div>
-    }
+  }
 
-    @if (isGameOver) {
+  @if (isGameOver) {
     <mat-card class="game-controls">
-        <mat-card-header>Choosing an action</mat-card-header>
-        <mat-card-actions class="button-container">
-            <button mat-raised-button color="primary" (click)="resetGameState()" class="restart-button">Try again</button>
-            @if(isNextLevel && currentLevel !== 'steep-grade') {
-            <button mat-raised-button color="accent" (click)="goToNextLevel()" class="next-level-button">Next
-                level</button>
-            }
-        </mat-card-actions>
+      <mat-card-header>Choosing an action</mat-card-header>
+      <mat-card-actions class="button-container">
+        <button
+          mat-raised-button
+          color="primary"
+          (click)="resetGameState()"
+          class="restart-button"
+        >
+          Try again
+        </button>
+        @if (isNextLevel && currentLevel !== "steep-grade") {
+          <button
+            mat-raised-button
+            color="accent"
+            (click)="goToNextLevel()"
+            class="next-level-button"
+          >
+            Next level
+          </button>
+        }
+      </mat-card-actions>
     </mat-card>
-    }
+  }
 </div>

@@ -84,21 +84,26 @@ mat-card-header {
   gap: 10px;
 }
 
-.restart-button, .next-level-button {
+.restart-button,
+.next-level-button {
   width: 100%;
   padding: 10px 0;
   border: none;
   border-radius: 8px;
   cursor: pointer;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  transition: background-color 0.3s, transform 0.2s;
+  transition:
+    background-color 0.3s,
+    transform 0.2s;
 }
 
-.restart-button:hover, .next-level-button:hover {
+.restart-button:hover,
+.next-level-button:hover {
   transform: translateY(-2px);
 }
 
-.restart-button:active, .next-level-button {
+.restart-button:active,
+.next-level-button {
   transform: translateY(0);
 }
 

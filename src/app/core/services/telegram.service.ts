@@ -3,10 +3,9 @@ import { Inject, Injectable } from '@angular/core';
 import { User } from '../models/user';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class TelegramService {
-
   private window: any;
   public tg: any;
 
@@ -33,8 +32,7 @@ export class TelegramService {
       userfirstname: tgUser.first_name ?? '',
       userlastname: tgUser.last_name ?? '',
       email: '',
-      password_plain: ''
+      password_plain: '',
     };
   }
-
 }

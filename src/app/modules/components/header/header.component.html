@@ -1,19 +1,27 @@
 <mat-toolbar color="primary" class="navbar">
-    <span class="menu-logo" (click)="goToHome()" style="cursor: pointer;">CAR SIMULATOR</span>
-    <span class="spacer"></span>
-    @if (isAuthenticated()) {
+  <span class="menu-logo" (click)="goToHome()" style="cursor: pointer"
+    >CAR SIMULATOR</span
+  >
+  <span class="spacer"></span>
+  @if (isAuthenticated()) {
     <button mat-icon-button (click)="snav.toggle()" class="burger-button">
-        <mat-icon>menu</mat-icon>
+      <mat-icon>menu</mat-icon>
     </button>
-    }
+  }
 </mat-toolbar>
 
 <mat-sidenav-container class="example-sidenav-container">
-    <mat-sidenav #snav [mode]="'over'" [style.width.px]="250" position="end" [hidden]="!isAuthenticated()">
-        <app-sidenav [sidenav]="snav"></app-sidenav>
-    </mat-sidenav>
+  <mat-sidenav
+    #snav
+    [mode]="'over'"
+    [style.width.px]="250"
+    position="end"
+    [hidden]="!isAuthenticated()"
+  >
+    <app-sidenav [sidenav]="snav"></app-sidenav>
+  </mat-sidenav>
 
-    <mat-sidenav-content>
-        <router-outlet></router-outlet>
-    </mat-sidenav-content>
+  <mat-sidenav-content>
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
 </mat-sidenav-container>

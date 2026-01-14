@@ -9,12 +9,21 @@ import { AuthService } from '../../../core/services/auth.service';
 @Component({
   selector: 'app-header',
   standalone: true,
-  imports: [RouterOutlet, SidenavComponent, MatToolbarModule, MatSidenavModule, MatIconModule],
+  imports: [
+    RouterOutlet,
+    SidenavComponent,
+    MatToolbarModule,
+    MatSidenavModule,
+    MatIconModule,
+  ],
   templateUrl: './header.component.html',
-  styleUrl: './header.component.css'
+  styleUrl: './header.component.css',
 })
 export class HeaderComponent {
-  constructor(private router: Router, private authService: AuthService) { }
+  constructor(
+    private router: Router,
+    private authService: AuthService,
+  ) {}
 
   public goToHome(): void {
     this.router.navigate(['/home']);
@@ -23,5 +32,4 @@ export class HeaderComponent {
   public isAuthenticated(): boolean {
     return this.authService.isAuthenticated();
   }
-
 }

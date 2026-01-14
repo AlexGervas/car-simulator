@@ -12,7 +12,7 @@ import { GroundComponent } from '../ground/ground.component';
   standalone: true,
   imports: [],
   templateUrl: './traffic-cones.component.html',
-  styleUrl: './traffic-cones.component.css'
+  styleUrl: './traffic-cones.component.css',
 })
 export class TrafficConesComponent {
   @Input() camera!: THREE.PerspectiveCamera;
@@ -32,7 +32,10 @@ export class TrafficConesComponent {
 
   private coneBoxes: THREE.Box3[] = [];
 
-  constructor(private coneStateService: ConeStateService, public stopLineService: StopLineService) {
+  constructor(
+    private coneStateService: ConeStateService,
+    public stopLineService: StopLineService,
+  ) {
     this.loader = new GLTFLoader();
   }
 
@@ -52,7 +55,7 @@ export class TrafficConesComponent {
 
   public getInitialConePositions(): CANNON.Vec3[] {
     return this.initialConePositions.map(
-      position => new CANNON.Vec3(position.x, position.y, position.z)
+      (position) => new CANNON.Vec3(position.x, position.y, position.z),
     );
   }
 
@@ -60,75 +63,98 @@ export class TrafficConesComponent {
     this.scene = scene;
   }
 
-  public loadConeModel(count: number, spacing: number, distanceFromCar: number, positions?: THREE.Vector3[], withStopLine: boolean = true): Promise<void> {
+  public loadConeModel(
+    count: number,
+    spacing: number,
+    distanceFromCar: number,
+    positions?: THREE.Vector3[],
+    withStopLine: boolean = true,
+  ): Promise<void> {
     const trafficConePath = 'models/road-elements/traffic-cone.glb';
     const promises: Promise<void>[] = [];
 
     if (!this.car) {
-      return Promise.reject(new Error("Car is not defined"));
+      return Promise.reject(new Error('Car is not defined'));
     }
 
     for (let i = 0; i < count; i++) {
       const promise = new Promise<void>((resolve, reject) => {
-        this.loader.load(trafficConePath, (gltf) => {
-          const cone = gltf.scene;
-          cone.scale.set(1, 1, 1);
-          this.scene.add(cone);
-          this.cones.push(cone);
+        this.loader.load(
+          trafficConePath,
+          (gltf) => {
+            const cone = gltf.scene;
+            cone.scale.set(1, 1, 1);
+            this.scene.add(cone);
+            this.cones.push(cone);
 
-          if (!this.car) {
-            reject(new Error("Car is not defined after loading cone"));
-            return;
-          }
-          let conePosition: THREE.Vector3;
-          if (positions && positions[i]) {
-            conePosition = positions[i].clone();
-          } else {
-            const zPosition = this.car.position.z - distanceFromCar - (i * spacing);
-            const xPosition = this.car.position.x;
-            conePosition = new THREE.Vector3(xPosition, 0, zPosition);
-          }
+            if (!this.car) {
+              reject(new Error('Car is not defined after loading cone'));
+              return;
+            }
+            let conePosition: THREE.Vector3;
+            if (positions && positions[i]) {
+              conePosition = positions[i].clone();
+            } else {
+              const zPosition =
+                this.car.position.z - distanceFromCar - i * spacing;
+              const xPosition = this.car.position.x;
+              conePosition = new THREE.Vector3(xPosition, 0, zPosition);
+            }
 
-          cone.position.set(conePosition.x, conePosition.y, conePosition.z);
-          cone.rotation.y = Math.PI;
+            cone.position.set(conePosition.x, conePosition.y, conePosition.z);
+            cone.rotation.y = Math.PI;
 
-          this.initialConePositions.push(cone.position.clone());      
+            this.initialConePositions.push(cone.position.clone());
 
-          const coneBox = new THREE.Box3().setFromObject(cone);
-          const radius = (coneBox.max.x - coneBox.min.x) / 2;
-          const height = coneBox.max.y - coneBox.min.y;
-          this.createPhysicsConeModel(cone, radius, height);
+            const coneBox = new THREE.Box3().setFromObject(cone);
+            const radius = (coneBox.max.x - coneBox.min.x) / 2;
+            const height = coneBox.max.y - coneBox.min.y;
+            this.createPhysicsConeModel(cone, radius, height);
 
-          this.coneBoxes.push(coneBox);
-          resolve();
-        }, undefined, (error) => {
-          reject(error);
-        });
+            this.coneBoxes.push(coneBox);
+            resolve();
+          },
+          undefined,
+          (error) => {
+            reject(error);
+          },
+        );
       });
       promises.push(promise);
     }
 
-    return Promise.all(promises).then(() => {
-      if (this.cones.length === 0) {
-        throw new Error("Cones are not loaded!");
-      }
-      console.log('All cones loaded');
-      if (withStopLine) {
-        this.stopLineService.callCreateStopLine();
-      }
-    }).catch((error) => {
-      console.error('Error loading some cones:', error)
-    });
+    return Promise.all(promises)
+      .then(() => {
+        if (this.cones.length === 0) {
+          throw new Error('Cones are not loaded!');
+        }
+        console.log('All cones loaded');
+        if (withStopLine) {
+          this.stopLineService.callCreateStopLine();
+        }
+      })
+      .catch((error) => {
+        console.error('Error loading some cones:', error);
+      });
   }
 
-  private createPhysicsConeModel(cone: THREE.Object3D, radius: number, height: number): void {
+  private createPhysicsConeModel(
+    cone: THREE.Object3D,
+    radius: number,
+    height: number,
+  ): void {
     const coneShape = new CANNON.Cylinder(0.01, radius, height, 8);
     const coneBody = new CANNON.Body({
       mass: 15,
-      position: new CANNON.Vec3(cone.position.x, cone.position.y + height / 2, cone.position.z),
+      position: new CANNON.Vec3(
+        cone.position.x,
+        cone.position.y + height / 2,
+        cone.position.z,
+      ),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
-      collisionFilterMask: CarComponent.GROUP_CAR | GroundComponent.GROUP_GROUND,
-      material: new CANNON.Material({ restitution: 0.2 })
+      collisionFilterMask:
+        CarComponent.GROUP_CAR | GroundComponent.GROUP_GROUND,
+      material: new CANNON.Material({ restitution: 0.2 }),
     });
     coneBody.addShape(coneShape);
     this.world.addBody(coneBody);
@@ -143,9 +169,14 @@ export class TrafficConesComponent {
     return this.cones;
   }
 
-  private createParkingScene(offsetX: number, width: number, height: number, gap: number): Promise<void> {
+  private createParkingScene(
+    offsetX: number,
+    width: number,
+    height: number,
+    gap: number,
+  ): Promise<void> {
     if (!this.car) {
-      return Promise.reject("Car not defined");
+      return Promise.reject('Car not defined');
     }
 
     const carX = this.car.position.x;
@@ -170,7 +201,7 @@ export class TrafficConesComponent {
 
     this.parkingPocket = new THREE.Box3(
       new THREE.Vector3(positions[0].x, 0, positions[2].z),
-      new THREE.Vector3(positions[1].x, 2, positions[0].z)
+      new THREE.Vector3(positions[1].x, 2, positions[0].z),
     );
 
     const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -179,23 +210,41 @@ export class TrafficConesComponent {
     const topLineGeometry = new THREE.PlaneGeometry(topLineLength, lineWidth);
     const topLine = new THREE.Mesh(topLineGeometry, lineMaterial);
     topLine.rotation.x = -Math.PI / 2;
-    topLine.position.set((positions[0].x + positions[1].x) / 2, 0.01, positions[0].z);
+    topLine.position.set(
+      (positions[0].x + positions[1].x) / 2,
+      0.01,
+      positions[0].z,
+    );
     this.scene.add(topLine);
     this.parkingLines.push(topLine);
 
     const bottomLineLength = positions[3].x - positions[2].x;
-    const bottomLineGeometry = new THREE.PlaneGeometry(bottomLineLength, lineWidth);
+    const bottomLineGeometry = new THREE.PlaneGeometry(
+      bottomLineLength,
+      lineWidth,
+    );
     const bottomLine = new THREE.Mesh(bottomLineGeometry, lineMaterial);
     bottomLine.rotation.x = -Math.PI / 2;
-    bottomLine.position.set((positions[2].x + positions[3].x) / 2, 0.01, positions[2].z);
+    bottomLine.position.set(
+      (positions[2].x + positions[3].x) / 2,
+      0.01,
+      positions[2].z,
+    );
     this.scene.add(bottomLine);
     this.parkingLines.push(bottomLine);
 
     const rightLineLength = Math.abs(positions[1].z - positions[3].z);
-    const rightLineGeometry = new THREE.PlaneGeometry(lineWidth, rightLineLength);
+    const rightLineGeometry = new THREE.PlaneGeometry(
+      lineWidth,
+      rightLineLength,
+    );
     const rightLine = new THREE.Mesh(rightLineGeometry, lineMaterial);
     rightLine.rotation.x = -Math.PI / 2;
-    rightLine.position.set(positions[1].x, 0.01, (positions[1].z + positions[3].z) / 2);
+    rightLine.position.set(
+      positions[1].x,
+      0.01,
+      (positions[1].z + positions[3].z) / 2,
+    );
     this.scene.add(rightLine);
     this.parkingLines.push(rightLine);
 
@@ -209,7 +258,11 @@ export class TrafficConesComponent {
       const dashGeometry = new THREE.PlaneGeometry(lineWidth, dashSize);
       const dash = new THREE.Mesh(dashGeometry, lineMaterial);
       dash.rotation.x = -Math.PI / 2;
-      dash.position.set(positions[0].x, 0.01, startZ - i * (dashSize + gapSize) - dashSize / 2);
+      dash.position.set(
+        positions[0].x,
+        0.01,
+        startZ - i * (dashSize + gapSize) - dashSize / 2,
+      );
       this.scene.add(dash);
       this.parkingLines.push(dash);
     }
@@ -219,7 +272,7 @@ export class TrafficConesComponent {
 
   public clearParkingLines(): void {
     if (this.parkingPocket) {
-      this.parkingLines.forEach(line => this.scene.remove(line));
+      this.parkingLines.forEach((line) => this.scene.remove(line));
       this.parkingLines = [];
     }
   }
@@ -246,8 +299,12 @@ export class TrafficConesComponent {
     });
   }
 
-  public checkCarInsideParkingPocket(): { preciseMatch: boolean; nearMatch: boolean } {
-    if (!this.car || !this.parkingPocket) return { preciseMatch: false, nearMatch: false };
+  public checkCarInsideParkingPocket(): {
+    preciseMatch: boolean;
+    nearMatch: boolean;
+  } {
+    if (!this.car || !this.parkingPocket)
+      return { preciseMatch: false, nearMatch: false };
 
     const carBox = new THREE.Box3().setFromObject(this.car);
 
@@ -257,14 +314,18 @@ export class TrafficConesComponent {
     preciseBox.expandByScalar(0.5);
 
     const preciseMatch = preciseBox.containsBox(carBox);
-    const nearMatch = expandedBox.intersectsBox(carBox) && expandedBox.containsPoint(carCenter);
+    const nearMatch =
+      expandedBox.intersectsBox(carBox) && expandedBox.containsPoint(carCenter);
 
     return { preciseMatch, nearMatch };
   }
 
-  public createParkingZones(tolerance: number): { preciseBox: THREE.Box3; expandedBox: THREE.Box3 } {
+  public createParkingZones(tolerance: number): {
+    preciseBox: THREE.Box3;
+    expandedBox: THREE.Box3;
+  } {
     if (!this.parkingPocket) {
-      throw new Error("Parking pocket is not defined.");
+      throw new Error('Parking pocket is not defined.');
     }
 
     const preciseBox = this.parkingPocket.clone();
@@ -273,7 +334,7 @@ export class TrafficConesComponent {
   }
 
   public resetCones() {
-    this.coneBodies.forEach(coneBody => {
+    this.coneBodies.forEach((coneBody) => {
       this.world.removeBody(coneBody);
     });
     this.coneBodies = [];
@@ -293,17 +354,16 @@ export class TrafficConesComponent {
   }
 
   public removeCones() {
-    this.coneBodies.forEach(coneBody => {
+    this.coneBodies.forEach((coneBody) => {
       this.world.removeBody(coneBody);
     });
     this.coneBodies = [];
 
-    this.cones.forEach(cone => {
+    this.cones.forEach((cone) => {
       cone.parent?.remove(cone);
     });
     this.cones = [];
     this.initialConePositions = [];
     this.coneBoxes = [];
   }
-
 }

@@ -20,6 +20,6 @@ export const telegramGuard: CanActivateFn = (route, state) => {
 
   return auth.loginWithTelegram(telegramId).pipe(
     map(() => router.createUrlTree(['/home'])),
-    catchError(() => of(router.createUrlTree(['/registration'])))
+    catchError(() => of(router.createUrlTree(['/registration']))),
   );
 };

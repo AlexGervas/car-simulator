@@ -22,12 +22,12 @@ describe('LoginComponent', () => {
       imports: [
         LoginComponent,
         RouterTestingModule.withRoutes([]),
-        NoopAnimationsModule
+        NoopAnimationsModule,
       ],
       providers: [
         { provide: AuthService, useValue: authServiceSpy },
-        { provide: DialogService, useValue: dialogServiceSpy }
-      ]
+        { provide: DialogService, useValue: dialogServiceSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(LoginComponent);
@@ -75,20 +75,26 @@ describe('LoginComponent', () => {
     const password = 'wrongpass';
     component.loginForm.setValue({ email, password });
 
-    authServiceSpy.login.and.returnValue(throwError(() => new Error('Invalid credentials')));
+    authServiceSpy.login.and.returnValue(
+      throwError(() => new Error('Invalid credentials')),
+    );
 
     component.onSubmit();
 
     expect(dialogServiceSpy.openDialog).toHaveBeenCalledWith(
       'Ошибка авторизации',
       'Неверный email или пароль',
-      false
+      false,
     );
   });
 
   it('should toggle password visibility when eye icon is clicked', () => {
-    const input: HTMLInputElement = fixture.nativeElement.querySelector('input[formControlName="password"]');
-    const button: HTMLButtonElement = fixture.nativeElement.querySelector('button[mat-icon-button]');
+    const input: HTMLInputElement = fixture.nativeElement.querySelector(
+      'input[formControlName="password"]',
+    );
+    const button: HTMLButtonElement = fixture.nativeElement.querySelector(
+      'button[mat-icon-button]',
+    );
 
     expect(component.hide).toBeTrue();
     expect(input.type).toBe('password');
@@ -105,6 +111,4 @@ describe('LoginComponent', () => {
     expect(component.hide).toBeTrue();
     expect(input.type).toBe('password');
   });
-
-
 });

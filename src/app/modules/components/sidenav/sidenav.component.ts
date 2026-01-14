@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
 import { MatListModule } from '@angular/material/list';
 import { Router } from '@angular/router';
-import { MatIcon } from "@angular/material/icon";
+import { MatIcon } from '@angular/material/icon';
 import { AuthService } from '../../../core/services/auth.service';
 import { MatSidenav } from '@angular/material/sidenav';
 
@@ -10,12 +10,15 @@ import { MatSidenav } from '@angular/material/sidenav';
   standalone: true,
   imports: [MatListModule, MatIcon],
   templateUrl: './sidenav.component.html',
-  styleUrl: './sidenav.component.css'
+  styleUrl: './sidenav.component.css',
 })
 export class SidenavComponent {
   @Input() sidenav!: MatSidenav;
 
-  constructor(private router: Router, private auth: AuthService) { }
+  constructor(
+    private router: Router,
+    private auth: AuthService,
+  ) {}
 
   async navigateToHome() {
     await this.router.navigate(['/home']);
@@ -32,5 +35,4 @@ export class SidenavComponent {
     this.auth.logout();
     await this.router.navigate(['/login']);
   }
-
 }

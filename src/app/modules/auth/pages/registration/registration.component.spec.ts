@@ -1,4 +1,9 @@
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
+import {
+  ComponentFixture,
+  fakeAsync,
+  TestBed,
+  tick,
+} from '@angular/core/testing';
 import { RegistrationComponent } from './registration.component';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
@@ -23,14 +28,14 @@ describe('RegistrationComponent', () => {
       imports: [
         RegistrationComponent,
         RouterTestingModule.withRoutes([
-          { path: 'login', component: LoginComponent }
+          { path: 'login', component: LoginComponent },
         ]),
         NoopAnimationsModule,
       ],
       providers: [
         { provide: ApiService, useValue: apiSpy },
-        { provide: DialogService, useValue: dialogSpy }
-      ]
+        { provide: DialogService, useValue: dialogSpy },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RegistrationComponent);
@@ -53,7 +58,9 @@ describe('RegistrationComponent', () => {
       control?.markAsTouched();
       control?.setValue('');
       fixture.detectChanges();
-      expect(component.getErrorMessage('userFirstName')).toBe(component.errorMsg['required']);
+      expect(component.getErrorMessage('userFirstName')).toBe(
+        component.errorMsg['required'],
+      );
     });
 
     it('should show required error for last name', () => {
@@ -61,7 +68,9 @@ describe('RegistrationComponent', () => {
       control?.markAsTouched();
       control?.setValue('');
       fixture.detectChanges();
-      expect(component.getErrorMessage('userLastName')).toBe(component.errorMsg['required']);
+      expect(component.getErrorMessage('userLastName')).toBe(
+        component.errorMsg['required'],
+      );
     });
   });
 
@@ -71,7 +80,9 @@ describe('RegistrationComponent', () => {
       control?.markAsTouched();
       control?.setValue('');
       fixture.detectChanges();
-      expect(component.getErrorMessage('password')).toBe(component.errorMsg['required']);
+      expect(component.getErrorMessage('password')).toBe(
+        component.errorMsg['required'],
+      );
     });
 
     it('should show minlength error when password is too short', () => {
@@ -79,7 +90,9 @@ describe('RegistrationComponent', () => {
       control?.setValue('123');
       fixture.detectChanges();
       expect(control?.hasError('minlength')).toBeTrue();
-      expect(component.getErrorMessage('password')).toBe(component.errorMsg['minlength']);
+      expect(component.getErrorMessage('password')).toBe(
+        component.errorMsg['minlength'],
+      );
     });
 
     it('should detect password mismatch', () => {
@@ -90,7 +103,9 @@ describe('RegistrationComponent', () => {
       confirmControl?.setValue('Other123!');
       fixture.detectChanges();
 
-      expect(component.getErrorMessage('confirmPassword')).toBe(component.errorMsg['mismatchpasswords']);
+      expect(component.getErrorMessage('confirmPassword')).toBe(
+        component.errorMsg['mismatchpasswords'],
+      );
 
       confirmControl?.setValue('Valid123!');
       fixture.detectChanges();
@@ -114,7 +129,6 @@ describe('RegistrationComponent', () => {
       expect(passwordControl?.hasError('minlength')).toBeFalse();
       expect(passwordControl?.valid).toBeTrue();
     });
-
   });
 
   describe('check email validation', () => {
@@ -123,14 +137,18 @@ describe('RegistrationComponent', () => {
       control?.markAsTouched();
       control?.setValue('');
       fixture.detectChanges();
-      expect(component.getErrorMessage('email')).toBe(component.errorMsg['required']);
+      expect(component.getErrorMessage('email')).toBe(
+        component.errorMsg['required'],
+      );
     });
 
     it('should show invalid error when email format is wrong', () => {
       const control = component.registrationForm.get('email');
       control?.setValue('wrongEmail');
       fixture.detectChanges();
-      expect(component.getErrorMessage('email')).toBe(component.errorMsg['email']);
+      expect(component.getErrorMessage('email')).toBe(
+        component.errorMsg['email'],
+      );
     });
 
     it('should accept valid email', () => {
@@ -139,7 +157,6 @@ describe('RegistrationComponent', () => {
       fixture.detectChanges();
       expect(component.getErrorMessage('email')).toBeNull();
     });
-
   });
 
   describe('onSubmit', () => {
@@ -151,7 +168,7 @@ describe('RegistrationComponent', () => {
         email: 'ivan@test.com',
         password_hash: '',
         isTelegram: false,
-        username: ''
+        username: '',
       };
 
       apiSpy.createUser.and.returnValue(of(mockUser));
@@ -164,22 +181,21 @@ describe('RegistrationComponent', () => {
         userLastName: 'Иванов',
         email: 'ivan@test.com',
         password: 'Valid123!',
-        confirmPassword: 'Valid123!'
+        confirmPassword: 'Valid123!',
       });
 
       component.onSubmit();
       tick();
 
-      expect(apiSpy.createUser).toHaveBeenCalledWith(jasmine.objectContaining({
-        userfirstname: 'Иван',
-        userlastname: 'Иванов',
-        email: 'ivan@test.com'
-      }));
+      expect(apiSpy.createUser).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          userfirstname: 'Иван',
+          userlastname: 'Иванов',
+          email: 'ivan@test.com',
+        }),
+      );
       expect(dialogSpy.openDialogWithRef).toHaveBeenCalled();
       expect(router.navigate).toHaveBeenCalledWith(['/login']);
     }));
-
-
   });
-
 });
