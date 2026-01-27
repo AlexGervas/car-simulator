@@ -1,18 +1,10 @@
-import {
-  Component,
-  EventEmitter,
-  Input,
-  OnInit,
-  Output,
-  ViewChild,
-} from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import * as THREE from 'three';
-import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import * as CANNON from 'cannon-es';
 import { GroundComponent } from '../ground/ground.component';
 import { BridgeComponent } from '../bridge/bridge.component';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
-import { SimulatorComponent } from '../../pages/simulator/simulator.component';
 
 @Component({
   selector: 'app-car',
@@ -68,7 +60,6 @@ export class CarComponent implements OnInit {
   async ngOnInit() {
     try {
       await this.loadCarModel();
-      console.log('Car model loaded successfully');
     } catch (error) {
       console.error('Error loading car model:', error);
     }
@@ -149,7 +140,7 @@ export class CarComponent implements OnInit {
 
       if (
         ['Wheel_1_R', 'Wheel_1_L', 'Wheel_2_R', 'Wheel_2_L'].includes(
-          child.name,
+          child.name
         )
       ) {
         const wheelBox = new THREE.Box3().setFromObject(child);
@@ -164,7 +155,6 @@ export class CarComponent implements OnInit {
         };
       }
     });
-    console.log('wheels: ', this.wheels);
 
     Object.keys(this.wheelData).forEach((wheelName) => {
       const wheel = this.wheelData[wheelName];
@@ -173,7 +163,7 @@ export class CarComponent implements OnInit {
         chassisConnectionPointLocal: new CANNON.Vec3(
           wheel.position.x,
           wheel.position.y,
-          wheel.position.z,
+          wheel.position.z
         ),
         axleLocal: new CANNON.Vec3(-1, 0, 0),
         directionLocal: new CANNON.Vec3(0, -1, 0),
@@ -198,7 +188,7 @@ export class CarComponent implements OnInit {
       isTurningLeft: boolean;
       isTurningRight: boolean;
       isGameOver: boolean;
-    },
+    }
   ): void {
     const {
       isMovingForward,
@@ -219,7 +209,7 @@ export class CarComponent implements OnInit {
       isMovingForward,
       isMovingBackward,
       isTurningLeft,
-      isTurningRight,
+      isTurningRight
     );
 
     if (this.currentLevel === 'steep-grade' && this.bridge?.bridgeBody) {
@@ -238,7 +228,7 @@ export class CarComponent implements OnInit {
   public updateCarSpeed(
     deltaTime: number,
     isMovingForward: boolean,
-    isMovingBackward: boolean,
+    isMovingBackward: boolean
   ): void {
     const direction = new THREE.Vector3();
     this.car.getWorldDirection(direction);
@@ -261,14 +251,14 @@ export class CarComponent implements OnInit {
 
     this.currentSpeed = Math.max(
       -maxReverseSpeed,
-      Math.min(this.currentSpeed, this.maxSpeed),
+      Math.min(this.currentSpeed, this.maxSpeed)
     );
 
     const currentVelocity = this.carBody.velocity;
     this.carBody.velocity.set(
       direction.x * this.currentSpeed,
       currentVelocity.y,
-      direction.z * this.currentSpeed,
+      direction.z * this.currentSpeed
     );
   }
 
@@ -276,7 +266,7 @@ export class CarComponent implements OnInit {
     isMovingForward: boolean,
     isMovingBackward: boolean,
     isTurningLeft: boolean,
-    isTurningRight: boolean,
+    isTurningRight: boolean
   ): void {
     if (isMovingForward || isMovingBackward) {
       const turnDirection = isMovingForward ? 1 : -1;
@@ -311,7 +301,7 @@ export class CarComponent implements OnInit {
           wheel.deltaRotation = Math.max(
             0,
             wheel.deltaRotation -
-              (this.decelerationRate * speedFactor) / wheelRadius,
+              (this.decelerationRate * speedFactor) / wheelRadius
           );
         } else {
           const interpolationFactor = 0.00001;

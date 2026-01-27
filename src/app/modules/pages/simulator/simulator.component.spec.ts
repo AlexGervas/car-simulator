@@ -145,7 +145,7 @@ describe('SimulatorComponent', () => {
         userlastname: '',
       });
       mockAuthService.loginWithTelegram.and.returnValue(
-        of({ token: 'mockToken' }),
+        of({ token: 'mockToken' })
       );
       await component.ngOnInit();
       expect(mockAuthService.loginWithTelegram).toHaveBeenCalledWith(784002330);
@@ -154,7 +154,7 @@ describe('SimulatorComponent', () => {
     it('should not call loginWithTelegram if in Telegram environment but user is missing', async () => {
       spyOn(mockTelegramService, 'isTelegramEnv').and.returnValue(true);
       spyOn(mockTelegramService, 'getTelegramUser').and.returnValue(
-        null as any,
+        null as any
       );
       mockAuthService.loginWithTelegram.calls.reset();
 
@@ -170,14 +170,14 @@ describe('SimulatorComponent', () => {
 
       mockUserService.getUser.and.returnValue(null);
       mockUserService.loadUserFromApi.and.returnValue(
-        of({ id: 1, username: 'web_user' }),
+        of({ id: 1, username: 'web_user' })
       );
 
       await component.ngOnInit();
 
       expect(mockUserService.loadUserFromApi).toHaveBeenCalled();
       expect(component.user).toEqual(
-        jasmine.objectContaining({ username: 'web_user' }),
+        jasmine.objectContaining({ username: 'web_user' })
       );
     });
 
@@ -190,7 +190,7 @@ describe('SimulatorComponent', () => {
         userlastname: '',
       });
       mockAuthService.loginWithTelegram.and.returnValue(
-        throwError(() => new Error('Telegram login failed')),
+        throwError(() => new Error('Telegram login failed'))
       );
 
       const consoleErrorSpy = spyOn(console, 'error');
@@ -198,7 +198,7 @@ describe('SimulatorComponent', () => {
 
       expect(consoleErrorSpy).toHaveBeenCalledWith(
         'Telegram login failed:',
-        jasmine.any(Error),
+        jasmine.any(Error)
       );
     });
   });
@@ -213,7 +213,7 @@ describe('SimulatorComponent', () => {
 
     it('should call initParallelParkingScene when level is parallel-parking', fakeAsync(() => {
       spyOn(component, 'initParallelParkingScene').and.returnValue(
-        Promise.resolve(),
+        Promise.resolve()
       );
       component.initLevel('parallel-parking');
       tick();
@@ -229,7 +229,7 @@ describe('SimulatorComponent', () => {
 
     it('should call initSteepGradeScene for unknown level', fakeAsync(() => {
       spyOn(component, 'initSteepGradeScene').and.returnValue(
-        Promise.resolve(),
+        Promise.resolve()
       );
       component.initLevel('unknown-level');
       tick();
@@ -244,11 +244,11 @@ describe('SimulatorComponent', () => {
       ]);
       const coneStateServiceSpy = spyOn(
         component['coneStateService'],
-        'clearConeStates',
+        'clearConeStates'
       );
       const stopLineServiceSpy = spyOn(
         component['stopLineService'],
-        'removeStopLine',
+        'removeStopLine'
       );
 
       component['clearLevelScene']();
@@ -265,11 +265,11 @@ describe('SimulatorComponent', () => {
       component.trafficCones = jasmine.createSpyObj(
         'TrafficConesComponent',
         ['createSnake'],
-        { cones: [1, 2, 3] },
+        { cones: [1, 2, 3] }
       );
       const coneStateServiceSpy = spyOn(
         component['coneStateService'],
-        'initializeConeStates',
+        'initializeConeStates'
       );
 
       component.initSnakeScene();
@@ -285,7 +285,7 @@ describe('SimulatorComponent', () => {
       component.trafficCones = jasmine.createSpyObj(
         'TrafficConesComponent',
         ['createSnake'],
-        { cones: [] },
+        { cones: [] }
       );
 
       (component.trafficCones.createSnake as jasmine.Spy).and.rejectWith(error);
@@ -297,7 +297,7 @@ describe('SimulatorComponent', () => {
 
       expect(console.error).toHaveBeenCalledWith(
         'Error when initializing Snake scene:',
-        error,
+        error
       );
     }));
   });
@@ -311,11 +311,11 @@ describe('SimulatorComponent', () => {
       component.trafficCones = jasmine.createSpyObj(
         'TrafficConesComponent',
         ['createParallelParking'],
-        { cones: [1, 2] },
+        { cones: [1, 2] }
       );
       const coneStateServiceSpy = spyOn(
         component['coneStateService'],
-        'initializeConeStates',
+        'initializeConeStates'
       );
 
       component.initParallelParkingScene();
@@ -333,7 +333,7 @@ describe('SimulatorComponent', () => {
       component.scene = undefined as any;
       tick();
       expectAsync(component.initParallelParkingScene()).toBeRejectedWith(
-        'Scene is not initialized',
+        'Scene is not initialized'
       );
     }));
 
@@ -341,7 +341,7 @@ describe('SimulatorComponent', () => {
       component.trafficCones = jasmine.createSpyObj(
         'TrafficConesComponent',
         ['createParallelParking'],
-        { cones: [1] },
+        { cones: [1] }
       );
       (
         component.trafficCones.createParallelParking as jasmine.Spy
@@ -352,7 +352,7 @@ describe('SimulatorComponent', () => {
       tick();
 
       expect(console.error).toHaveBeenCalledWith(
-        'Error initialization of the ParallelParking scene:',
+        'Error initialization of the ParallelParking scene:'
       );
     }));
   });
@@ -364,7 +364,7 @@ describe('SimulatorComponent', () => {
         ['createGarage'],
         {
           cones: [1, 2, 3],
-        },
+        }
       );
       spyOn(component['coneStateService'], 'initializeConeStates');
     });
@@ -379,13 +379,13 @@ describe('SimulatorComponent', () => {
       expect(component['isCheckingConditions']).toBeFalse();
       expect(component.trafficCones.createGarage).toHaveBeenCalled();
       expect(
-        component['coneStateService'].initializeConeStates,
+        component['coneStateService'].initializeConeStates
       ).toHaveBeenCalledWith(3);
     }));
 
     it('should catch and log errors during garage scene initialization', fakeAsync(() => {
       (component.trafficCones.createGarage as jasmine.Spy).and.throwError(
-        'Garage error',
+        'Garage error'
       );
       spyOn(console, 'error');
 
@@ -393,7 +393,7 @@ describe('SimulatorComponent', () => {
       tick();
 
       expect(console.error).toHaveBeenCalledWith(
-        'Error initialization of the Garage scene',
+        'Error initialization of the Garage scene'
       );
     }));
   });
@@ -426,7 +426,7 @@ describe('SimulatorComponent', () => {
 
       spyOn(
         component['componentFactoryResolver'],
-        'resolveComponentFactory',
+        'resolveComponentFactory'
       ).and.returnValue({} as any);
     });
 
@@ -463,7 +463,7 @@ describe('SimulatorComponent', () => {
 
       expect(component.bridgeComponentInstance).toBeDefined();
       expect(component.carComponent.bridge).toBe(
-        component.bridgeComponentInstance!,
+        component.bridgeComponentInstance!
       );
     }));
 
@@ -478,7 +478,7 @@ describe('SimulatorComponent', () => {
       tick();
 
       expect(console.error).toHaveBeenCalledWith(
-        'BridgeComponent instance not created.',
+        'BridgeComponent instance not created.'
       );
     }));
   });
@@ -546,30 +546,30 @@ describe('SimulatorComponent', () => {
         expect(component.coneStateService.resetConeState).toHaveBeenCalled();
         expect(component.trafficCones.resetCones).toHaveBeenCalled();
         expect(component.world.removeBody).toHaveBeenCalledWith(
-          component.carBody,
+          component.carBody
         );
         expect(component.dialog.closeAll).toHaveBeenCalled();
 
         expect(component.carComponent.currentSpeed).toBe(0);
         expect(component.carComponent.resetCarPosition).toHaveBeenCalled();
         expect(
-          component.carComponent.createPhysicsCarBody,
+          component.carComponent.createPhysicsCarBody
         ).toHaveBeenCalledWith(component.carComponent.finalHeight);
         expect(component.carComponent.createPhysicsWheels).toHaveBeenCalledWith(
-          component.carComponent.scaleFactor,
+          component.carComponent.scaleFactor
         );
         expect(component.carComponent.vehicle.wheelInfos[0].deltaRotation).toBe(
-          0,
+          0
         );
         expect(component.carComponent.vehicle.wheelInfos[1].deltaRotation).toBe(
-          0,
+          0
         );
 
         expect(component.bridgeComponentInstance!.hasCrossedBridge).toBeFalse();
         expect(component.bridgeComponentInstance!.isOnBridge).toBeFalse();
         expect(component.bridgeComponentInstance!.outOfBounds).toBeFalse();
         expect(
-          component.bridgeComponentInstance!.hasPassedByBridge,
+          component.bridgeComponentInstance!.hasPassedByBridge
         ).toBeFalse();
       });
     });
@@ -596,7 +596,7 @@ describe('SimulatorComponent', () => {
           'isNextLevelAvailable',
         ]);
         (component.levelService.getNextLevel as jasmine.Spy).and.returnValue(
-          nextLevel,
+          nextLevel
         );
         (
           component.levelService.isNextLevelAvailable as jasmine.Spy
@@ -621,7 +621,7 @@ describe('SimulatorComponent', () => {
           'isNextLevelAvailable',
         ]);
         (component.levelService.getNextLevel as jasmine.Spy).and.returnValue(
-          null,
+          null
         );
         (
           component.levelService.isNextLevelAvailable as jasmine.Spy
@@ -655,10 +655,10 @@ describe('SimulatorComponent', () => {
     it('should add lights to the scene', () => {
       component.initSceneAndWorld();
       const ambientLight = component.scene.children.find(
-        (child) => child instanceof THREE.AmbientLight,
+        (child) => child instanceof THREE.AmbientLight
       );
       const directionalLight = component.scene.children.find(
-        (child) => child instanceof THREE.DirectionalLight,
+        (child) => child instanceof THREE.DirectionalLight
       );
       expect(ambientLight).toBeDefined();
       expect(directionalLight).toBeDefined();
@@ -724,7 +724,7 @@ describe('SimulatorComponent', () => {
             cb(0);
           }
           return 0;
-        },
+        }
       );
 
       component.clock = new THREE.Clock();
@@ -753,12 +753,12 @@ describe('SimulatorComponent', () => {
           isTurningLeft: component.isTurningLeft,
           isTurningRight: component.isTurningRight,
           isGameOver: component.isGameOver,
-        },
+        }
       );
       expect(component.updateCameraPosition).toHaveBeenCalled();
       expect(component.renderer.render).toHaveBeenCalledWith(
         component.scene,
-        component.camera,
+        component.camera
       );
     });
   });
@@ -775,7 +775,7 @@ describe('SimulatorComponent', () => {
       component.updateCameraPosition();
 
       const expectedPosition = new THREE.Vector3(1, 1, 1).add(
-        new THREE.Vector3(0, 2, 5),
+        new THREE.Vector3(0, 2, 5)
       );
       expect(component.camera.position).toEqual(expectedPosition);
     });
@@ -795,7 +795,7 @@ describe('SimulatorComponent', () => {
         (target: THREE.Vector3) => {
           target.set(0, 0, -1);
           return target;
-        },
+        }
       );
 
       const mockCamera = new THREE.PerspectiveCamera();
@@ -950,7 +950,7 @@ describe('SimulatorComponent', () => {
       (component as any).currentLevel = 'steep-grade';
       (component as any).checkGameOverConditions();
       expect(
-        (component as any).handleSteepGradeLevelGameOver,
+        (component as any).handleSteepGradeLevelGameOver
       ).toHaveBeenCalled();
     });
   });
@@ -996,7 +996,7 @@ describe('SimulatorComponent', () => {
       expect(mockDialog).toHaveBeenCalledWith(
         'Игра окончена',
         jasmine.stringMatching(/сбили 2 конусов/),
-        false,
+        false
       );
       expect((component as any).isGameOver).toBeTrue();
     });
@@ -1080,7 +1080,7 @@ describe('SimulatorComponent', () => {
       expect(mockDialog).toHaveBeenCalledWith(
         'Поздравляем!',
         jasmine.any(String),
-        false,
+        false
       );
       expect(mockApi.completeLevel).toHaveBeenCalledWith(123, 'steep-grade');
     });
@@ -1091,7 +1091,7 @@ describe('SimulatorComponent', () => {
       expect(mockDialog).toHaveBeenCalledWith(
         'Задание не выполнено',
         jasmine.stringMatching(/вышли за пределы/),
-        false,
+        false
       );
     });
 
@@ -1101,7 +1101,7 @@ describe('SimulatorComponent', () => {
       expect(mockDialog).toHaveBeenCalledWith(
         'Задание не выполнено',
         jasmine.stringMatching(/проехала мимо/),
-        false,
+        false
       );
     });
   });
@@ -1167,7 +1167,7 @@ describe('SimulatorComponent', () => {
             afterClosed: () => afterClosedSubject.asObservable(),
           }),
       };
-      spyOn(window as any, 'setInterval').and.callFake((fn: Function) => {
+      spyOn(window as any, 'setInterval').and.callFake((fn: () => void) => {
         fn();
         return 123;
       });
@@ -1232,7 +1232,7 @@ describe('SimulatorComponent', () => {
       (component as any).startParkingCheck();
       expect((component as any).isCheckingConditions).toBeTrue();
       expect(
-        (component as any).dialogService.openDialog,
+        (component as any).dialogService.openDialog
       ).not.toHaveBeenCalled();
     });
 
@@ -1244,15 +1244,15 @@ describe('SimulatorComponent', () => {
       expect((component as any).ensureUser$).toHaveBeenCalled();
       expect((component as any).api.completeLevel).toHaveBeenCalledWith(
         123,
-        'parallel-parking',
+        'parallel-parking'
       );
       expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
         'Поздравляем!',
         'Задание выполнено',
-        false,
+        false
       );
       expect((component as any).levelService.loadLevels).toHaveBeenCalledWith(
-        123,
+        123
       );
       expect((component as any).isNextLevel).toBeTrue();
     }));
@@ -1270,7 +1270,7 @@ describe('SimulatorComponent', () => {
       expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
         'Задание не выполнено',
         jasmine.stringMatching(/Машина задела 1 конус/),
-        false,
+        false
       );
       expect((component as any).api.completeLevel).not.toHaveBeenCalled();
     });
@@ -1290,7 +1290,7 @@ describe('SimulatorComponent', () => {
       expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
         'Задание не выполнено',
         jasmine.stringMatching(/Машина не находится в парковочном кармане/),
-        false,
+        false
       );
     });
 
@@ -1309,7 +1309,7 @@ describe('SimulatorComponent', () => {
       expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
         'Задание не выполнено',
         jasmine.stringMatching(/не точно в кармане/),
-        false,
+        false
       );
     });
 
@@ -1329,7 +1329,7 @@ describe('SimulatorComponent', () => {
       expect((component as any).dialogService.openDialog).toHaveBeenCalledWith(
         'Задание не выполнено',
         jasmine.stringMatching(/Машина не параллельна конусам/),
-        false,
+        false
       );
     });
   });
@@ -1355,7 +1355,7 @@ describe('SimulatorComponent', () => {
     it('should reject the promise if there are no cones', async () => {
       (component as any).trafficCones.getConeBoxes.and.returnValue([]);
       await expectAsync(
-        (component as any).createStopLine(),
+        (component as any).createStopLine()
       ).toBeRejectedWithError('No cones available to create stop line.');
     });
   });
@@ -1385,7 +1385,7 @@ describe('SimulatorComponent', () => {
         {} as any,
         {} as any,
         {} as any,
-        {} as any,
+        {} as any
       );
       (component as any).carComponent = carComponentMock;
       component.isGameOver = false;
@@ -1398,7 +1398,7 @@ describe('SimulatorComponent', () => {
       expect(component.isTurningRight).toBeFalse();
       expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
         true,
-        false,
+        false
       );
 
       component.handleKeyboardEvent({ key: 'ArrowRight' } as KeyboardEvent);
@@ -1406,7 +1406,7 @@ describe('SimulatorComponent', () => {
       expect(component.isTurningRight).toBeTrue();
       expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
         false,
-        true,
+        true
       );
     });
 
@@ -1417,7 +1417,7 @@ describe('SimulatorComponent', () => {
         expect(component.isTurningRight).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           true,
-          false,
+          false
         );
       });
 
@@ -1427,7 +1427,7 @@ describe('SimulatorComponent', () => {
         expect(component.isTurningLeft).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           false,
-          false,
+          false
         );
       });
     });
@@ -1439,7 +1439,7 @@ describe('SimulatorComponent', () => {
         expect(component.isTurningLeft).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           false,
-          true,
+          true
         );
       });
 
@@ -1449,7 +1449,7 @@ describe('SimulatorComponent', () => {
         expect(component.isTurningRight).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           false,
-          false,
+          false
         );
       });
     });
@@ -1457,39 +1457,39 @@ describe('SimulatorComponent', () => {
     describe('handleKeyboardEvent', () => {
       it('should start moving forward at ArrowUp', () => {
         component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowUp' }),
+          new KeyboardEvent('keydown', { key: 'ArrowUp' })
         );
         expect(component.isMovingForward).toBeTrue();
       });
 
       it('should start moving backwards at ArrowDown', () => {
         component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowDown' }),
+          new KeyboardEvent('keydown', { key: 'ArrowDown' })
         );
         expect(component.isMovingBackward).toBeTrue();
       });
 
       it('should turn left at ArrowLeft', () => {
         component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowLeft' }),
+          new KeyboardEvent('keydown', { key: 'ArrowLeft' })
         );
         expect(component.isTurningLeft).toBeTrue();
         expect(component.isTurningRight).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           true,
-          false,
+          false
         );
       });
 
       it('should turn right at ArrowRight', () => {
         component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowRight' }),
+          new KeyboardEvent('keydown', { key: 'ArrowRight' })
         );
         expect(component.isTurningRight).toBeTrue();
         expect(component.isTurningLeft).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           false,
-          true,
+          true
         );
       });
     });
@@ -1498,7 +1498,7 @@ describe('SimulatorComponent', () => {
       it('should stop moving forward when releasing the ArrowUp', () => {
         component.isMovingForward = true;
         component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowUp' }),
+          new KeyboardEvent('keyup', { key: 'ArrowUp' })
         );
         expect(component.isMovingForward).toBeFalse();
       });
@@ -1506,7 +1506,7 @@ describe('SimulatorComponent', () => {
       it('should stop moving backwards when releasing ArrowDown', () => {
         component.isMovingBackward = true;
         component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowDown' }),
+          new KeyboardEvent('keyup', { key: 'ArrowDown' })
         );
         expect(component.isMovingBackward).toBeFalse();
       });
@@ -1514,26 +1514,26 @@ describe('SimulatorComponent', () => {
       it('should reset both rotations when releasing ArrowLeft', () => {
         component.isTurningLeft = true;
         component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowLeft' }),
+          new KeyboardEvent('keyup', { key: 'ArrowLeft' })
         );
         expect(component.isTurningLeft).toBeFalse();
         expect(component.isTurningRight).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           false,
-          false,
+          false
         );
       });
 
       it('should reset both rotations when releasing ArrowRight', () => {
         component.isTurningRight = true;
         component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowRight' }),
+          new KeyboardEvent('keyup', { key: 'ArrowRight' })
         );
         expect(component.isTurningLeft).toBeFalse();
         expect(component.isTurningRight).toBeFalse();
         expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
           false,
-          false,
+          false
         );
       });
     });

@@ -53,13 +53,13 @@ export class BridgeComponent {
         undefined,
         (error) => {
           reject(error);
-        },
+        }
       );
     });
   }
 
   public getLastVertexPosition(
-    geometry: THREE.BufferGeometry,
+    geometry: THREE.BufferGeometry
   ): CANNON.Vec3 | null {
     const positionAttribute = geometry.getAttribute('position');
     if (!positionAttribute) {
@@ -88,7 +88,7 @@ export class BridgeComponent {
 
   private findObjectByName(
     object: THREE.Object3D,
-    name: string,
+    name: string
   ): THREE.Mesh | null {
     if ((object as THREE.Mesh).isMesh && object.name === name) {
       return object as THREE.Mesh;
@@ -122,7 +122,7 @@ export class BridgeComponent {
         tempVector.set(
           positionAttribute.getX(i),
           positionAttribute.getY(i),
-          positionAttribute.getZ(i),
+          positionAttribute.getZ(i)
         );
         tempVector.x *= 0.65;
 
@@ -151,7 +151,7 @@ export class BridgeComponent {
       position: new CANNON.Vec3(
         roadWorldPosition.x,
         roadWorldPosition.y,
-        roadWorldPosition.z,
+        roadWorldPosition.z
       ),
       collisionFilterGroup: BridgeComponent.GROUP_BRIDGE,
       collisionFilterMask:
@@ -165,13 +165,13 @@ export class BridgeComponent {
       worldQuaternion.x,
       worldQuaternion.y,
       worldQuaternion.z,
-      worldQuaternion.w,
+      worldQuaternion.w
     );
 
     const rotationQuaternionX = new CANNON.Quaternion();
     rotationQuaternionX.setFromAxisAngle(
       new CANNON.Vec3(1, 0, 0),
-      -Math.PI / 2,
+      -Math.PI / 2
     );
     const rotationQuaternionY = new CANNON.Quaternion();
     rotationQuaternionY.setFromAxisAngle(new CANNON.Vec3(0, 1, 0), Math.PI);
@@ -189,7 +189,7 @@ export class BridgeComponent {
         restitution: 0,
         contactEquationStiffness: 1e8,
         contactEquationRelaxation: 3,
-      },
+      }
     );
     this.world.addContactMaterial(bridgeWheelContactMaterial);
   }
@@ -227,7 +227,7 @@ export class BridgeComponent {
 
   public handleCarOnBridge(
     carPosition: CANNON.Vec3,
-    carBody: CANNON.Body,
+    carBody: CANNON.Body
   ): void {
     const retreat = 20;
     const isCurrentlyOnBridge = this.checkIfOnBridge(carPosition);
@@ -246,13 +246,11 @@ export class BridgeComponent {
         carPosition.z <= this.lastVertexPosition.z - retreat
       ) {
         this.hasCrossedBridge = true;
-        console.log('Вы успешно проехали мост.');
       } else if (
         this.lastVertexPosition &&
         carPosition.z > this.lastVertexPosition.z - retreat
       ) {
         this.outOfBounds = true;
-        console.log('Покинули мост досрочно');
       }
       this.isOnBridge = false;
     } else if (
@@ -261,13 +259,12 @@ export class BridgeComponent {
       hasReachedEndOfBridge
     ) {
       this.hasPassedByBridge = true;
-      console.log('Машина проехала мимо моста.');
     }
   }
 
   private movingAcrossTheBridge(
     carPosition: CANNON.Vec3,
-    carBody: CANNON.Body,
+    carBody: CANNON.Body
   ): void {
     const bridgeHeight = this.getBridgeHeightAtPosition(carPosition);
     const offsetY = 0.5;
@@ -293,7 +290,7 @@ export class BridgeComponent {
     currentZ: number,
     lastBridgeZ: number,
     roadHeight: number,
-    bridgeHeight: number,
+    bridgeHeight: number
   ): number {
     const distanceToRoad = Math.max(0, currentZ - lastBridgeZ);
     const transitionFactor = Math.min(distanceToRoad / 1000, 1);

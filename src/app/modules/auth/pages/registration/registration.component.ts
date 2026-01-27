@@ -48,7 +48,7 @@ export class RegistrationComponent implements OnInit {
     private api: ApiService,
     private dialogService: DialogService,
     private router: Router,
-    private route: ActivatedRoute,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit() {
@@ -69,20 +69,18 @@ export class RegistrationComponent implements OnInit {
             Validators.required,
             Validators.minLength(this.minLengthPass),
             Validators.pattern(
-              /(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*(){}":>?<~!"№;%:?*()]).{6,}/,
+              /(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[!@#$%^&*(){}":>?<~!"№;%:?*()]).{6,}/
             ),
           ],
         ],
         confirmPassword: ['', Validators.required],
       },
-      { validators: this.checkPasswords.bind(this) },
+      { validators: this.checkPasswords.bind(this) }
     );
   }
 
   private handleQueryParams(): void {
     this.route.queryParams.subscribe((params) => {
-      console.log('params', params);
-
       if (params['first_name']) {
         this.registrationForm.patchValue({
           userFirstName: params['first_name'],
@@ -116,11 +114,23 @@ export class RegistrationComponent implements OnInit {
 
     document.getElementById('telegram-login-container')?.appendChild(script);
 
-    window.addEventListener('telegramAuth', (event: any) => {
-      const u = event.detail;
+    interface TelegramAuthEvent extends Event {
+      detail: {
+        id: number;
+        username?: string;
+        auth_date: number;
+        hash: string;
+        first_name?: string;
+        last_name?: string;
+      };
+    }
+
+    window.addEventListener('telegramAuth', (event: Event) => {
+      const telegramEvent = event as TelegramAuthEvent;
+      const u = telegramEvent.detail;
       this.tgId = String(u.id);
       this.tgUsername = u.username || '';
-      this.tgAuthDate = u.auth_date;
+      this.tgAuthDate = String(u.auth_date);
       this.tgHash = u.hash;
 
       this.registrationForm.patchValue({
@@ -151,7 +161,7 @@ export class RegistrationComponent implements OnInit {
           const dialogRef = this.dialogService.openDialogWithRef(
             'Вы успешно зарегистрировались!',
             'Перейдите на страницу входа, чтобы авторизоваться.',
-            false,
+            false
           );
           dialogRef.afterClosed().subscribe(() => {
             this.router.navigate(['/login']);

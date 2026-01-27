@@ -8,8 +8,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 describe('CarComponent', () => {
   let component: CarComponent;
   let fixture: ComponentFixture<CarComponent>;
-  let mockScene: THREE.Scene;
-  let mockWorld: CANNON.World;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -45,11 +43,11 @@ describe('CarComponent', () => {
       const emitSpy = spyOn(component.carLoaded, 'emit').and.callThrough();
       const physicsSpy = spyOn(
         component,
-        'createPhysicsCarBody',
+        'createPhysicsCarBody'
       ).and.callThrough();
       const wheelsSpy = spyOn(
         component,
-        'createPhysicsWheels',
+        'createPhysicsWheels'
       ).and.callThrough();
 
       component.ground = {
@@ -109,11 +107,11 @@ describe('CarComponent', () => {
 
       const addToWorldSpy = spyOn(
         component.vehicle,
-        'addToWorld',
+        'addToWorld'
       ).and.callThrough();
       const addWheelSpy = spyOn(
         component.vehicle,
-        'addWheel',
+        'addWheel'
       ).and.callThrough();
 
       const scaleFactor = 1;
@@ -139,15 +137,15 @@ describe('CarComponent', () => {
 
       const updateSpeedSpy = spyOn<any>(
         component,
-        'updateCarSpeed',
+        'updateCarSpeed'
       ).and.callThrough();
       const updateRotationSpy = spyOn<any>(
         component,
-        'updateCarRotation',
+        'updateCarRotation'
       ).and.callThrough();
       const rotateWheelsSpy = spyOn<any>(
         component,
-        'rotateWheels',
+        'rotateWheels'
       ).and.callThrough();
 
       const coneSpy = spyOn(component.carCheckCollisionWithCones, 'emit');
@@ -160,10 +158,10 @@ describe('CarComponent', () => {
       expect(rotateWheelsSpy).toHaveBeenCalled();
 
       expect(component.car.position.x).toBeCloseTo(
-        component.carBody.position.x,
+        component.carBody.position.x
       );
       expect(component.car.quaternion.y).toBeCloseTo(
-        component.carBody.quaternion.y,
+        component.carBody.quaternion.y
       );
 
       expect(coneSpy).toHaveBeenCalledWith(component.carBody.position);
@@ -243,7 +241,7 @@ describe('CarComponent', () => {
         isMovingForward,
         isMovingBackward,
         isTurningLeft,
-        isTurningRight,
+        isTurningRight
       );
 
       expect(component.carBody.angularVelocity.y).toBe(1);
@@ -259,7 +257,7 @@ describe('CarComponent', () => {
         isMovingForward,
         isMovingBackward,
         isTurningLeft,
-        isTurningRight,
+        isTurningRight
       );
 
       expect(component.carBody.angularVelocity.y).toBe(-1);
@@ -275,7 +273,7 @@ describe('CarComponent', () => {
         isMovingForward,
         isMovingBackward,
         isTurningLeft,
-        isTurningRight,
+        isTurningRight
       );
 
       expect(component.carBody.angularVelocity.y).toBe(0);
@@ -291,7 +289,7 @@ describe('CarComponent', () => {
         isMovingForward,
         isMovingBackward,
         isTurningLeft,
-        isTurningRight,
+        isTurningRight
       );
 
       expect(component.carBody.angularVelocity.y).toBe(0);
@@ -307,7 +305,7 @@ describe('CarComponent', () => {
         isMovingForward,
         isMovingBackward,
         isTurningLeft,
-        isTurningRight,
+        isTurningRight
       );
 
       expect(component.carBody.angularVelocity.y).toBe(-1);
@@ -323,7 +321,7 @@ describe('CarComponent', () => {
         isMovingForward,
         isMovingBackward,
         isTurningLeft,
-        isTurningRight,
+        isTurningRight
       );
 
       expect(component.carBody.angularVelocity.y).toBe(1);

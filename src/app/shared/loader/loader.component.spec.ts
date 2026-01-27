@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LoaderComponent } from './loader.component';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 import { ModelsLoaderService } from '../../core/services/models-loader.service';
 
 class MockModelsLoaderService {

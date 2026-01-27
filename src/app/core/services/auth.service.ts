@@ -3,6 +3,16 @@ import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { UserService } from './user.service';
 import { StorageService } from './storage.service';
+import { User } from '../models/user';
+
+interface LoginResponse {
+  token: string;
+}
+
+interface TelegramLoginResponse {
+  token: string;
+  user: User;
+}
 
 @Injectable({
   providedIn: 'root',
@@ -17,7 +27,7 @@ export class AuthService {
   constructor(
     private http: HttpClient,
     private userService: UserService,
-    private storage: StorageService,
+    private storage: StorageService
   ) {}
 
   /**
@@ -26,16 +36,16 @@ export class AuthService {
    * @param password
    * @returns
    */
-  public login(email: string, password: string): Observable<any> {
+  public login(email: string, password: string): Observable<LoginResponse> {
     return this.http
-      .post<{ token: string }>(`${this.apiUrl}/login`, { email, password })
+      .post<LoginResponse>(`${this.apiUrl}/login`, { email, password })
       .pipe(
         tap((res) => {
           if (res.token) {
             localStorage.setItem(this.TOKEN_KEY, res.token);
             this.userService.loadUserFromApi().subscribe();
           }
-        }),
+        })
       );
   }
 
@@ -44,19 +54,20 @@ export class AuthService {
    * @param telegramId
    * @returns
    */
-  public loginWithTelegram(telegramId: number): Observable<any> {
+  public loginWithTelegram(
+    telegramId: number
+  ): Observable<TelegramLoginResponse> {
     return this.http
-      .post<{
-        token: string;
-        user: any;
-      }>(`${this.apiUrl}/login-telegram`, { telegram_id: telegramId })
+      .post<TelegramLoginResponse>(`${this.apiUrl}/login-telegram`, {
+        telegram_id: telegramId,
+      })
       .pipe(
         tap((res) => {
           if (res.token) {
             localStorage.setItem(this.TOKEN_KEY, res.token);
             this.userService.setUser(res.user);
           }
-        }),
+        })
       );
   }
 

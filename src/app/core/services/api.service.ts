@@ -3,6 +3,16 @@ import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
 import { User } from '../models/user';
 
+interface CreateUserResponse {
+  id?: number;
+  username?: string;
+}
+
+interface CompleteLevelResponse {
+  success: boolean;
+  message?: string;
+}
+
 @Injectable({
   providedIn: 'root',
 })
@@ -22,17 +32,19 @@ export class ApiService {
    * @returns
    */
   public createUser(user: User): Observable<User> {
-    return this.http.post<any>(`${this.apiUrl}/create-user`, user).pipe(
-      map((res: any) => ({
-        userId: res.id ?? 0,
-        isTelegram: user.isTelegram,
-        username: res.username ?? user.username,
-        userfirstname: user.userfirstname,
-        userlastname: user.userlastname,
-        email: user.email,
-        password_plain: '',
-      })),
-    );
+    return this.http
+      .post<CreateUserResponse>(`${this.apiUrl}/create-user`, user)
+      .pipe(
+        map((res: CreateUserResponse) => ({
+          userId: res.id ?? 0,
+          isTelegram: user.isTelegram,
+          username: res.username ?? user.username,
+          userfirstname: user.userfirstname,
+          userlastname: user.userlastname,
+          email: user.email,
+          password_plain: '',
+        }))
+      );
   }
 
   /**
@@ -54,7 +66,7 @@ export class ApiService {
    * @returns
    */
   public getLevelsFromServer(
-    userId: number,
+    userId: number
   ): Observable<{ [key: string]: boolean }> {
     return this.http
       .get<{
@@ -70,11 +82,11 @@ export class ApiService {
             response.levels.forEach(
               (lvl: { level: string | number; status: boolean }) => {
                 levelMap[lvl.level] = lvl.status;
-              },
+              }
             );
             return levelMap;
-          },
-        ),
+          }
+        )
       );
   }
 
@@ -84,11 +96,17 @@ export class ApiService {
    * @param currentLevel
    * @returns
    */
-  public completeLevel(userId: number, currentLevel: string): Observable<any> {
+  public completeLevel(
+    userId: number,
+    currentLevel: string
+  ): Observable<CompleteLevelResponse> {
     const body = {
       userId: userId,
       currentLevel: currentLevel,
     };
-    return this.http.post<any>(`${this.apiUrl}/complete-level`, body);
+    return this.http.post<CompleteLevelResponse>(
+      `${this.apiUrl}/complete-level`,
+      body
+    );
   }
 }

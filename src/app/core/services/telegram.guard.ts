@@ -3,11 +3,11 @@ import { CanActivateFn, Router } from '@angular/router';
 import { AuthService } from './auth.service';
 import { catchError, map, of } from 'rxjs';
 
-export const telegramGuard: CanActivateFn = (route, state) => {
+export const telegramGuard: CanActivateFn = () => {
   const router = inject(Router);
   const auth = inject(AuthService);
 
-  const tgData = (window as any)?.Telegram?.WebApp?.initDataUnsafe;
+  const tgData = window?.Telegram?.WebApp?.initDataUnsafe;
   const telegramId = tgData?.user?.id;
 
   if (!telegramId) {
@@ -20,6 +20,6 @@ export const telegramGuard: CanActivateFn = (route, state) => {
 
   return auth.loginWithTelegram(telegramId).pipe(
     map(() => router.createUrlTree(['/home'])),
-    catchError(() => of(router.createUrlTree(['/registration']))),
+    catchError(() => of(router.createUrlTree(['/registration'])))
   );
 };

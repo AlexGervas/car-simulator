@@ -2,14 +2,25 @@ import { DOCUMENT } from '@angular/common';
 import { Inject, Injectable } from '@angular/core';
 import { User } from '../models/user';
 
+interface TelegramWebApp {
+  initDataUnsafe?: {
+    user?: {
+      id: number;
+      username?: string;
+      first_name?: string;
+      last_name?: string;
+    };
+  };
+}
+
 @Injectable({
   providedIn: 'root',
 })
 export class TelegramService {
-  private window: any;
-  public tg: any;
+  private window: Window | null;
+  public tg: TelegramWebApp | undefined;
 
-  constructor(@Inject(DOCUMENT) private _document: any) {
+  constructor(@Inject(DOCUMENT) private _document: Document) {
     this.window = this._document.defaultView;
     this.tg = this.window?.Telegram?.WebApp;
   }

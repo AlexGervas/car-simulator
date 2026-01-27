@@ -5,12 +5,6 @@ import { ModelsLoaderService } from '../../../core/services/models-loader.servic
 import * as THREE from 'three';
 import { of } from 'rxjs';
 
-class MockModelsLoaderService {
-  isLoading$ = of(false);
-  show() {}
-  hide() {}
-}
-
 describe('ModelViewerComponent', () => {
   let component: ModelViewerComponent;
   let fixture: ComponentFixture<ModelViewerComponent>;
@@ -22,7 +16,7 @@ describe('ModelViewerComponent', () => {
       ['show', 'hide'],
       {
         isLoading$: of(false),
-      },
+      }
     );
 
     await TestBed.configureTestingModule({
@@ -36,7 +30,7 @@ describe('ModelViewerComponent', () => {
     fixture = TestBed.createComponent(ModelViewerComponent);
     component = fixture.componentInstance;
     modelsLoaderService = TestBed.inject(
-      ModelsLoaderService,
+      ModelsLoaderService
     ) as jasmine.SpyObj<ModelsLoaderService>;
     fixture.detectChanges();
   });

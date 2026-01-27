@@ -2,6 +2,12 @@ import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
+export interface DialogData {
+  showButtons: boolean;
+  title: string;
+  message: string;
+}
+
 @Component({
   selector: 'app-dialog',
   standalone: true,
@@ -13,7 +19,7 @@ export class DialogComponent {
   constructor(
     public dialogRef: MatDialogRef<DialogComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data: { showButtons: any; title: string; message: string },
+    public data: DialogData
   ) {}
 
   public onConfirm(): void {

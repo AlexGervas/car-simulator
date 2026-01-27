@@ -16,7 +16,7 @@ import { MatButtonModule } from '@angular/material/button';
 describe('HeaderComponent', () => {
   let component: HeaderComponent;
   let fixture: ComponentFixture<HeaderComponent>;
-  let authService: AuthService;
+  let _authService: AuthService;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
@@ -35,7 +35,7 @@ describe('HeaderComponent', () => {
 
     fixture = TestBed.createComponent(HeaderComponent);
     component = fixture.componentInstance;
-    authService = TestBed.inject(AuthService);
+    _authService = TestBed.inject(AuthService);
   });
 
   afterEach(() => {

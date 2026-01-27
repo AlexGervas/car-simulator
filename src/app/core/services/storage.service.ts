@@ -16,8 +16,8 @@ export class StorageService {
       const cloudStorage = window.Telegram?.WebApp?.CloudStorage;
       if (cloudStorage) {
         try {
-          return await new Promise((resolve) => {
-            cloudStorage.getItem(key, (err: any, value: string) => {
+          return await new Promise<string | null>((resolve) => {
+            cloudStorage.getItem(key, (err, value: string) => {
               if (err) {
                 console.warn('CloudStorage getItem error:', err);
                 resolve(null);
@@ -26,9 +26,9 @@ export class StorageService {
               }
             });
           });
-        } catch (e) {
+        } catch {
           console.warn(
-            'CloudStorage not supported, fallback to sessionStorage',
+            'CloudStorage not supported, fallback to sessionStorage'
           );
           return sessionStorage.getItem(key);
         }
@@ -51,7 +51,7 @@ export class StorageService {
       if (cloudStorage) {
         try {
           await new Promise<void>((resolve) => {
-            cloudStorage.setItem(key, value, (err?: any) => {
+            cloudStorage.setItem(key, value, (err) => {
               if (err) {
                 console.warn('CloudStorage setItem error:', err);
               }
@@ -59,9 +59,9 @@ export class StorageService {
             });
           });
           return;
-        } catch (e) {
+        } catch {
           console.warn(
-            'CloudStorage not supported, fallback to sessionStorage',
+            'CloudStorage not supported, fallback to sessionStorage'
           );
           sessionStorage.setItem(key, value);
           return;
@@ -84,7 +84,7 @@ export class StorageService {
       if (cloudStorage) {
         try {
           await new Promise<void>((resolve) => {
-            cloudStorage.removeItem(key, (err?: any) => {
+            cloudStorage.removeItem(key, (err) => {
               if (err) {
                 console.warn('CloudStorage removeItem error:', err);
               }
@@ -92,9 +92,9 @@ export class StorageService {
             });
           });
           return;
-        } catch (e) {
+        } catch {
           console.warn(
-            'CloudStorage not supported, fallback to sessionStorage',
+            'CloudStorage not supported, fallback to sessionStorage'
           );
           sessionStorage.removeItem(key);
           return;

@@ -37,7 +37,7 @@ export class LoginComponent implements OnInit {
     private formBuilder: FormBuilder,
     private authService: AuthService,
     private router: Router,
-    private dialogService: DialogService,
+    private dialogService: DialogService
   ) {}
 
   ngOnInit(): void {
@@ -53,18 +53,17 @@ export class LoginComponent implements OnInit {
   onSubmit(): void {
     if (this.loginForm.valid) {
       const { email, password } = this.loginForm.value;
-      console.log('Login data:', this.loginForm.value);
 
       this.authService.login(email, password).subscribe({
         next: () => {
           this.router.navigate(['/home']);
         },
-        error: (err: any) => {
+        error: (err: unknown) => {
           console.error(err);
           this.dialogService.openDialog(
             'Ошибка авторизации',
             'Неверный email или пароль',
-            false,
+            false
           );
         },
       });

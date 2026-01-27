@@ -12,7 +12,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 export class StopLineComponent {
   @Input() scene!: THREE.Scene;
 
-  public createStopLine(lastConeBox: any): Promise<void> {
+  public createStopLine(lastConeBox: THREE.Box3): Promise<void> {
     return new Promise((resolve, reject) => {
       const loader = new GLTFLoader();
       const finishLinePath = 'models/road-elements/finish_line.glb';
@@ -30,7 +30,7 @@ export class StopLineComponent {
         (error) => {
           console.error('The finish line model is not loaded:', error);
           reject(error);
-        },
+        }
       );
 
       if (lastConeBox) {
@@ -46,7 +46,7 @@ export class StopLineComponent {
 
         geometry.setAttribute(
           'position',
-          new THREE.BufferAttribute(vertices, 3),
+          new THREE.BufferAttribute(vertices, 3)
         );
 
         const material = new THREE.LineBasicMaterial({ color: 0xff0000 });

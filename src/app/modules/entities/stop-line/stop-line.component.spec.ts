@@ -30,7 +30,7 @@ describe('StopLineComponent', () => {
           };
           onLoad(gltf);
         }
-      },
+      }
     );
 
     fixture = TestBed.createComponent(StopLineComponent);
@@ -45,7 +45,10 @@ describe('StopLineComponent', () => {
   });
 
   describe('createStopLine()', () => {
-    const lastConeBox = { max: { y: 1, z: 5 } };
+    const lastConeBox = new THREE.Box3(
+      new THREE.Vector3(-1, 0, 0),
+      new THREE.Vector3(1, 1, 5)
+    );
 
     it('should create a stop line with a model', async () => {
       throwLoadError = false;
@@ -62,7 +65,7 @@ describe('StopLineComponent', () => {
       throwLoadError = true;
 
       await expectAsync(
-        component.createStopLine(lastConeBox),
+        component.createStopLine(lastConeBox)
       ).toBeRejectedWithError('Load error');
     });
   });

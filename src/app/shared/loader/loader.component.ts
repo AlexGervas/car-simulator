@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output } from '@angular/core';
+import { Component } from '@angular/core';
 import { ModelsLoaderService } from '../../core/services/models-loader.service';
 import { CommonModule } from '@angular/common';
 

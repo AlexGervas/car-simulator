@@ -1,6 +1,6 @@
 import { Component, Input } from '@angular/core';
 import * as THREE from 'three';
-import { GLTFLoader, GLTF } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { ConeStateService } from '../../../core/services/cone-state.service';
 import { StopLineService } from '../../../core/services/stop-line.service';
 import * as CANNON from 'cannon-es';
@@ -34,7 +34,7 @@ export class TrafficConesComponent {
 
   constructor(
     private coneStateService: ConeStateService,
-    public stopLineService: StopLineService,
+    public stopLineService: StopLineService
   ) {
     this.loader = new GLTFLoader();
   }
@@ -46,7 +46,6 @@ export class TrafficConesComponent {
   public getConeByPosition(position: THREE.Vector3): THREE.Object3D | null {
     for (const cone of this.cones) {
       if (cone.position.distanceTo(position) < 0.1) {
-        console.log('Cone found:', cone);
         return cone;
       }
     }
@@ -55,7 +54,7 @@ export class TrafficConesComponent {
 
   public getInitialConePositions(): CANNON.Vec3[] {
     return this.initialConePositions.map(
-      (position) => new CANNON.Vec3(position.x, position.y, position.z),
+      (position) => new CANNON.Vec3(position.x, position.y, position.z)
     );
   }
 
@@ -68,7 +67,7 @@ export class TrafficConesComponent {
     spacing: number,
     distanceFromCar: number,
     positions?: THREE.Vector3[],
-    withStopLine: boolean = true,
+    withStopLine: boolean = true
   ): Promise<void> {
     const trafficConePath = 'models/road-elements/traffic-cone.glb';
     const promises: Promise<void>[] = [];
@@ -117,7 +116,7 @@ export class TrafficConesComponent {
           undefined,
           (error) => {
             reject(error);
-          },
+          }
         );
       });
       promises.push(promise);
@@ -128,7 +127,6 @@ export class TrafficConesComponent {
         if (this.cones.length === 0) {
           throw new Error('Cones are not loaded!');
         }
-        console.log('All cones loaded');
         if (withStopLine) {
           this.stopLineService.callCreateStopLine();
         }
@@ -141,7 +139,7 @@ export class TrafficConesComponent {
   private createPhysicsConeModel(
     cone: THREE.Object3D,
     radius: number,
-    height: number,
+    height: number
   ): void {
     const coneShape = new CANNON.Cylinder(0.01, radius, height, 8);
     const coneBody = new CANNON.Body({
@@ -149,7 +147,7 @@ export class TrafficConesComponent {
       position: new CANNON.Vec3(
         cone.position.x,
         cone.position.y + height / 2,
-        cone.position.z,
+        cone.position.z
       ),
       collisionFilterGroup: TrafficConesComponent.GROUP_CONE,
       collisionFilterMask:
@@ -173,7 +171,7 @@ export class TrafficConesComponent {
     offsetX: number,
     width: number,
     height: number,
-    gap: number,
+    gap: number
   ): Promise<void> {
     if (!this.car) {
       return Promise.reject('Car not defined');
@@ -201,7 +199,7 @@ export class TrafficConesComponent {
 
     this.parkingPocket = new THREE.Box3(
       new THREE.Vector3(positions[0].x, 0, positions[2].z),
-      new THREE.Vector3(positions[1].x, 2, positions[0].z),
+      new THREE.Vector3(positions[1].x, 2, positions[0].z)
     );
 
     const lineMaterial = new THREE.MeshBasicMaterial({ color: 0xffffff });
@@ -213,7 +211,7 @@ export class TrafficConesComponent {
     topLine.position.set(
       (positions[0].x + positions[1].x) / 2,
       0.01,
-      positions[0].z,
+      positions[0].z
     );
     this.scene.add(topLine);
     this.parkingLines.push(topLine);
@@ -221,14 +219,14 @@ export class TrafficConesComponent {
     const bottomLineLength = positions[3].x - positions[2].x;
     const bottomLineGeometry = new THREE.PlaneGeometry(
       bottomLineLength,
-      lineWidth,
+      lineWidth
     );
     const bottomLine = new THREE.Mesh(bottomLineGeometry, lineMaterial);
     bottomLine.rotation.x = -Math.PI / 2;
     bottomLine.position.set(
       (positions[2].x + positions[3].x) / 2,
       0.01,
-      positions[2].z,
+      positions[2].z
     );
     this.scene.add(bottomLine);
     this.parkingLines.push(bottomLine);
@@ -236,14 +234,14 @@ export class TrafficConesComponent {
     const rightLineLength = Math.abs(positions[1].z - positions[3].z);
     const rightLineGeometry = new THREE.PlaneGeometry(
       lineWidth,
-      rightLineLength,
+      rightLineLength
     );
     const rightLine = new THREE.Mesh(rightLineGeometry, lineMaterial);
     rightLine.rotation.x = -Math.PI / 2;
     rightLine.position.set(
       positions[1].x,
       0.01,
-      (positions[1].z + positions[3].z) / 2,
+      (positions[1].z + positions[3].z) / 2
     );
     this.scene.add(rightLine);
     this.parkingLines.push(rightLine);
@@ -261,7 +259,7 @@ export class TrafficConesComponent {
       dash.position.set(
         positions[0].x,
         0.01,
-        startZ - i * (dashSize + gapSize) - dashSize / 2,
+        startZ - i * (dashSize + gapSize) - dashSize / 2
       );
       this.scene.add(dash);
       this.parkingLines.push(dash);
@@ -288,11 +286,9 @@ export class TrafficConesComponent {
   public createSnake(): Promise<void> {
     return this.loadConeModel(5, 15, 15, undefined, true).then(() => {
       if (!this.camera) {
-        console.log('Camera is not defined');
         return;
       }
       if (!this.car) {
-        console.log('Car is not defined');
         return;
       }
       return this.stopLineService.callCreateStopLine();

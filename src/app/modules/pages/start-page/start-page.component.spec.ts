@@ -6,7 +6,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { LevelService } from '../../../core/services/level.service';
 import { TelegramService } from '../../../core/services/telegram.service';
 import { Router } from '@angular/router';
-import { BehaviorSubject, of } from 'rxjs';
+import { BehaviorSubject } from 'rxjs';
 
 describe('StartPageComponent', () => {
   let component: StartPageComponent;
@@ -29,7 +29,7 @@ describe('StartPageComponent', () => {
       {
         levels$: levels$,
         levelOrder: ['snake', 'parallel-parking', 'garage', 'steep-grade'],
-      },
+      }
     );
 
     const mockTelegramService = jasmine.createSpyObj('TelegramService', [
@@ -65,14 +65,14 @@ describe('StartPageComponent', () => {
 
       const snakeBtn = component.levelBtns.find((btn) => btn.name === 'snake');
       const parkingBtn = component.levelBtns.find(
-        (btn) => btn.name === 'parallel-parking',
+        (btn) => btn.name === 'parallel-parking'
       );
       const garageBtn = component.levelBtns.find(
-        (btn) => btn.name === 'garage',
+        (btn) => btn.name === 'garage'
       );
 
       expect(snakeBtn?.available).toBeTrue();
-      expect(parkingBtn?.available).toBeTrue;
+      expect(parkingBtn?.available).toBeTrue();
       expect(garageBtn?.available).toBeFalse();
       expect(snakeBtn?.icon).toBe('svg/snake.svg');
       expect(parkingBtn?.icon).toBe('svg/parallel_parking.svg');

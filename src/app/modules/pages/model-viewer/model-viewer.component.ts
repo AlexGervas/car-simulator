@@ -52,7 +52,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
 
   constructor(
     private modelsLoaderService: ModelsLoaderService,
-    private rendererFactory: RendererFactoryService,
+    private rendererFactory: RendererFactoryService
   ) {}
 
   ngOnInit(): void {
@@ -62,7 +62,6 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
         return this.loadModel();
       })
       .then(() => {
-        console.log('Model loaded successfully');
         this.animate();
       })
       .catch((error) => {
@@ -86,7 +85,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
         70,
         container.clientWidth / container.clientHeight,
         0.1,
-        1000,
+        1000
       );
       this.camera.position.set(2, 3, 5);
       this.camera.lookAt(0, 0, 0);
@@ -114,7 +113,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
         (error) => {
           console.error('Error loading HDRI:', error);
           reject(error);
-        },
+        }
       );
 
       const planeGeometry = new THREE.PlaneGeometry(100, 100);
@@ -197,7 +196,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
           this.modelsLoaderService.hide();
           console.error('Error loading model:', error);
           reject(error);
-        },
+        }
       );
     });
   }
@@ -211,7 +210,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('window:resize', [])
-  private onWindowResize(): void {
+  protected onWindowResize(): void {
     const container = this.viewerContainer.nativeElement;
     this.camera.aspect = container.clientWidth / container.clientHeight;
     this.camera.updateProjectionMatrix();
@@ -219,7 +218,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
   }
 
   @HostListener('click', ['$event'])
-  private onClick(event: MouseEvent): void {
+  protected onClick(event: MouseEvent): void {
     const rect = this.viewerContainer.nativeElement.getBoundingClientRect();
     this.mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
     this.mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
@@ -227,9 +226,8 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
     this.raycaster.setFromCamera(this.mouse, this.camera);
     const intersects = this.raycaster.intersectObjects(
       this.model.children,
-      true,
+      true
     );
-    console.log(111, intersects);
 
     if (intersects.length > 0) {
       const clickedObject = intersects[0].object;
@@ -240,42 +238,42 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
           this.isFrontLeftDoorOpen = this.toggleDoor(
             this.frontLeftDoor,
             this.isFrontLeftDoorOpen,
-            -1,
+            -1
           );
           return;
         } else if (parent.name === this.frontRightDoor.name) {
           this.isFrontRightDoorOpen = this.toggleDoor(
             this.frontRightDoor,
             this.isFrontRightDoorOpen,
-            1,
+            1
           );
           return;
         } else if (parent.name == this.backLeftDoor.name) {
           this.isBackLeftDoorOpen = this.toggleDoor(
             this.backLeftDoor,
             this.isBackLeftDoorOpen,
-            -1,
+            -1
           );
           return;
         } else if (parent.name === this.backRightDoor.name) {
           this.isBackRightDoorOpen = this.toggleDoor(
             this.backRightDoor,
             this.isBackRightDoorOpen,
-            1,
+            1
           );
           return;
         } else if (parent.name === this.carTrunk.name) {
           this.isCarTrunkOpen = this.toggleDoor(
             this.carTrunk,
             this.isCarTrunkOpen,
-            1,
+            1
           );
           return;
         } else if (parent.name.includes(this.carHood.name)) {
           this.isCarHoodOpen = this.toggleDoor(
             this.carHood,
             this.isCarHoodOpen,
-            -1,
+            -1
           );
           return;
         }
@@ -287,7 +285,7 @@ export class ModelViewerComponent implements OnInit, OnDestroy {
   private toggleDoor(
     door: THREE.Object3D,
     isOpen: boolean,
-    direction: number,
+    direction: number
   ): boolean {
     const rotation = isOpen ? 0 : THREE.MathUtils.degToRad(45) * direction;
 
