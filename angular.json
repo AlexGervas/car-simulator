@@ -32,7 +32,10 @@
               "src/styles.css",
               "src/app/modules/auth/styles/auth.css"
             ],
-            "scripts": []
+            "scripts": [],
+            "optimization": {
+              "fonts": false
+            }
           },
           "configurations": {
             "production": {

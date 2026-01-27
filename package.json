@@ -5,11 +5,11 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build --base-href 'https://alexgervas.github.io/car-simulator/' && node copy-404.js && node rename-browser-to-docs.js",
+    "build": "ng build --base-href 'https://alexgervas.github.io/car-simulator/' && node copy-404.cjs && node rename-browser-to-docs.cjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "test-headless": "ng test --karma-config karma.conf.ci.cjs --watch=false --browsers=ChromeHeadlessNoSandbox --code-coverage",
-    "start-bot": "node bot.js",
+    "start-bot": "node bot.cjs",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{ts,html,css,scss,json}\"",
