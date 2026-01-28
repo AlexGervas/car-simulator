@@ -3,9 +3,13 @@
 ![Build Status](https://github.com/AlexGervas/car-simulator/actions/workflows/deploy.yml/badge.svg)
 ![Deploy](https://img.shields.io/github/deployments/AlexGervas/car-simulator/github-pages)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
+
 ![Angular](https://img.shields.io/badge/Angular-18-DD0031?logo=angular&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-20-339933?logo=node.js&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-15-336791?logo=postgresql&logoColor=white)
+![ESLint](https://img.shields.io/badge/ESLint-9-4B32C3?logo=eslint&logoColor=white)
+![Prettier](https://img.shields.io/badge/Prettier-3-F7B93E?logo=prettier&logoColor=black)
+![Husky](https://img.shields.io/badge/Husky-9-000000?logo=git&logoColor=white)
 
 A web application on **Angular** for car driving simulation with support for a mini-application **Telegram** and an integrated **Telegram bot** for user interaction. The interactive car simulator provides realistic **3D physics** for driving and interacts with the backend API. The application also implements **UI components**. Testing is carried out using **Karma** and **Jasmine**.
 
@@ -45,6 +49,30 @@ A web application on **Angular** for car driving simulation with support for a m
 </td>
 </tr>
 </table>
+
+## Code quality & developer tools
+
+The project uses a modern toolchain to maintain **code quality**, **consistent formatting**, and **clean Git history**:
+
+- **ESLint** — static code analysis for TypeScript, JavaScript, and Angular templates  
+  Enforces best practices, prevents common bugs, and ensures consistent coding standards.
+
+- **Prettier** — automatic code formatting  
+  Keeps the codebase clean and consistent without manual effort.
+
+- **Husky** — Git hooks integration  
+  Automatically runs checks before commits to prevent broken or low-quality code from being pushed.
+
+- **lint-staged** — optimized pre-commit checks  
+  Runs ESLint and Prettier **only on staged files**, making checks fast and efficient.
+
+### Pre-commit workflow
+Before every commit:
+1. Prettier formats staged files
+2. ESLint validates TypeScript and Angular templates
+3. The commit is blocked if any errors are found
+
+This ensures that only **clean, linted, and well-formatted code** enters the repository.
 
 ## Installation and launch
 
