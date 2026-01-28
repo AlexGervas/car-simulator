@@ -33,9 +33,9 @@ import { DialogService } from '../../../core/services/dialog.service';
 import { User } from '../../../core/models/types';
 import { ApiService } from '../../../core/services/api.service';
 import { TelegramService } from '../../../core/services/telegram.service';
-import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { SceneService } from '../../../core/services/scene.service';
 
 @Component({
   selector: 'app-simulator',
@@ -122,9 +122,9 @@ export class SimulatorComponent
     public dialog: MatDialog,
     private api: ApiService,
     private telegramService: TelegramService,
-    private rendererFactory: RendererFactoryService,
     private userService: UserService,
-    private authService: AuthService
+    private authService: AuthService,
+    private sceneService: SceneService
   ) {}
 
   async ngOnInit() {
@@ -195,7 +195,6 @@ export class SimulatorComponent
     });
 
     this.startRenderingLoop();
-    window.addEventListener('resize', this.onWindowResize.bind(this), false);
   }
 
   ngAfterViewInit() {
@@ -436,31 +435,15 @@ export class SimulatorComponent
   }
 
   public initSceneAndWorld(): void {
-    this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0xc0c0c0);
-
     this.world = new CANNON.World();
     this.world.gravity.set(0, -9.82, 0);
 
-    this.camera = new THREE.PerspectiveCamera(
-      70,
-      window.innerWidth / window.innerHeight,
-      0.1,
-      1000
-    );
-    this.camera.position.set(0, 2, 5);
-    this.camera.lookAt(0, 0, 0);
-
     const canvas = this.el.nativeElement.querySelector('#webgl-canvas');
-    this.renderer = this.rendererFactory.createRenderer(canvas);
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.sceneService.init(canvas);
 
-    const light = new THREE.AmbientLight(0xffffff, 0.5);
-    this.scene.add(light);
-
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    directionalLight.position.set(5, 10, 7.5);
-    this.scene.add(directionalLight);
+    this.scene = this.sceneService.scene;
+    this.camera = this.sceneService.camera;
+    this.renderer = this.sceneService.renderer;
   }
 
   public animatePhysics(deltaTime: number): void {
@@ -507,28 +490,16 @@ export class SimulatorComponent
       isGameOver: this.isGameOver,
     });
 
-    this.updateCameraPosition();
+    if (this.car) {
+      this.sceneService.updateCamera(this.car);
+    }
 
     // const cannonDebugger = CannonDebugger(this.scene, this.world, {
     //   color: 0xff0000,
     // });
     // cannonDebugger.update();
 
-    this.renderer.render(this.scene, this.camera);
-  }
-
-  public updateCameraPosition() {
-    if (this.car) {
-      const offset = new THREE.Vector3(0, 2, 5);
-      this.camera.position.copy(this.car.position).add(offset);
-
-      const direction = new THREE.Vector3();
-      this.car.getWorldDirection(direction);
-      direction.y = 0;
-      direction.normalize();
-
-      this.camera.lookAt(this.car.position.clone().sub(direction));
-    }
+    this.sceneService.render();
   }
 
   private checkCollisionWithCones(carPosition: CANNON.Vec3) {
@@ -947,11 +918,6 @@ export class SimulatorComponent
   @HostListener('window:resize')
   onResize() {
     this.isMobileDevice = this.deviceService.isMobile();
-  }
-
-  private onWindowResize() {
-    this.camera.aspect = window.innerWidth / window.innerHeight;
-    this.camera.updateProjectionMatrix();
-    this.renderer.setSize(window.innerWidth, window.innerHeight);
+    this.sceneService.resize();
   }
 }
