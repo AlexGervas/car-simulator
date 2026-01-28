@@ -14,7 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { ErrorMessages } from '../../../../core/models/error-messages';
 import { ApiService } from '../../../../core/services/api.service';
-import { User } from '../../../../core/models/user';
+import { TelegramAuthEvent, User } from '../../../../core/models/types';
 import { DialogService } from '../../../../core/services/dialog.service';
 
 @Component({
@@ -113,17 +113,6 @@ export class RegistrationComponent implements OnInit {
     script.async = true;
 
     document.getElementById('telegram-login-container')?.appendChild(script);
-
-    interface TelegramAuthEvent extends Event {
-      detail: {
-        id: number;
-        username?: string;
-        auth_date: number;
-        hash: string;
-        first_name?: string;
-        last_name?: string;
-      };
-    }
 
     window.addEventListener('telegramAuth', (event: Event) => {
       const telegramEvent = event as TelegramAuthEvent;

@@ -3,16 +3,7 @@ import { Injectable } from '@angular/core';
 import { Observable, tap } from 'rxjs';
 import { UserService } from './user.service';
 import { StorageService } from './storage.service';
-import { User } from '../models/user';
-
-interface LoginResponse {
-  token: string;
-}
-
-interface TelegramLoginResponse {
-  token: string;
-  user: User;
-}
+import { LoginResponse, TelegramLoginResponse } from '../models/types';
 
 @Injectable({
   providedIn: 'root',

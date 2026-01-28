@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
-import { User } from '../models/user';
+import { User } from '../models/types';
 import { TelegramService } from './telegram.service';
 import { tap } from 'rxjs/operators';
 import { ApiService } from './api.service';
@@ -14,7 +14,7 @@ export class UserService {
 
   constructor(
     private telegramService: TelegramService,
-    private api: ApiService,
+    private api: ApiService
   ) {}
 
   public init(): void {
@@ -42,7 +42,7 @@ export class UserService {
     return this.api
       .getCurrentUser()
       .pipe(
-        tap((user) => this.userSubject.next({ ...user, isTelegram: false })),
+        tap((user) => this.userSubject.next({ ...user, isTelegram: false }))
       );
   }
 

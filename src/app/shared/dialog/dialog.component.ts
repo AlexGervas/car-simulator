@@ -1,12 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, Inject } from '@angular/core';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-
-export interface DialogData {
-  showButtons: boolean;
-  title: string;
-  message: string;
-}
+import { DialogData } from '../../core/models/types';
 
 @Component({
   selector: 'app-dialog',

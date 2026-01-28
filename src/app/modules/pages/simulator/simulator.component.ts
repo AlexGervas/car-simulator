@@ -30,7 +30,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { of, Subscription, switchMap, tap } from 'rxjs';
 import { StopLineComponent } from '../../entities/stop-line/stop-line.component';
 import { DialogService } from '../../../core/services/dialog.service';
-import { User } from '../../../core/models/user';
+import { User } from '../../../core/models/types';
 import { ApiService } from '../../../core/services/api.service';
 import { TelegramService } from '../../../core/services/telegram.service';
 import { RendererFactoryService } from '../../../core/services/renderer-factory.service';

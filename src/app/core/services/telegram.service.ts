@@ -1,17 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { Inject, Injectable } from '@angular/core';
-import { User } from '../models/user';
-
-interface TelegramWebApp {
-  initDataUnsafe?: {
-    user?: {
-      id: number;
-      username?: string;
-      first_name?: string;
-      last_name?: string;
-    };
-  };
-}
+import { TelegramWebApp, User } from '../models/types';
 
 @Injectable({
   providedIn: 'root',

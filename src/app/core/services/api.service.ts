@@ -1,17 +1,11 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { map, Observable } from 'rxjs';
-import { User } from '../models/user';
-
-interface CreateUserResponse {
-  id?: number;
-  username?: string;
-}
-
-interface CompleteLevelResponse {
-  success: boolean;
-  message?: string;
-}
+import {
+  CompleteLevelResponse,
+  CreateUserResponse,
+  User,
+} from '../models/types';
 
 @Injectable({
   providedIn: 'root',
