@@ -36,6 +36,7 @@ import { TelegramService } from '../../../core/services/telegram.service';
 import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SceneService } from '../../../core/services/scene.service';
+import { PhysicsService } from '../../../core/services/physics.service';
 
 @Component({
   selector: 'app-simulator',
@@ -124,7 +125,8 @@ export class SimulatorComponent
     private telegramService: TelegramService,
     private userService: UserService,
     private authService: AuthService,
-    private sceneService: SceneService
+    private sceneService: SceneService,
+    private physicsService: PhysicsService
   ) {}
 
   async ngOnInit() {
@@ -435,46 +437,25 @@ export class SimulatorComponent
   }
 
   public initSceneAndWorld(): void {
-    this.world = new CANNON.World();
-    this.world.gravity.set(0, -9.82, 0);
-
     const canvas = this.el.nativeElement.querySelector('#webgl-canvas');
     this.sceneService.init(canvas);
 
     this.scene = this.sceneService.scene;
     this.camera = this.sceneService.camera;
     this.renderer = this.sceneService.renderer;
+    this.world = this.physicsService.world;
   }
 
   public animatePhysics(deltaTime: number): void {
-    const fixedTimeStep = 1 / 60;
-    const maxSubSteps = 3;
-    this.world.step(fixedTimeStep, deltaTime, maxSubSteps);
-
+    this.physicsService.step(deltaTime);
     if (this.carBody) {
-      this.car.position.set(
-        this.carBody.position.x,
-        this.carBody.position.y,
-        this.carBody.position.z
-      );
-      this.car.quaternion.set(
-        this.carBody.quaternion.x,
-        this.carBody.quaternion.y,
-        this.carBody.quaternion.z,
-        this.carBody.quaternion.w
-      );
+      this.physicsService.syncBody(this.car, this.carBody);
     }
 
-    this.trafficCones.coneBodies.forEach((body, index) => {
-      const cone = this.trafficCones.getCones()[index];
-      cone.position.set(body.position.x, 0, body.position.z);
-      cone.quaternion.set(
-        body.quaternion.x,
-        body.quaternion.y,
-        body.quaternion.z,
-        body.quaternion.w
-      );
-    });
+    this.physicsService.syncBodies(
+      this.trafficCones.getCones(),
+      this.trafficCones.coneBodies
+    );
   }
 
   public animate() {
