@@ -51,8 +51,12 @@
       <div class="up-control">
         <button
           mat-raised-button
-          (touchstart)="isMovingForward = true; preventDefault($event)"
-          (touchend)="isMovingForward = false; preventDefault($event)"
+          (touchstart)="
+            inputControlService.setMovingForward(true); preventDefault($event)
+          "
+          (touchend)="
+            inputControlService.setMovingForward(false); preventDefault($event)
+          "
         >
           <i class="fas fa-arrow-up"></i>
         </button>
@@ -61,8 +65,12 @@
       <div class="down-control">
         <button
           mat-raised-button
-          (touchstart)="isMovingBackward = true; preventDefault($event)"
-          (touchend)="isMovingBackward = false; preventDefault($event)"
+          (touchstart)="
+            inputControlService.setMovingBackward(true); preventDefault($event)
+          "
+          (touchend)="
+            inputControlService.setMovingBackward(false); preventDefault($event)
+          "
         >
           <i class="fas fa-arrow-down"></i>
         </button>
@@ -82,7 +90,7 @@
         >
           Try again
         </button>
-        @if (isNextLevel && currentLevel !== "steep-grade") {
+        @if (isNextLevel && currentLevel !== 'steep-grade') {
           <button
             mat-raised-button
             color="accent"

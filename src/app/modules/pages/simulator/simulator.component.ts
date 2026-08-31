@@ -37,6 +37,7 @@ import { UserService } from '../../../core/services/user.service';
 import { AuthService } from '../../../core/services/auth.service';
 import { SceneService } from '../../../core/services/scene.service';
 import { PhysicsService } from '../../../core/services/physics.service';
+import { InputControlService } from '../../../core/services/input-control.service';
 
 @Component({
   selector: 'app-simulator',
@@ -83,10 +84,6 @@ export class SimulatorComponent
   private turnSpeed: number = 1;
   public hitConeCount: number = 0;
 
-  public isMovingForward: boolean = false;
-  public isMovingBackward: boolean = false;
-  public isTurningLeft: boolean = false;
-  public isTurningRight: boolean = false;
   public isMobileDevice: boolean = false;
   public isConeFallen: boolean = false;
   public isGameOver: boolean = false;
@@ -126,13 +123,16 @@ export class SimulatorComponent
     private userService: UserService,
     private authService: AuthService,
     private sceneService: SceneService,
-    private physicsService: PhysicsService
+    private physicsService: PhysicsService,
+    public inputControlService: InputControlService
   ) {}
 
   async ngOnInit() {
     this.modelsLoaderService.show();
     this.isMobileDevice = this.deviceService.isMobile();
     this.clock = new THREE.Clock();
+
+    this.inputControlService.init();
 
     if (this.telegramService.isTelegramEnv()) {
       const tgUser = this.telegramService.getTelegramUser();
@@ -236,6 +236,8 @@ export class SimulatorComponent
   }
 
   ngOnDestroy() {
+    this.inputControlService.destroy();
+
     if (this.carCollisionSubscription) {
       this.carCollisionSubscription.unsubscribe();
     }
@@ -377,13 +379,13 @@ export class SimulatorComponent
 
   public startGame(): void {
     this.isGameOver = false;
+    this.inputControlService.setGameOver(false);
     this.controlsEnabled = false;
   }
 
   public resetGameState(): void {
     this.isGameOver = false;
-    this.isMovingForward = false;
-    this.isMovingBackward = false;
+    this.inputControlService.setGameOver(false);
     this.hitConeCount = 0;
     this.coneStateService.resetConeState();
     this.trafficCones.resetCones();
@@ -397,18 +399,20 @@ export class SimulatorComponent
 
     if (this.carComponent) {
       this.carComponent.currentSpeed = 0;
+      this.carComponent.resetPhysicsAndWheels();
       this.carComponent.resetCarPosition();
       this.carComponent.createPhysicsCarBody(this.carComponent.finalHeight);
-
-      this.carComponent.vehicle.wheelInfos.forEach((wheel) => {
-        wheel.deltaRotation = 0;
-      });
-      this.carComponent.createPhysicsWheels(this.carComponent.scaleFactor);
+      this.carComponent.initWheelsAfterLoad(this.carComponent.scaleFactor);
     }
 
     if (this.carBody) {
       this.world.removeBody(this.carBody);
     }
+
+    this.inputControlService.setTurningLeft(false);
+    this.inputControlService.setTurningRight(false);
+    this.inputControlService.setMovingForward(false);
+    this.inputControlService.setMovingBackward(false);
 
     this.checkDialogShown = false;
     this.stoppedOnce = false;
@@ -463,13 +467,8 @@ export class SimulatorComponent
     const deltaTime = this.clock.getDelta();
     this.animatePhysics(deltaTime);
 
-    this.carComponent.updateCarPosition(deltaTime, {
-      isMovingForward: this.isMovingForward,
-      isMovingBackward: this.isMovingBackward,
-      isTurningLeft: this.isTurningLeft,
-      isTurningRight: this.isTurningRight,
-      isGameOver: this.isGameOver,
-    });
+    const input = this.inputControlService.getInputState();
+    this.carComponent.updateCarPosition(deltaTime, input);
 
     if (this.car) {
       this.sceneService.updateCamera(this.car);
@@ -561,6 +560,7 @@ export class SimulatorComponent
           false
         );
         this.isGameOver = true;
+        this.inputControlService.setGameOver(true);
         this.controlsEnabled = true;
         this.isNextLevel = false;
 
@@ -599,7 +599,9 @@ export class SimulatorComponent
   }
 
   private handleParkingLevelGameOver(): void {
-    if (!this.isMovingForward && !this.isMovingBackward) {
+    const input = this.inputControlService.getInputState();
+
+    if (!input.isMovingForward && !input.isMovingBackward) {
       if (this.exerciseStarted && !this.checkDialogShown) {
         if (this.shouldShowCheckDialog()) {
           this.showCheckDialog();
@@ -618,6 +620,7 @@ export class SimulatorComponent
         false
       );
       this.isGameOver = true;
+      this.inputControlService.setGameOver(true);
       this.controlsEnabled = true;
       this.isNextLevel = false;
 
@@ -651,6 +654,7 @@ export class SimulatorComponent
         false
       );
       this.isGameOver = true;
+      this.inputControlService.setGameOver(true);
       this.controlsEnabled = true;
     } else if (this.bridgeComponentInstance?.hasPassedByBridge) {
       this.dialogService.openDialog(
@@ -659,6 +663,7 @@ export class SimulatorComponent
         false
       );
       this.isGameOver = true;
+      this.inputControlService.setGameOver(true);
       this.controlsEnabled = true;
     }
   }
@@ -701,7 +706,8 @@ export class SimulatorComponent
         this.temporaryBlockDialog = true;
 
         const interval = setInterval(() => {
-          if (this.isMovingForward || this.isMovingBackward) {
+          const currentInput = this.inputControlService.getInputState();
+          if (currentInput.isMovingForward || currentInput.isMovingBackward) {
             this.temporaryBlockDialog = false;
             clearInterval(interval);
           }
@@ -747,6 +753,7 @@ export class SimulatorComponent
         this.isNextLevel = false;
         this.isResultDialogShown = true;
         this.isGameOver = true;
+        this.inputControlService.setGameOver(true);
         this.controlsEnabled = true;
         this.dialogService.openDialog(
           'Задание не выполнено',
@@ -756,6 +763,7 @@ export class SimulatorComponent
       } else {
         this.isResultDialogShown = true;
         this.isGameOver = true;
+        this.inputControlService.setGameOver(true);
 
         this.ensureUser$()
           .pipe(
@@ -813,82 +821,19 @@ export class SimulatorComponent
   }
 
   public turnLeft() {
-    this.isTurningLeft = true;
-    this.isTurningRight = false;
-    this.carComponent.updateFrontWheels(
-      this.isTurningLeft,
-      this.isTurningRight
-    );
+    this.inputControlService.setTurningLeft(true);
   }
 
   public stopTurningLeft() {
-    this.isTurningLeft = false;
-    this.carComponent.updateFrontWheels(
-      this.isTurningLeft,
-      this.isTurningRight
-    );
+    this.inputControlService.setTurningLeft(false);
   }
 
   public turnRight() {
-    this.isTurningRight = true;
-    this.isTurningLeft = false;
-    this.carComponent.updateFrontWheels(
-      this.isTurningLeft,
-      this.isTurningRight
-    );
+    this.inputControlService.setTurningRight(true);
   }
 
   public stopTurningRight() {
-    this.isTurningRight = false;
-    this.carComponent.updateFrontWheels(
-      this.isTurningLeft,
-      this.isTurningRight
-    );
-  }
-
-  @HostListener('window:keydown', ['$event'])
-  handleKeyboardEvent(event: KeyboardEvent) {
-    // if (this.isMobileDevice) return;
-
-    if (this.car && !this.isGameOver) {
-      if (event.key === 'ArrowUp') {
-        this.isMovingForward = true;
-      } else if (event.key === 'ArrowDown') {
-        this.isMovingBackward = true;
-      } else if (event.key === 'ArrowLeft') {
-        this.isTurningLeft = true;
-        this.isTurningRight = false;
-        this.carComponent.updateFrontWheels(
-          this.isTurningLeft,
-          this.isTurningRight
-        );
-      } else if (event.key === 'ArrowRight') {
-        this.isTurningRight = true;
-        this.isTurningLeft = false;
-        this.carComponent.updateFrontWheels(
-          this.isTurningLeft,
-          this.isTurningRight
-        );
-      }
-    }
-  }
-
-  @HostListener('window:keyup', ['$event'])
-  handleKeyUpEvent(event: KeyboardEvent) {
-    // if (this.isMobileDevice) return;
-
-    if (event.key === 'ArrowUp') {
-      this.isMovingForward = false;
-    } else if (event.key === 'ArrowDown') {
-      this.isMovingBackward = false;
-    } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-      this.isTurningLeft = false;
-      this.isTurningRight = false;
-      this.carComponent.updateFrontWheels(
-        this.isTurningLeft,
-        this.isTurningRight
-      );
-    }
+    this.inputControlService.setTurningRight(false);
   }
 
   // Управление с мобильного

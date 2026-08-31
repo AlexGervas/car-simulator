@@ -57,7 +57,7 @@ export default defineConfig([
         },
       ],
       'prefer-const': 'error',
-      // 'max-lines': ['warn', { max: 300 }],
+      // 'max-lines': ['warn', { max: 400 }],
       'max-params': ['error', 5],
       '@typescript-eslint/no-unused-vars': [
         'error',

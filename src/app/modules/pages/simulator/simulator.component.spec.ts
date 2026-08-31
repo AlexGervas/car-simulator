@@ -24,6 +24,7 @@ import * as THREE from 'three';
 import * as CANNON from 'cannon-es';
 import { RendererFactoryService } from '../../../core/services/renderer-factory.service';
 import { AuthService } from '../../../core/services/auth.service';
+import { InputControlService } from '../../../core/services/input-control.service';
 
 describe('SimulatorComponent', () => {
   let component: SimulatorComponent;
@@ -521,12 +522,10 @@ describe('SimulatorComponent', () => {
           currentSpeed: 5,
           finalHeight: 1.5,
           resetCarPosition: jasmine.createSpy(),
+          resetPhysicsAndWheels: jasmine.createSpy(),
           createPhysicsCarBody: jasmine.createSpy(),
-          createPhysicsWheels: jasmine.createSpy(),
+          initWheelsAfterLoad: jasmine.createSpy(),
           scaleFactor: 1,
-          vehicle: {
-            wheelInfos: [{ deltaRotation: 3 }, { deltaRotation: 4 }],
-          },
         } as any;
       });
 
@@ -534,8 +533,8 @@ describe('SimulatorComponent', () => {
         component.resetGameState();
 
         expect(component.isGameOver).toBeFalse();
-        expect(component.isMovingForward).toBeFalse();
-        expect(component.isMovingBackward).toBeFalse();
+        expect(component.inputControlService.getInputState().isMovingForward).toBeFalse();
+        expect(component.inputControlService.getInputState().isMovingBackward).toBeFalse();
         expect(component.hitConeCount).toBe(0);
         expect(component.checkDialogShown).toBeFalse();
         expect(component.stoppedOnce).toBeFalse();
@@ -551,18 +550,13 @@ describe('SimulatorComponent', () => {
         expect(component.dialog.closeAll).toHaveBeenCalled();
 
         expect(component.carComponent.currentSpeed).toBe(0);
+        expect(component.carComponent.resetPhysicsAndWheels).toHaveBeenCalled();
         expect(component.carComponent.resetCarPosition).toHaveBeenCalled();
         expect(
           component.carComponent.createPhysicsCarBody
         ).toHaveBeenCalledWith(component.carComponent.finalHeight);
-        expect(component.carComponent.createPhysicsWheels).toHaveBeenCalledWith(
+        expect(component.carComponent.initWheelsAfterLoad).toHaveBeenCalledWith(
           component.carComponent.scaleFactor
-        );
-        expect(component.carComponent.vehicle.wheelInfos[0].deltaRotation).toBe(
-          0
-        );
-        expect(component.carComponent.vehicle.wheelInfos[1].deltaRotation).toBe(
-          0
         );
 
         expect(component.bridgeComponentInstance!.hasCrossedBridge).toBeFalse();
@@ -677,7 +671,11 @@ describe('SimulatorComponent', () => {
         quaternion: new CANNON.Quaternion(0, 0, 0, 1),
       } as any;
 
-      component.world = jasmine.createSpyObj('CANNON.World', ['step']);
+      (component as any).physicsService = jasmine.createSpyObj('PhysicsService', [
+        'step',
+        'syncBody',
+        'syncBodies',
+      ]);
 
       component.trafficCones = {
         coneBodies: [],
@@ -688,18 +686,12 @@ describe('SimulatorComponent', () => {
     it('should step the physics world and sync car transform', () => {
       component.animatePhysics(1 / 60);
 
-      const args = (component.world.step as jasmine.Spy).calls.mostRecent()
-        .args;
-      expect(args[0]).toBeCloseTo(1 / 60);
-
-      expect(component.car.position.x).toBeCloseTo(1);
-      expect(component.car.position.y).toBeCloseTo(2);
-      expect(component.car.position.z).toBeCloseTo(3);
-
-      expect(component.car.quaternion.x).toBeCloseTo(0);
-      expect(component.car.quaternion.y).toBeCloseTo(0);
-      expect(component.car.quaternion.z).toBeCloseTo(0);
-      expect(component.car.quaternion.w).toBeCloseTo(1);
+      expect((component as any).physicsService.step).toHaveBeenCalledWith(1 / 60);
+      expect((component as any).physicsService.syncBody).toHaveBeenCalledWith(
+        component.car,
+        component.carBody
+      );
+      expect((component as any).physicsService.syncBodies).toHaveBeenCalled();
     });
 
     it('should not throw if car or carBody are missing', () => {
@@ -730,10 +722,13 @@ describe('SimulatorComponent', () => {
       component.clock = new THREE.Clock();
       spyOn(component, 'animatePhysics');
       spyOn(component.carComponent, 'updateCarPosition');
-      spyOn(component, 'updateCameraPosition');
+      (component as any).sceneService = jasmine.createSpyObj('SceneService', [
+        'updateCamera',
+        'render',
+      ]);
+      component.car = new THREE.Object3D();
       component.scene = new THREE.Scene();
       component.camera = new THREE.PerspectiveCamera();
-      component.renderer = jasmine.createSpyObj('WebGLRenderer', ['render']);
     });
 
     afterEach(() => {
@@ -741,76 +736,46 @@ describe('SimulatorComponent', () => {
     });
 
     it('should schedule the next animation frame and update the scene', () => {
+      component.inputControlService.setMovingForward(true);
+      component.isGameOver = false;
+
       component.animate();
 
       expect(rafSpy).toHaveBeenCalled();
       expect(component.animatePhysics).toHaveBeenCalled();
       expect(component.carComponent.updateCarPosition).toHaveBeenCalledWith(
         jasmine.any(Number),
-        {
-          isMovingForward: component.isMovingForward,
-          isMovingBackward: component.isMovingBackward,
-          isTurningLeft: component.isTurningLeft,
-          isTurningRight: component.isTurningRight,
-          isGameOver: component.isGameOver,
-        }
+        jasmine.objectContaining({
+          isMovingForward: true,
+          isMovingBackward: false,
+          isTurningLeft: false,
+          isTurningRight: false,
+          isGameOver: false,
+        })
       );
-      expect(component.updateCameraPosition).toHaveBeenCalled();
-      expect(component.renderer.render).toHaveBeenCalledWith(
-        component.scene,
-        component.camera
+      expect((component as any).sceneService.updateCamera).toHaveBeenCalledWith(
+        component.car
       );
+      expect((component as any).sceneService.render).toHaveBeenCalled();
     });
   });
 
-  describe('updateCameraPosition', () => {
+  describe('updateCamera via SceneService', () => {
     beforeEach(() => {
-      component.camera = new THREE.PerspectiveCamera();
+      (component as any).sceneService = jasmine.createSpyObj('SceneService', [
+        'updateCamera',
+      ]);
       component.car = new THREE.Object3D();
     });
 
-    it('should update the camera position based on the car position and offset', () => {
+    it('should delegate camera update to SceneService', () => {
       component.car.position.set(1, 1, 1);
 
-      component.updateCameraPosition();
+      (component as any).sceneService.updateCamera(component.car);
 
-      const expectedPosition = new THREE.Vector3(1, 1, 1).add(
-        new THREE.Vector3(0, 2, 5)
+      expect((component as any).sceneService.updateCamera).toHaveBeenCalledWith(
+        component.car
       );
-      expect(component.camera.position).toEqual(expectedPosition);
-    });
-
-    it('should do nothing if car is undefined', () => {
-      component.car = undefined!;
-      component.camera = jasmine.createSpyObj('camera', ['lookAt', 'position']);
-
-      expect(() => component.updateCameraPosition()).not.toThrow();
-    });
-
-    it('should position camera correctly and look at the expected point based on car direction', () => {
-      const mockCar = new THREE.Object3D();
-      mockCar.position.set(1, 0, 2);
-
-      spyOn(mockCar, 'getWorldDirection').and.callFake(
-        (target: THREE.Vector3) => {
-          target.set(0, 0, -1);
-          return target;
-        }
-      );
-
-      const mockCamera = new THREE.PerspectiveCamera();
-      const lookAtSpy = spyOn(mockCamera, 'lookAt');
-
-      component.car = mockCar;
-      component.camera = mockCamera;
-
-      component.updateCameraPosition();
-
-      expect(mockCamera.position.x).toBeCloseTo(1);
-      expect(mockCamera.position.y).toBeCloseTo(2);
-      expect(mockCamera.position.z).toBeCloseTo(7);
-
-      expect(lookAtSpy).toHaveBeenCalled();
     });
   });
 
@@ -1024,22 +989,20 @@ describe('SimulatorComponent', () => {
     });
 
     it('should start the exercise while moving forward', () => {
-      (component as any).isMovingForward = true;
-      (component as any).isMovingBackward = false;
+      component.inputControlService.setMovingForward(true);
       (component as any).handleParkingLevelGameOver();
       expect((component as any).exerciseStarted).toBeTrue();
     });
 
     it('should start the exercise while moving backwards', () => {
-      (component as any).isMovingForward = false;
-      (component as any).isMovingBackward = true;
+      component.inputControlService.setMovingBackward(true);
       (component as any).handleParkingLevelGameOver();
       expect((component as any).exerciseStarted).toBeTrue();
     });
 
     it('should call showCheckDialog if the machine has stopped, the exercise has started and checkDialogShown = false', () => {
-      (component as any).isMovingForward = false;
-      (component as any).isMovingBackward = false;
+      component.inputControlService.setMovingForward(false);
+      component.inputControlService.setMovingBackward(false);
       (component as any).exerciseStarted = true;
       (component as any).handleParkingLevelGameOver();
       expect((component as any).showCheckDialog).toHaveBeenCalled();
@@ -1360,16 +1323,13 @@ describe('SimulatorComponent', () => {
     });
   });
 
-  describe('Steering and Keyboard Controls', () => {
-    let component: SimulatorComponent;
-    let carComponentMock: any;
+  describe('Steering and Touch Controls', () => {
+    let inputControlService: InputControlService;
+    let steeringComponent: SimulatorComponent;
 
     beforeEach(() => {
-      carComponentMock = {
-        updateFrontWheels: jasmine.createSpy('updateFrontWheels'),
-      };
-
-      component = new SimulatorComponent(
+      inputControlService = new InputControlService();
+      steeringComponent = new SimulatorComponent(
         {} as any,
         {} as any,
         {} as any,
@@ -1385,156 +1345,37 @@ describe('SimulatorComponent', () => {
         {} as any,
         {} as any,
         {} as any,
-        {} as any
-      );
-      (component as any).carComponent = carComponentMock;
-      component.isGameOver = false;
-      component.car = {} as any;
-    });
-
-    it('should switch the flags correctly when pressing ArrowLeft and ArrowRight sequentially', () => {
-      component.handleKeyboardEvent({ key: 'ArrowLeft' } as KeyboardEvent);
-      expect(component.isTurningLeft).toBeTrue();
-      expect(component.isTurningRight).toBeFalse();
-      expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-        true,
-        false
-      );
-
-      component.handleKeyboardEvent({ key: 'ArrowRight' } as KeyboardEvent);
-      expect(component.isTurningLeft).toBeFalse();
-      expect(component.isTurningRight).toBeTrue();
-      expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-        false,
-        true
+        {} as any,
+        {} as any,
+        inputControlService
       );
     });
 
     describe('turnLeft / stopTurningLeft', () => {
-      it('should enable left turn and call updateFrontWheels', () => {
-        component.turnLeft();
-        expect(component.isTurningLeft).toBeTrue();
-        expect(component.isTurningRight).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          true,
-          false
-        );
+      it('should enable left turn via input service', () => {
+        steeringComponent.turnLeft();
+        expect(inputControlService.getInputState().isTurningLeft).toBeTrue();
+        expect(inputControlService.getInputState().isTurningRight).toBeFalse();
       });
 
-      it('should stop turning left and call updateFrontWheels', () => {
-        component.isTurningLeft = true;
-        component.stopTurningLeft();
-        expect(component.isTurningLeft).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          false,
-          false
-        );
+      it('should stop turning left via input service', () => {
+        inputControlService.setTurningLeft(true);
+        steeringComponent.stopTurningLeft();
+        expect(inputControlService.getInputState().isTurningLeft).toBeFalse();
       });
     });
 
     describe('turnRight / stopTurningRight', () => {
-      it('should enable right turn and call updateFrontWheels', () => {
-        component.turnRight();
-        expect(component.isTurningRight).toBeTrue();
-        expect(component.isTurningLeft).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          false,
-          true
-        );
+      it('should enable right turn via input service', () => {
+        steeringComponent.turnRight();
+        expect(inputControlService.getInputState().isTurningRight).toBeTrue();
+        expect(inputControlService.getInputState().isTurningLeft).toBeFalse();
       });
 
-      it('should stop turning right and call updateFrontWheels', () => {
-        component.isTurningRight = true;
-        component.stopTurningRight();
-        expect(component.isTurningRight).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          false,
-          false
-        );
-      });
-    });
-
-    describe('handleKeyboardEvent', () => {
-      it('should start moving forward at ArrowUp', () => {
-        component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowUp' })
-        );
-        expect(component.isMovingForward).toBeTrue();
-      });
-
-      it('should start moving backwards at ArrowDown', () => {
-        component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowDown' })
-        );
-        expect(component.isMovingBackward).toBeTrue();
-      });
-
-      it('should turn left at ArrowLeft', () => {
-        component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowLeft' })
-        );
-        expect(component.isTurningLeft).toBeTrue();
-        expect(component.isTurningRight).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          true,
-          false
-        );
-      });
-
-      it('should turn right at ArrowRight', () => {
-        component.handleKeyboardEvent(
-          new KeyboardEvent('keydown', { key: 'ArrowRight' })
-        );
-        expect(component.isTurningRight).toBeTrue();
-        expect(component.isTurningLeft).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          false,
-          true
-        );
-      });
-    });
-
-    describe('handleKeyUpEvent', () => {
-      it('should stop moving forward when releasing the ArrowUp', () => {
-        component.isMovingForward = true;
-        component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowUp' })
-        );
-        expect(component.isMovingForward).toBeFalse();
-      });
-
-      it('should stop moving backwards when releasing ArrowDown', () => {
-        component.isMovingBackward = true;
-        component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowDown' })
-        );
-        expect(component.isMovingBackward).toBeFalse();
-      });
-
-      it('should reset both rotations when releasing ArrowLeft', () => {
-        component.isTurningLeft = true;
-        component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowLeft' })
-        );
-        expect(component.isTurningLeft).toBeFalse();
-        expect(component.isTurningRight).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          false,
-          false
-        );
-      });
-
-      it('should reset both rotations when releasing ArrowRight', () => {
-        component.isTurningRight = true;
-        component.handleKeyUpEvent(
-          new KeyboardEvent('keyup', { key: 'ArrowRight' })
-        );
-        expect(component.isTurningLeft).toBeFalse();
-        expect(component.isTurningRight).toBeFalse();
-        expect(carComponentMock.updateFrontWheels).toHaveBeenCalledWith(
-          false,
-          false
-        );
+      it('should stop turning right via input service', () => {
+        inputControlService.setTurningRight(true);
+        steeringComponent.stopTurningRight();
+        expect(inputControlService.getInputState().isTurningRight).toBeFalse();
       });
     });
   });

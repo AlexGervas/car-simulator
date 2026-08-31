@@ -47,7 +47,7 @@ describe('CarComponent', () => {
       ).and.callThrough();
       const wheelsSpy = spyOn(
         component,
-        'createPhysicsWheels'
+        'initWheelsAfterLoad'
       ).and.callThrough();
 
       component.ground = {

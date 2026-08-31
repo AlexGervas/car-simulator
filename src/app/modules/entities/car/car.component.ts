@@ -6,6 +6,19 @@ import { GroundComponent } from '../ground/ground.component';
 import { BridgeComponent } from '../bridge/bridge.component';
 import { TrafficConesComponent } from '../traffic-cones/traffic-cones.component';
 
+interface WheelPivot extends THREE.Object3D {
+  wheelMesh: THREE.Object3D;
+}
+
+const WHEEL_NAME_BY_KEY: Record<string, string> = {
+  frontLeft: 'Wheel_1_L',
+  frontRight: 'Wheel_1_R',
+  backLeft: 'Wheel_2_L',
+  backRight: 'Wheel_2_R',
+};
+
+const FRONT_WHEEL_KEYS = ['frontLeft', 'frontRight'] as const;
+
 @Component({
   selector: 'app-car',
   standalone: true,
@@ -54,6 +67,7 @@ export class CarComponent implements OnInit {
 
   public finalHeight: number = 0;
   public scaleFactor: number = 0;
+  private wheelRotation: number = 0;
 
   constructor() {}
 
@@ -92,9 +106,8 @@ export class CarComponent implements OnInit {
       console.error('GroundComponent is not initialized yet in CarComponent');
     }
 
-    this.createPhysicsWheels(this.scaleFactor);
-
     this.scene.add(this.car);
+    this.initWheelsAfterLoad(this.scaleFactor);
 
     if (this.ground) {
       this.ground.updateTiles();
@@ -156,8 +169,10 @@ export class CarComponent implements OnInit {
       }
     });
 
-    Object.keys(this.wheelData).forEach((wheelName) => {
+    this.wheelKeys.forEach((key) => {
+      const wheelName = WHEEL_NAME_BY_KEY[key];
       const wheel = this.wheelData[wheelName];
+      if (!wheel) return;
 
       this.vehicle.addWheel({
         chassisConnectionPointLocal: new CANNON.Vec3(
@@ -211,6 +226,8 @@ export class CarComponent implements OnInit {
       isTurningLeft,
       isTurningRight
     );
+
+    this.updateFrontWheels(isTurningLeft, isTurningRight);
 
     if (this.currentLevel === 'steep-grade' && this.bridge?.bridgeBody) {
       this.bridge.handleCarOnBridge(this.carBody.position, this.carBody);
@@ -287,35 +304,51 @@ export class CarComponent implements OnInit {
   }
 
   private rotateWheels(): void {
-    this.vehicle.wheelInfos.forEach((wheel, index) => {
+    if (!this.vehicle) return;
+
+    const speedAbs = Math.abs(this.currentSpeed);
+
+    // скорость вращения колёс
+    const rotationSpeed =
+      speedAbs > 0.01 ? (this.currentSpeed / this.maxSpeed) * 0.15 : 0;
+
+    // абсолютный угол (без накопления ошибок)
+    this.wheelRotation += rotationSpeed;
+
+    this.vehicle.wheelInfos.forEach((_, index) => {
       const key = this.wheelKeys[index];
       const wheelObject = this.wheels[key];
+      if (!wheelObject) return;
 
-      if (wheelObject) {
-        const wheelRadius = wheel.radius;
-        const speedFactor = Math.abs(this.currentSpeed) / this.maxSpeed;
-        const desiredDeltaRotation =
-          (this.currentSpeed / wheelRadius) * (1 / 60);
+      const wheelMesh: THREE.Object3D =
+        (wheelObject as WheelPivot).wheelMesh ?? wheelObject;
 
-        if (Math.abs(this.currentSpeed) < 0.1) {
-          wheel.deltaRotation = Math.max(
-            0,
-            wheel.deltaRotation -
-              (this.decelerationRate * speedFactor) / wheelRadius
-          );
-        } else {
-          const interpolationFactor = 0.00001;
-          wheel.deltaRotation +=
-            (desiredDeltaRotation - wheel.deltaRotation) * interpolationFactor;
-        }
-        wheel.deltaRotation = Math.max(-2, Math.min(2, wheel.deltaRotation));
-
-        const { position } = wheel.worldTransform;
-        wheelObject.position.set(position.x, position.y, position.z);
-        const rotationAngle = wheel.deltaRotation;
-        wheelObject.rotateX(rotationAngle);
-      }
+      wheelMesh.rotation.x = this.wheelRotation;
     });
+  }
+
+  private setupFrontWheelPivot(key: 'frontLeft' | 'frontRight'): void {
+    const wheel = this.wheels[key];
+    if (!wheel || !this.car) return;
+
+    const worldPos = new THREE.Vector3();
+    wheel.getWorldPosition(worldPos);
+
+    const localPos = this.car.worldToLocal(worldPos.clone());
+
+    const pivot = new THREE.Object3D() as WheelPivot;
+    pivot.position.copy(localPos);
+
+    wheel.parent?.remove(wheel);
+    pivot.add(wheel);
+
+    wheel.position.set(0, 0, 0);
+    wheel.rotation.set(0, 0, 0);
+
+    this.car.add(pivot);
+
+    pivot.wheelMesh = wheel;
+    this.wheels[key] = pivot;
   }
 
   public updateFrontWheels(isTurningLeft: boolean, isTurningRight: boolean) {
@@ -325,17 +358,67 @@ export class CarComponent implements OnInit {
         : isTurningRight
           ? -Math.PI / 6
           : 0;
-      if (this.wheels['frontLeft']) {
-        this.wheels['frontLeft'].rotation.set(0, 0, frontWheelAngle);
+      const frontLeft = this.wheels['frontLeft'];
+      const frontRight = this.wheels['frontRight'];
+      if (frontLeft) {
+        frontLeft.rotation.y = frontWheelAngle;
       }
-      if (this.wheels['frontRight']) {
-        this.wheels['frontRight'].rotation.set(0, 0, frontWheelAngle);
+      if (frontRight) {
+        frontRight.rotation.y = frontWheelAngle;
       }
     }
+  }
+
+  public initWheelsAfterLoad(scaleFactor: number): void {
+    this.createPhysicsWheels(scaleFactor);
+    this.car.updateWorldMatrix(true, true);
+    this.setupFrontWheelPivot('frontLeft');
+    this.setupFrontWheelPivot('frontRight');
   }
 
   public resetCarPosition(): void {
     this.car.position.set(0, 0, 0);
     this.car.rotation.set(0, Math.PI, 0);
+  }
+
+  public resetPhysicsAndWheels(): void {
+    if (this.vehicle) {
+      this.vehicle.removeFromWorld(this.world);
+    }
+
+    if (this.carBody) {
+      this.world.removeBody(this.carBody);
+    }
+
+    this.restoreFrontWheelPivots();
+
+    Object.values(this.wheels).forEach((wheel) => {
+      wheel.rotation.set(0, 0, 0);
+    });
+
+    this.wheels = {};
+    this.wheelData = {};
+    this.currentSpeed = 0;
+    this.wheelRotation = 0;
+  }
+
+  private restoreFrontWheelPivots(): void {
+    if (!this.car) return;
+
+    for (const key of FRONT_WHEEL_KEYS) {
+      const wheelObj = this.wheels[key];
+      if (!wheelObj) continue;
+
+      const pivot = wheelObj as WheelPivot;
+      const mesh = pivot.wheelMesh;
+      if (!mesh) continue;
+
+      const localPos = pivot.position.clone();
+      pivot.remove(mesh);
+      this.car.remove(pivot);
+      this.car.add(mesh);
+      mesh.position.copy(localPos);
+      mesh.rotation.set(0, 0, 0);
+    }
   }
 }
